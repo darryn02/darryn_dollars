@@ -1,0 +1,17 @@
+= simple_form_for BettingSlip.new do |f|
+
+  - @games.each do |game|
+    %h2= game.description
+    - game.contests.order(primary: :desc).each do |contest|
+      %h3= contest.name
+      %table
+        %tr
+          %th Team
+          %th Spread
+          %th Over/Under
+        - contest.contestants.each do |contestant|
+          %tr
+            %td= contestant.name
+            %td= f.input :line_ids, as: :boolean, id: contestant.lines.point_spreads.latest.id, value: contestant.lines.point_spreads.latest.value
+            %td= contestant.lines.over_unders.latest.value
+

@@ -1,0 +1,13 @@
+---
+en:
+  date:
+    formats:
+      default: "%-m/%-d/%Y"
+      with_weekday: "%b %-d, %Y (%a)"
+      with_weekday_without_year: "%a, %b %-d"
+  time:
+    formats:
+      date: "%b %-d, %Y"
+      time: "%l:%M %p %Z"
+      default: "%-m/%-d/%Y %l:%M %p"
+      short: "%B %d"

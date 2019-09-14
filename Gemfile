@@ -5,13 +5,16 @@ ruby "2.4.0"
 gem "autoprefixer-rails"
 gem "delayed_job_active_record"
 gem "flutie"
+gem 'haml-rails'
 gem "honeybadger"
 gem "jquery-rails"
+gem 'kaminari', '~> 1.0'
 gem "normalize-rails", "~> 3.0.0"
 gem "pg"
 gem "puma"
 gem "rack-canonical-host"
 gem "rails", "~> 5.0.0"
+gem "reform-rails"
 gem "recipient_interceptor"
 gem "sass-rails", "~> 5.0"
 gem "simple_form"
@@ -44,7 +47,7 @@ group :development, :staging do
 end
 
 group :test do
-  gem "capybara-webkit"
+  gem "capybara-selenium"
   gem "database_cleaner"
   gem "formulaic"
   gem "launchy"
