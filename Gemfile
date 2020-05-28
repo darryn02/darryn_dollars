@@ -8,7 +8,7 @@ gem "flutie"
 gem 'haml-rails'
 gem "honeybadger"
 gem "jquery-rails"
-gem 'kaminari', '~> 1.0'
+gem 'kaminari', '~> 1.2'
 gem "normalize-rails", "~> 3.0.0"
 gem "pg"
 gem "puma"
