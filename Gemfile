@@ -12,6 +12,7 @@ gem 'kaminari'
 gem 'nokogiri'
 gem "normalize-rails"
 gem "pg"
+gem "phony_rails"
 gem "puma"
 gem "rack-canonical-host"
 gem "rails"
