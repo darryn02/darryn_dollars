@@ -1,9 +1,6 @@
 class Contest < ApplicationRecord
-  belongs_to :game
-  has_many :contestants
-  has_many :competitors, through: :contestants
+  include ResultEnum
 
-  def self.primary
-    find_by(primary: true)
-  end
+  belongs_to :contestant
+  has_one :line
 end

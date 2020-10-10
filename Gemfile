@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "2.4.0"
+ruby "2.7.1"
 
 gem "autoprefixer-rails"
 gem "delayed_job_active_record"
@@ -8,21 +8,23 @@ gem "flutie"
 gem 'haml-rails'
 gem "honeybadger"
 gem "jquery-rails"
-gem 'kaminari', '~> 1.0'
-gem "normalize-rails", "~> 3.0.0"
+gem 'kaminari'
+gem 'nokogiri'
+gem "normalize-rails"
 gem "pg"
 gem "puma"
 gem "rack-canonical-host"
-gem "rails", "~> 5.0.0"
+gem "rails"
 gem "reform-rails"
 gem "recipient_interceptor"
-gem "sass-rails", "~> 5.0"
+gem "sass-rails"
 gem "simple_form"
 gem "skylight"
-gem "sprockets", ">= 3.0.0"
+gem "sprockets"
 gem "suspenders"
 gem "title"
 gem "uglifier"
+gem 'watir'
 
 group :development do
   gem "listen"
@@ -34,12 +36,12 @@ end
 group :development, :test do
   gem "awesome_print"
   gem "bullet"
-  gem "bundler-audit", ">= 0.5.0", require: false
+  gem "bundler-audit", require: false
   gem "dotenv-rails"
-  gem "factory_girl_rails"
+  gem "factory_bot"
   gem "pry-byebug"
   gem "pry-rails"
-  gem "rspec-rails", "~> 3.5"
+  gem "rspec-rails"
 end
 
 group :development, :staging do

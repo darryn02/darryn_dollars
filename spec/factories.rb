@@ -19,12 +19,12 @@ FactoryGirl.define do
   factory :user do
     admin false
   end
-  factory :competetor do
-    
+  factory :competitor do
+
   end
   factory :contestant do
     contest nil
-    competetor nil
+    competitor nil
   end
   factory :contest do
     game nil

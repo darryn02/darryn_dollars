@@ -1,7 +1,7 @@
 class Wager < ApplicationRecord
-  DEFAULT_MIN_WAGER = 25
+  include ResultEnum
 
-  enum result: { pending: 0, win: 1, loss: 2, push: 3 }
+  DEFAULT_MIN_WAGER = 25
 
   belongs_to :betting_slip
   belongs_to :line
@@ -9,7 +9,7 @@ class Wager < ApplicationRecord
 
   before_save :update_net
 
-  validates :amount_wagered, presence: true, numericality: { greater_than_or_equal_to: :min_wager }
+  validates :amount, presence: true, numericality: { greater_than_or_equal_to: :min_wager }
   validates :line, presence: true
 
   def self.min_wager
@@ -23,8 +23,8 @@ class Wager < ApplicationRecord
   private
 
   def update_net
-    return self.net = amount_wagered if win?
-    return self.net = -amount_wagered * (1 + vig_pct) if loss?
+    return self.net = line.payout(amount) if win?
+    return self.net = -amount if loss?
     self.net = 0
   end
 end

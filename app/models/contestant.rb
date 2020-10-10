@@ -1,7 +1,7 @@
 class Contestant < ApplicationRecord
-  belongs_to :contest
-  belongs_to :competetor
-  has_many :lines
+  belongs_to :game
+  belongs_to :competitor
+  has_many :contests
 
-  delegate :name, to: :competetor
+  delegate :name, to: :competitor
 end
