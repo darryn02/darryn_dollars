@@ -23,6 +23,7 @@ gem "skylight"
 gem "sprockets"
 gem "suspenders"
 gem "title"
+gem 'twilio-ruby'
 gem "uglifier"
 gem 'watir'
 
