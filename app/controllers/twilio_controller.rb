@@ -34,6 +34,13 @@ class TwilioController < ApplicationController
     ["Is that right?"]).
     join("\n")
   end
+
+  rescue AccountNotFoundError
+    r.message body: "I'm sorry, I don't know which account you are betting under."
+  rescue AmbiguousAccountError
+    r.message body: "I'm sorry, it wasn't clear which account you meant for each wager"
+  rescue IncompleteWagerError
+    r.message body: "I'm sorry, I don't understand your wager. Try using a dollar sign in front of the amount and being as concise as possible"
 end
 =begin
  {

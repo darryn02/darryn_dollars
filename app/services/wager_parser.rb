@@ -1,6 +1,7 @@
 class WagerParser
   class AccountNotFoundError < StandardError; end
   class AmbiguousAccountError < StandardError; end
+  class IncompleteWagerError < StandardError; end
 
   def self.parse(user, wager_string)
     WagerParser.new.parse(user, wager_string)
@@ -12,6 +13,7 @@ class WagerParser
     line, remaining_string = extract_line(remaining_string)
     amount, remaining_string = extract_amount(remaining_string)
     competitors, remaining_string = extract_competitors(remaining_string)
+    raise IncompleteWagerError.new if line.blank? || amount.blank? || competitors.blank?
     [account, game_type, line, amount, competitors]
   end
 
