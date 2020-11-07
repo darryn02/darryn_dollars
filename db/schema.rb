@@ -15,12 +15,24 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
+  create_table "accounts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.string "nickname"
+    t.decimal "credit_limit", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["name"], name: "index_accounts_on_name"
+    t.index ["nickname"], name: "index_accounts_on_nickname"
+    t.index ["user_id"], name: "index_accounts_on_user_id"
+  end
+
   create_table "betting_slips", id: :serial, force: :cascade do |t|
-    t.integer "user_id"
+    t.integer "account_id", null: false
     t.boolean "confirmed"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["user_id"], name: "index_betting_slips_on_user_id"
+    t.index ["account_id"], name: "index_betting_slips_on_account_id"
   end
 
   create_table "competitors", id: :serial, force: :cascade do |t|
@@ -116,7 +128,8 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
     t.index ["line_id"], name: "index_wagers_on_line_id"
   end
 
-  add_foreign_key "betting_slips", "users"
+  add_foreign_key "accounts", "users", on_delete: :cascade
+  add_foreign_key "betting_slips", "accounts", on_delete: :cascade
   add_foreign_key "contestants", "competitors"
   add_foreign_key "contestants", "games"
   add_foreign_key "contests", "contestants"
