@@ -15,11 +15,13 @@ class TwilioController < ApplicationController
       "#{" on your" + account + "account" if account.present?}"
     end
 
-    response = Twilio::TwiML::MessagingResponse.new do |r|
-      r.message body: body(wagers)
-    end
-
-    render xml: response.to_s
+    respond body(wagers)
+  rescue WagerParser::AccountNotFoundError
+    respond "I'm sorry, I don't know which account you are betting under."
+  rescue WagerParser::AmbiguousAccountError
+    respond "I'm sorry, it wasn't clear which account you meant for each wager"
+  rescue WagerParser::IncompleteWagerError => e
+    respond "I'm sorry, I don't understand your wager.\n#{e.message}"
   end
 
   private
@@ -35,12 +37,12 @@ class TwilioController < ApplicationController
     join("\n")
   end
 
-  rescue AccountNotFoundError
-    r.message body: "I'm sorry, I don't know which account you are betting under."
-  rescue AmbiguousAccountError
-    r.message body: "I'm sorry, it wasn't clear which account you meant for each wager"
-  rescue IncompleteWagerError
-    r.message body: "I'm sorry, I don't understand your wager. Try using a dollar sign in front of the amount and being as concise as possible"
+  def respond(text)
+    response = Twilio::TwiML::MessagingResponse.new do |r|
+      r.message body: text
+    end
+    render xml: response.to_s
+  end
 end
 =begin
  {

@@ -13,7 +13,8 @@ class WagerParser
     line, remaining_string = extract_line(remaining_string)
     amount, remaining_string = extract_amount(remaining_string)
     competitors, remaining_string = extract_competitors(remaining_string)
-    raise IncompleteWagerError.new if line.blank? || amount.blank? || competitors.blank?
+    error_if_incomplete(amount, competitors)
+
     [account, game_type, line, amount, competitors]
   end
 
@@ -89,6 +90,16 @@ class WagerParser
     ).or(
       Competitor.where(abbreviation: permutations)
     ).distinct
+  end
+
+  def error_if_incomplete(amount, competitors)
+    message = nil
+    if amount.blank?
+      message = "The amount of the wager wasn't clear."
+    elsif competitors.blank?
+      message = "The competitor was not clear."
+    end
+    raise IncompleteWagerError.new(message) if message.present?
   end
 end
 
