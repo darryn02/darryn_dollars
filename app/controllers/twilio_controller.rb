@@ -2,11 +2,37 @@ class TwilioController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   def sms
+    from = params[:From]
     body = params[:Body]
-    response = Twilio::TwiML::MessagingResponse.new do |r|
-      r.message body: body
+    wager_components = body.split(/\n|\.\s+/).map do |str|
+      WagerParser.parse(user, str)
     end
+
+    wagers = wager_components.map do |account, game_type, line, amount, competitors|
+      "$#{amount} on " \
+      "#{competitors.map(&:abbreviation).join("/")} " \
+      "#{line}#{game_type.present? ? " (#{game_type})" : ""}" \
+      "#{" on your" + account + "account" if account.present?}"
+    end
+
+    response = Twilio::TwiML::MessagingResponse.new do |r|
+      r.message body: body(wagers)
+    end
+
     render xml: response.to_s
+  end
+
+  private
+
+  def user
+    @user ||= User.find_by!(mobile: params[:From])
+  end
+
+  def body(wagers)
+    (["So you want to bet:"] +
+    wagers +
+    ["Is that right?"]).
+    join("\n")
   end
 end
 =begin

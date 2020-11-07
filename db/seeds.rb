@@ -27,7 +27,7 @@ Competitor.create!(sport: :nfl, nicknames: ['Minny'], abbreviation: 'MIN', regio
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'ATL', region: 'Atlanta', name: 'Falcons')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'CAR', region: 'Carolina', name: 'Panthers')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'NO', region: 'New Orleans', name: 'Saints')
-Competitor.create!(sport: :nfl, nicknames: ['Bucs'], abbreviation: 'TB', region: 'Tampa Bay', name: 'Buccaneers')
+Competitor.create!(sport: :nfl, nicknames: ['Bucs', 'Tampa'], abbreviation: 'TB', region: 'Tampa Bay', name: 'Buccaneers')
 Competitor.create!(sport: :nfl, nicknames: ['Zona', 'Cards'], abbreviation: 'ARI', region: 'Arizona', name: 'Cardinals')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'LAR', region: 'Los Angeles', name: 'Rams')
 Competitor.create!(sport: :nfl, nicknames: ['9ers', 'Niners'], abbreviation: 'SF', region: 'San Francisco', name: '49ers')

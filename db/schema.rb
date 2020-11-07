@@ -13,6 +13,7 @@
 ActiveRecord::Schema.define(version: 2017_08_23_033013) do
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "citext"
   enable_extension "plpgsql"
 
   create_table "accounts", force: :cascade do |t|
@@ -37,11 +38,11 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
 
   create_table "competitors", id: :serial, force: :cascade do |t|
     t.integer "sport", null: false
-    t.string "abbreviation"
-    t.string "nicknames", default: [], null: false, array: true
-    t.string "region"
-    t.string "name", null: false
-    t.string "full_name", null: false
+    t.citext "abbreviation"
+    t.citext "nicknames", default: [], null: false, array: true
+    t.citext "region"
+    t.citext "name", null: false
+    t.citext "full_name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_competitors_on_lower_name"
