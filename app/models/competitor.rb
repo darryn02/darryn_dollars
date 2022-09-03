@@ -13,7 +13,12 @@ class Competitor < ApplicationRecord
   before_save :assign_full_name
 
   def self.find_by_string(str, sport: nil)
-
+    scope = where(abbreviation: str).
+      or(where(region: str)).
+      or(where(name: str)).
+      or(where("? = ANY(nicknames)", str))
+    scope = scope.send(sport) if sport.presence_in(self.sports.keys)
+    scope.first
   end
 
   private
