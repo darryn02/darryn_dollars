@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "2.7.1"
+ruby "3.1.2"
 
 gem "autoprefixer-rails"
 gem "delayed_job_active_record"
@@ -15,14 +15,13 @@ gem "pg"
 gem "phony_rails"
 gem "puma"
 gem "rack-canonical-host"
-gem "rails"
+gem "rails", "~> 7.0.0"
 gem "reform-rails"
 gem "recipient_interceptor"
 gem "sass-rails"
 gem "simple_form"
 gem "skylight"
 gem "sprockets"
-gem "suspenders"
 gem "title"
 gem 'twilio-ruby'
 gem "uglifier"
@@ -66,6 +65,4 @@ group :staging, :production do
 end
 
 gem 'high_voltage'
-gem 'bourbon', '~> 5.0.0.beta.7'
-gem 'neat', '~> 2.0.0.beta.1'
 gem 'refills', group: [:development, :test]
