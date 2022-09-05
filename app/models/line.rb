@@ -3,6 +3,7 @@ class Line < ApplicationRecord
   belongs_to :game
 
   enum kind: { point_spread: 0, moneyline: 1, over: 2, under: 3, prop: 9 }
+  enum scope: { game: 0, first_half: 1, second_half: 2 }
 
   def self.latest
     order(created_at: :desc).take

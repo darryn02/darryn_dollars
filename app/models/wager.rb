@@ -1,6 +1,6 @@
 class Wager < ApplicationRecord
 
-  DEFAULT_MIN_WAGER = 25
+  DEFAULT_MIN_WAGER = 50
 
   belongs_to :betting_slip
   belongs_to :line
@@ -14,11 +14,11 @@ class Wager < ApplicationRecord
   before_save :update_net
 
   def self.min_wager
-    @@min_wager || DEFAULT_MIN_WAGER
+    @min_wager || DEFAULT_MIN_WAGER
   end
 
   def self.min_wager=(value)
-    @@min_wager = value
+    @min_wager = value
   end
 
   private

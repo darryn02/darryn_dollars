@@ -7,7 +7,7 @@ class Game < ApplicationRecord
   has_many :lines
 
   def self.unplayed
-    where('starts_at > ?', DateTime.now)
+    where('starts_at > ?', Time.current)
   end
 
   def description
@@ -28,6 +28,7 @@ class Game < ApplicationRecord
     %w[
         starts_at
         sport
+        cached_competitor_ids
       ]
   end
 end

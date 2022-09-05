@@ -92,6 +92,7 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
     t.integer "game_id", null: false
     t.string "description"
     t.integer "kind", null: false
+    t.integer "scope", null: false
     t.float "value", null: false
     t.integer "odds", default: -110, null: false
     t.boolean "hidden", default: false, null: false
@@ -100,6 +101,7 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
     t.index ["contestant_id"], name: "index_lines_on_contestant_id"
     t.index ["game_id"], name: "index_lines_on_game_id"
     t.index ["kind"], name: "index_lines_on_kind"
+    t.index ["scope"], name: "index_lines_on_scope"
   end
 
   create_table "users", id: :serial, force: :cascade do |t|

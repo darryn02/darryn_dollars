@@ -5,6 +5,7 @@ class CreateLines < ActiveRecord::Migration[5.0]
       t.references :game, foreign_key: { on_delete: :cascade}, null: false, index: true
       t.string :description
       t.integer :kind, null: false, index: true
+      t.integer :scope, null: false, index: true
       t.float :value, null: false
       t.integer :odds, null: false, default: -110
       t.boolean :hidden, default: false, null: false

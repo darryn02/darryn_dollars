@@ -1,8 +1,4 @@
 FactoryGirl.define do
-  factory :betting_slip do
-    user nil
-    confirmed false
-  end
   factory :line do
     contestant nil
     hidden false
