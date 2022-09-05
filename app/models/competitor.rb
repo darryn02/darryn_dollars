@@ -1,5 +1,5 @@
 # A Competitor is like a team or a player.
-# Each time a Competitor is involved in a Contest it becomes a Contestant.
+# Each time a Competitor is involved in a Game it becomes a Contestant.
 # So a given Competitor (like the Buffalo Bills) will be a Contestant
 # many times throughout the NFL season.
 # Each Contestant has its own Line, because in the case of prop bets,
@@ -8,7 +8,8 @@
 class Competitor < ApplicationRecord
   include SportEnum
 
-  has_many :contestants
+  has_many :contests
+  has_many :games, through: :contests
 
   before_save :assign_full_name
 
@@ -16,9 +17,16 @@ class Competitor < ApplicationRecord
     scope = where(abbreviation: str).
       or(where(region: str)).
       or(where(name: str)).
+      or(where(full_name: str)).
       or(where("? = ANY(nicknames)", str))
     scope = scope.send(sport) if sport.presence_in(self.sports.keys)
     scope.first
+  end
+
+  def self.find_by_string!(str, sport: nil)
+    result = find_by_string(str, sport: sport)
+    raise ActiveRecord::RecordNotFound if result.nil?
+    result
   end
 
   private

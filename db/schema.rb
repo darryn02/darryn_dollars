@@ -45,28 +45,21 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
     t.citext "full_name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index "lower((name)::text)", name: "index_competitors_on_lower_name"
-    t.index "lower((region)::text)", name: "index_competitors_on_lower_region"
     t.index ["abbreviation"], name: "index_competitors_on_abbreviation"
+    t.index ["name"], name: "index_competitors_on_name"
     t.index ["nicknames"], name: "index_competitors_on_nicknames", using: :gin
+    t.index ["region"], name: "index_competitors_on_region"
     t.index ["sport"], name: "index_competitors_on_sport"
   end
 
   create_table "contestants", id: :serial, force: :cascade do |t|
     t.integer "game_id", null: false
     t.integer "competitor_id", null: false
+    t.integer "priority", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["competitor_id"], name: "index_contestants_on_competitor_id"
     t.index ["game_id"], name: "index_contestants_on_game_id"
-  end
-
-  create_table "contests", id: :serial, force: :cascade do |t|
-    t.integer "contestant_id", null: false
-    t.integer "result"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["contestant_id"], name: "index_contests_on_contestant_id"
   end
 
   create_table "delayed_jobs", id: :serial, force: :cascade do |t|
@@ -87,7 +80,7 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
   create_table "games", id: :serial, force: :cascade do |t|
     t.datetime "starts_at"
     t.integer "sport", null: false
-    t.text "cached_competitor_ids", default: [], null: false, array: true
+    t.integer "cached_competitor_ids", default: [], null: false, array: true
     t.string "md5_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -95,15 +88,18 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
   end
 
   create_table "lines", id: :serial, force: :cascade do |t|
-    t.integer "contest_id", null: false
-    t.string "type", null: false
+    t.integer "contestant_id"
+    t.integer "game_id", null: false
+    t.string "description"
+    t.integer "kind", null: false
     t.float "value", null: false
     t.integer "odds", default: -110, null: false
     t.boolean "hidden", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["contest_id"], name: "index_lines_on_contest_id"
-    t.index ["type"], name: "index_lines_on_type"
+    t.index ["contestant_id"], name: "index_lines_on_contestant_id"
+    t.index ["game_id"], name: "index_lines_on_game_id"
+    t.index ["kind"], name: "index_lines_on_kind"
   end
 
   create_table "users", id: :serial, force: :cascade do |t|
@@ -133,8 +129,8 @@ ActiveRecord::Schema.define(version: 2017_08_23_033013) do
   add_foreign_key "betting_slips", "accounts", on_delete: :cascade
   add_foreign_key "contestants", "competitors"
   add_foreign_key "contestants", "games"
-  add_foreign_key "contests", "contestants"
-  add_foreign_key "lines", "contests"
+  add_foreign_key "lines", "contestants", on_delete: :nullify
+  add_foreign_key "lines", "games", on_delete: :cascade
   add_foreign_key "wagers", "betting_slips"
   add_foreign_key "wagers", "lines"
 end

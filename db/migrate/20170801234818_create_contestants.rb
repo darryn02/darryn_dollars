@@ -3,7 +3,7 @@ class CreateContestants < ActiveRecord::Migration[5.0]
     create_table :contestants do |t|
       t.belongs_to :game, foreign_key: true, null: false, index: true
       t.belongs_to :competitor, foreign_key: true, null: false, index: true
-
+      t.integer :priority, default: 0, null: false
       t.timestamps
     end
   end

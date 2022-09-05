@@ -1,5 +1,4 @@
 class Wager < ApplicationRecord
-  include ResultEnum
 
   DEFAULT_MIN_WAGER = 25
 
@@ -7,10 +6,12 @@ class Wager < ApplicationRecord
   belongs_to :line
   has_one :contestant, through: :line
 
-  before_save :update_net
+  enum result: { pending: 0, win: 1, loss: 2, push: 3, canceled: 4 }
 
   validates :amount, presence: true, numericality: { greater_than_or_equal_to: :min_wager }
   validates :line, presence: true
+
+  before_save :update_net
 
   def self.min_wager
     @@min_wager || DEFAULT_MIN_WAGER

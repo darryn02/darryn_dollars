@@ -2,7 +2,9 @@ class Game < ApplicationRecord
   include SportEnum
   include Md5Digestible
 
-  has_many :contests
+  has_many :contestants
+  has_many :competitors, through: :contestants
+  has_many :lines
 
   def self.unplayed
     where('starts_at > ?', DateTime.now)
@@ -13,11 +15,11 @@ class Game < ApplicationRecord
   end
 
   def matchup
-    contests.primary.contestants.map(&:name).join(' vs. ')
-  end
-
-  def cached_competitor_ids
-    super.sort
+    if competitors.size == 2
+      competitors.map(&:name).join(' vs. ')
+    else
+      competitors.map(&:name).join(',')
+    end
   end
 
   private
@@ -26,7 +28,6 @@ class Game < ApplicationRecord
     %w[
         starts_at
         sport
-        cached_competitor_ids
       ]
   end
 end

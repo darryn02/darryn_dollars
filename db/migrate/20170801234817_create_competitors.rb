@@ -15,7 +15,7 @@ class CreateCompetitors < ActiveRecord::Migration[5.0]
     add_index :competitors, :sport
     add_index :competitors, :abbreviation
     add_index :competitors, :nicknames, using: :gin
-    add_index :competitors, 'lower(region)'
-    add_index :competitors, 'lower(name)'
+    add_index :competitors, :region
+    add_index :competitors, :name
   end
 end

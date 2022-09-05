@@ -3,7 +3,7 @@ class CreateGames < ActiveRecord::Migration[5.0]
     create_table :games do |t|
       t.datetime :starts_at
       t.integer :sport, null: false
-      t.text :cached_competitor_ids, array: true, null: false, default: []
+      t.integer :cached_competitor_ids, array: true, default: [], null: false
       t.string :md5_digest, null: false
 
       t.timestamps

@@ -23,11 +23,8 @@ FactoryGirl.define do
 
   end
   factory :contestant do
-    contest nil
+    game
     competitor nil
-  end
-  factory :contest do
-    game nil
   end
   factory :game do
     starts_at "2017-08-01 19:47:58"
