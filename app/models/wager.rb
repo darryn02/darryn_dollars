@@ -1,6 +1,5 @@
 class Wager < ApplicationRecord
-
-  DEFAULT_MIN_WAGER = 50
+  DEFAULT_MIN_WAGER = ENV.fetch('MIN_WAGER', 50).freeze
 
   belongs_to :betting_slip
   belongs_to :line
