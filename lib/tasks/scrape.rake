@@ -12,7 +12,7 @@ namespace :scrape do
     map.each do |url, scope|
       browser.goto(url)
       begin
-        js_doc ||= browser.element(css: "div.grouped-events").wait_until(timeout: 5, &:present?)
+        js_doc ||= browser.element(css: "sp-next-events div.grouped-events").wait_until(timeout: 5, &:present?)
       rescue Watir::Wait::TimeoutError
         puts "Timeout waiting for #{url}. Continuing to next page."
         next

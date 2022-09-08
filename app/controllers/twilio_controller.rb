@@ -1,27 +1,99 @@
 class TwilioController < ApplicationController
   skip_before_action :verify_authenticity_token
+  rescue_from ActiveRecord::RecordNotFound, with: :account_not_found
+
+  class CommandProcessor
+    def self.process(user, body)
+      new(user, body).process
+    end
+
+    def initialize(user, body)
+      @user = user
+      @body = body.to_s.strip.downcase
+    end
+
+    def process
+      if body.starts_with?("lines")
+        Sms::LinesPresenter.new(body.sub("lines", "")).to_s
+      elsif body.match(/(bets|bet slip|slip)/).present?
+        format_bet_slip
+      elsif body.starts_with?("history")
+        format_history
+      elsif body.starts_with?("balance")
+        format_account_balances
+      elsif body.starts_with?("cancel")
+        cancel_wager(body.sub("cancel", ""))
+      elsif body.starts_with?("help")
+        format_help
+      else
+        process_wager
+      end
+    end
+
+    private
+
+    attr_reader :user, :body
+
+    def format_bet_slip
+      if user.accounts.many?
+        user.accounts.each do |account|
+          account.wagers.confirmed.map do |wager|
+            "#{account}: $#{wager.amount} #{wager.line}"
+          end.join("\n")
+        end.join("\n")
+      else
+        user.accounts.first.wagers.confirmed.map do |wager|
+          "$#{wager.amount} #{wager.line}"
+        end.join("\n")
+      end
+    end
+
+    def format_history
+    end
+
+    def cancel_wager(str)
+      wager_id = Integer(str, exception_false)
+      wager = Wager.find(wager_id)
+      if Time.current - wager.placed_at < WAGER::GRACE_PERIOD
+      end
+    end
+
+    def format_account_balances
+      if user.accounts.many?
+        user.accounts.each do |account|
+          "#{account}: #{ActionController::Base.helpers.number_to_currency(account.wagers.sum(:net))}"
+        end.join("\n")
+      else
+        ActionController::Base.helpers.number_to_currency(user.accounts.first.wagers.sum(:net))
+      end
+    end
+
+    def format_help
+    end
+
+    def process_wager
+      body.split(/\n|\.\s+/).map do |str|
+        account, kind, scope, line, amount, competitors = WagerParser.parse(user, str)
+
+        begin
+          wager = WagerProcessor.new.create_wager(account, kind, scope, line, amount, competitors)
+        rescue WagerParser::AccountNotFoundError
+          "[x]: #{str}: Account not clear."
+        rescue WagerParser::AmbiguousAccountError
+          "[x]: #{str}: Account ambiguous"
+        rescue WagerParser::IncompleteWagerError => e
+          "[x]: #{str}: Wager unclear - #{e.message}"
+        rescue WagerProcessor::LineChange
+          "[x]: #{str}: Line has changed"
+        rescue WagerProcessor::LineNotFound
+          "[x]: #{str}: Line not found"
+        end
+      end.join("\n")
+    end
+  end
 
   def sms
-    from = params[:From]
-    body = params[:Body]
-    wager_components = body.split(/\n|\.\s+/).map do |str|
-      WagerParser.parse(user, str)
-    end
-
-    wagers = wager_components.map do |account, game_type, line, amount, competitors|
-      "$#{amount} on " \
-      "#{competitors.map(&:abbreviation).join("/")} " \
-      "#{line}#{game_type.present? ? " (#{game_type})" : ""}" \
-      "#{" on your" + account + "account" if account.present?}"
-    end
-
-    respond body(wagers)
-  rescue WagerParser::AccountNotFoundError
-    respond "I'm sorry, I don't know which account you are betting under."
-  rescue WagerParser::AmbiguousAccountError
-    respond "I'm sorry, it wasn't clear which account you meant for each wager"
-  rescue WagerParser::IncompleteWagerError => e
-    respond "I'm sorry, I don't understand your wager.\n#{e.message}"
+    respond CommandProcessor.process(user, params[:Body])
   end
 
   private
@@ -30,18 +102,15 @@ class TwilioController < ApplicationController
     @user ||= User.find_by!(mobile: params[:From])
   end
 
-  def body(wagers)
-    (["So you want to bet:"] +
-    wagers +
-    ["Is that right?"]).
-    join("\n")
-  end
-
   def respond(text)
     response = Twilio::TwiML::MessagingResponse.new do |r|
       r.message body: text
     end
     render xml: response.to_s
+  end
+
+  def account_not_found
+    respond("Number not recognized")
   end
 end
 =begin

@@ -9,13 +9,13 @@ class WagerParser
 
   def parse(user, remaining_string)
     account, remaining_string = extract_account(user, remaining_string)
-    game_type, remaining_string = extract_game_type(remaining_string)
-    line, remaining_string = extract_line(remaining_string)
     amount, remaining_string = extract_amount(remaining_string)
+    scope, remaining_string = extract_scope(remaining_string)
+    kind, line, remaining_string = extract_line(remaining_string)
     competitors, remaining_string = extract_competitors(remaining_string)
-    error_if_incomplete(amount, competitors)
+    error_if_incomplete(competitors)
 
-    [account, game_type, line, amount, competitors]
+    [account, kind, scope, line, amount, competitors]
   end
 
   private
@@ -41,28 +41,50 @@ class WagerParser
     user.accounts.map { |a| [a.name, a.nickname] }.map(&:downcase)
   end
 
-  def extract_game_type(str)
-    types = ["1st half", "first half", "1 half", "1 half", "2nd half", "second half", "2half", "2 half", "halftime"]
-    game_type = str.match(/(#{types.join("|")})/)&.captures&.first.to_s
-    [parsed_game_type(game_type), str.sub(game_type, "")]
+  def extract_scope(str)
+    types = ["1st half", "first half", "1 half", "1h", "2nd half", "second half", "2half", "2 half", "2h", "halftime"]
+    scope = str.match(/(#{types.join("|")})/i)&.captures&.first.to_s
+    [parsed_scope(scope), str.sub(scope, "")]
   end
 
-  def parsed_game_type(raw_game_type)
-    if ["1st half", "first half", "1 half", "1 half"].include?(raw_game_type)
-      "first half"
-    elsif ["2nd half", "second half", "2half", "2 half", "halftime"].include?(raw_game_type)
-      "second half"
+  def parsed_scope(raw_scope)
+    if ["1st half", "first half", "1 half", "1 half", "1h"].include?(raw_scope)
+      :first_half
+    elsif ["2nd half", "second half", "2half", "2 half", "2h", "halftime"].include?(raw_scope)
+      :second_half
+    else
+      :game
     end
   end
 
   def extract_line(str)
-    line = str.match(/((over|under|\-|\+)\s*[\d\.]+)\b/)&.captures&.first.to_s
-    [line, str.sub(line, "")]
+    match = str.match(/(?<over>o|over)?(?<under>u|under)?\s*(?<value>(\-|\+)?[\d\.]+)\b/i)
+    if match.nil?
+      return [:point_spread, "", str]
+    end
+
+    line = Float(match[:value], exception: false)
+
+    kind = nil
+    if match[:under].present?
+      kind = :under
+    elsif match[:over].present?
+      kind = :over
+    elsif line.present? && line.abs >= 100
+      kind = :moneyline
+    else
+      kind = :point_spread
+    end
+
+    [kind, line, str.sub(match.to_s, "")]
   end
 
   def extract_amount(str)
-    amount = str.match(/^[^0-9\$]*[\$]?([0-9]+)[^0-9]*$/)&.captures&.first.to_s
-    [amount, str.sub(amount, "")]
+    match = str.match(/\$(?<amount>\d+(\.\d+)?)/)
+    if match.nil? || Float(match[:amount], exception: false).nil?
+      raise IncompleteWagerError.new("The amount of the wager wasn't clear.")
+    end
+    [match[:amount].to_f, str.sub(match.to_s, "")]
   end
 
   def extract_competitors(str)
@@ -92,14 +114,8 @@ class WagerParser
     ).distinct
   end
 
-  def error_if_incomplete(amount, competitors)
-    message = nil
-    if amount.blank?
-      message = "The amount of the wager wasn't clear."
-    elsif competitors.blank?
-      message = "The competitor was not clear."
-    end
-    raise IncompleteWagerError.new(message) if message.present?
+  def error_if_incomplete(competitors)
+    raise IncompleteWagerError.new("The competitor was not clear.") if competitors.blank?
   end
 end
 

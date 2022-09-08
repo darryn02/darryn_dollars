@@ -10,6 +10,10 @@ class Game < ApplicationRecord
     where('starts_at > ?', Time.current)
   end
 
+  def self.wagerable
+    where('starts_at BETWEEN ? AND ?', Time.current, Time.current + Wager::WINDOW.hours)
+  end
+
   def description
     [matchup, I18n.l(starts_at, format: :default)].join(', ')
   end
@@ -20,6 +24,10 @@ class Game < ApplicationRecord
     else
       competitors.map(&:name).join(',')
     end
+  end
+
+  def short_matchup
+    competitors.map(&:abbreviation).join('/')
   end
 
   private

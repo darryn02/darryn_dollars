@@ -1,15 +1,21 @@
-class LineChange < StandardError; end
-class LineNotFound < StandardError; end
-
 class WagerProcessor
-  def create_wager!(account, game_type, requested_line, amount, competitors)
-    relation = Line.
-      joins(:game, :competitors).
-      where(games: { starts_at: Time.current..Time.current + 12.hours})
-      where.contains(competitors: competitors.map(&:id))
+  class LineChange < StandardError; end
+  class LineNotFound < StandardError; end
 
-    if game_type.present?
-      relation = relation.send(game_type)
+  def create_wager(account, kind, scope, requested_line, amount, competitors)
+    relation = Line.
+      joins(:game).
+      includes(:contestant).
+      references(:contestant).
+      where(games: { starts_at: Time.current..Time.current + Wager::WINDOW}).
+      send(kind).
+      send(scope)
+    if kind == :over || kind == :under
+      relation = relation.where("cached_competitor_ids @> ARRAY[?]", competitors.map(&:id))
+    elsif competitors.one?
+      relation = relation.where(contestants: { competitor_id: competitors.first.id })
+    else
+      raise LineNotFound
     end
 
     latest_line = relation.latest
@@ -19,11 +25,11 @@ class WagerProcessor
       raise LineChange if latest_line.value != requested_line
     end
 
-    Wager.create!(
+    Wager.create(
       account: account,
       line: latest_line,
       placed_at: Time.current,
-      amount_wagered: amount
+      amount: amount
     )
   end
 end

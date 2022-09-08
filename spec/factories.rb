@@ -7,9 +7,9 @@ FactoryGirl.define do
     user nil
     line nil
     placed_at "2017-08-01 19:51:38"
-    amount_wagered "9.99"
+    amount "9.99"
     vig 1.5
-    result 1
+    status 1
     net "9.99"
   end
   factory :user do
