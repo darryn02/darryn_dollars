@@ -1,7 +1,5 @@
 namespace :scrape do
   require 'webdrivers/chromedriver'
-  Selenium::WebDriver::Chrome.path = ENV['GOOGLE_CHROME_SHIM'] if ENV['GOOGLE_CHROME_SHIM'].present?
-  driver = Selenium::WebDriver.for :chrome
 
   desc 'Scrape NFL lines and create games and contests'
   task nfl_lines: :environment do
