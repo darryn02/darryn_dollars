@@ -26,6 +26,7 @@ gem "title"
 gem 'twilio-ruby'
 gem "uglifier"
 gem 'watir'
+gem 'webdrivers', '~> 5.0', require: false
 
 group :development do
   gem "listen"

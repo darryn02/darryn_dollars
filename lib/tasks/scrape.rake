@@ -1,4 +1,6 @@
 namespace :scrape do
+  require 'webdrivers/chromedriver'
+
   desc 'Scrape NFL lines and create games and contests'
   task nfl_lines: :environment do
     browser = Watir::Browser.new
