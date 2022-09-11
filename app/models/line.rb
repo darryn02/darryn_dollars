@@ -30,7 +30,7 @@ class Line < ApplicationRecord
     "#{competitor.present? ? competitor.abbreviation : game.short_matchup}" \
     " #{kind if %w[over under].include?(kind)}" \
     " #{value_string}" \
-    " #{"(#{scope})"}".squish
+    " #{"(#{odds}, #{scope})"}".squish
   end
 
   private

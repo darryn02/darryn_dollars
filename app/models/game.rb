@@ -14,6 +14,13 @@ class Game < ApplicationRecord
     where('starts_at BETWEEN ? AND ?', Time.current, Time.current + Wager::WINDOW.hours)
   end
 
+  def self.today
+    where(
+      "date_trunc('day', starts_at) = ?",
+      Time.now.in_time_zone("America/New_York").to_date
+    )
+  end
+
   def description
     [matchup, I18n.l(starts_at, format: :default)].join(', ')
   end
