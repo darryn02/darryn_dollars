@@ -23,6 +23,8 @@ namespace :scrape do
     page = Nokogiri::HTML(js_doc.inner_html)
     game_elements = page.css("section.coupon-content.more-info")
 
+    deactivate_ids = Line.active.send(scope).pluck(:id)
+
     game_elements.map do |ge|
       start_time = nil
       time_string = ge.css("sp-score-coupon.scores span.period").inner_text.strip
@@ -51,17 +53,15 @@ namespace :scrape do
 
       away_spread, home_spread, away_ml, home_ml, total = normalize([away_spread, home_spread, away_ml, home_ml, total])
 
-      deactivate_ids = game.lines.active.send(scope).pluck(:id)
+      deactivate_ids -= game.lines.point_spread.send(scope).find_or_create_by!(contestant: away_contestant, value: away_spread).id if away_spread.present?
+      deactivate_ids -= game.lines.point_spread.send(scope).find_or_create_by!(contestant: home_contestant, value: home_spread).id if home_spread.present?
 
-      game.lines.point_spread.send(scope).find_or_create_by!(contestant: away_contestant, value: away_spread) if away_spread.present?
-      game.lines.point_spread.send(scope).find_or_create_by!(contestant: home_contestant, value: home_spread) if home_spread.present?
-
-      game.lines.moneyline.send(scope).find_or_create_by!(contestant: away_contestant, value: 0, odds: away_ml) if away_ml.present?
-      game.lines.moneyline.send(scope).find_or_create_by!(contestant: home_contestant, value: 0, odds: home_ml) if home_ml.present?
+      deactivate_ids -= game.lines.moneyline.send(scope).find_or_create_by!(contestant: away_contestant, value: 0, odds: away_ml).id if away_ml.present?
+      deactivate_ids -= game.lines.moneyline.send(scope).find_or_create_by!(contestant: home_contestant, value: 0, odds: home_ml).id if home_ml.present?
 
       if total.present?
-        game.lines.over.send(scope).find_or_create_by!(value: total)
-        game.lines.under.send(scope).find_or_create_by!(value: total)
+        deactivate_ids -= game.lines.over.send(scope).find_or_create_by!(value: total).id
+        deactivate_ids -= game.lines.under.send(scope).find_or_create_by!(value: total).id
       end
 
       Line.where(id: deactivate_ids).update_all(updated_at: Time.now, hidden: true)
