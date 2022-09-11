@@ -25,7 +25,19 @@ class Line < ApplicationRecord
   def to_s
     "#{competitor.present? ? competitor.abbreviation : game.short_matchup}" \
     " #{kind if %w[over under].include?(kind)}" \
-    " #{value}" \
+    " #{value_string}" \
     " #{"(#{scope})"}".squish
+  end
+
+  private
+
+  def value_string
+    if value < 0
+      value.to_s
+    elsif value > 0
+      "+#{value}"
+    else
+      "PICK"
+    end
   end
 end
