@@ -11,7 +11,7 @@ module Sms
         where(starts_at: Time.current..Time.current + Wager::WINDOW).
         order(starts_at: :asc).
         map(&method(:present)).
-        join("\n")
+        join("\n").squish
     end
 
     private
@@ -32,7 +32,9 @@ module Sms
 
       end
 
-      str.concat ", #{lines.over.latest.value}"
+      over_under = lines.over.latest&.value
+      str.concat ", #{over_under}" if over_under.present?
+      str
     end
 
     def scope
