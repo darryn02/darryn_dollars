@@ -2,7 +2,7 @@ namespace :scrape do
   require 'webdrivers/chromedriver'
 
   desc 'Scrape NFL lines and create games and contests'
-  task :nfl_lines, [:scope] => :environment
+  task :nfl_lines, [:scope] => :environment do |_t, args|
     browser = Watir::Browser.new
 
     map = {
@@ -11,7 +11,8 @@ namespace :scrape do
       'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
     }
 
-    url = map[args[scope].presence || "game"]
+    scope = args[:scope].presence || "game"
+    url = map[scope]
     browser.goto(url)
     begin
       js_doc ||= browser.element(css: "sp-next-events div.grouped-events").wait_until(timeout: 5, &:present?)
@@ -23,7 +24,13 @@ namespace :scrape do
     game_elements = page.css("section.coupon-content.more-info")
 
     game_elements.map do |ge|
-      start_time = Time.strptime(ge.css("sp-score-coupon.scores span.period").inner_text.strip, "%m/%d/%y %I:%M %p")
+      start_time = nil
+      time_string = ge.css("sp-score-coupon.scores span.period").inner_text.strip
+      if time_string.blank? || ["First Half", "Second Half", "Halftime"].include?(time_string)
+        start_time = [Time.now.beginning_of_day..Time.now]
+      else
+        start_time = Time.strptime(time_string, "%m/%d/%y %I:%M %p")
+      end
 
       away, home = ge.css(".competitor-name").map(&:text)
       away_team = Competitor.find_by_string!(away, sport: :nfl)
@@ -53,7 +60,7 @@ namespace :scrape do
         game.lines.under.send(scope).find_or_create_by!(value: total)
       end
 
-      puts "#{start_time.strftime("%m/%d %l:%M %p")} #{away} (#{away_spread}) @ #{home} (#{home_spread}), O/U #{total}"
+      puts "#{start_time.is_a?(Array) ? time_string : start_time.strftime("%m/%d %l:%M %p")} #{away} (#{away_spread}) @ #{home} (#{home_spread}), O/U #{total}"
     end
   end
 
