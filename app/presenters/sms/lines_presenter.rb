@@ -21,7 +21,7 @@ module Sms
     def present(game)
       str = ""
 
-      lines = game.lines.send(scope)
+      lines = game.lines.active.send(scope)
 
       lines.point_spread.order(created_at: :desc).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
         str +=

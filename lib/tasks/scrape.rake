@@ -41,14 +41,17 @@ namespace :scrape do
       away_contestant = game.contestants.find_or_create_by!(competitor: away_team, priority: 0)
       home_contestant = game.contestants.find_or_create_by!(competitor: home_team, priority: 1)
 
-      line_elements = ge.css("sp-two-way-vertical.market-type ul li")
-      away_spread, home_spread, away_ml, home_ml, total = line_elements.map { |e| e.text.strip.upcase }
+      away_spread, home_spread, away_ml, home_ml, total = ge.css("sp-two-way-vertical.market-type ul li").map do |line_element|
+        line_element.text.strip.upcase.presence unless line_element.css('.empty-bet')
+      end
 
       away_spread = away_spread&.split("(")&.first&.strip
       home_spread = home_spread&.split("(")&.first&.strip
       total = total&.gsub(/[OU]/, "")&.split("(")&.first&.strip
 
       away_spread, home_spread, away_ml, home_ml, total = normalize([away_spread, home_spread, away_ml, home_ml, total])
+
+      deactivate_ids = game.lines.active.send(scope).pluck(:id)
 
       game.lines.point_spread.send(scope).find_or_create_by!(contestant: away_contestant, value: away_spread) if away_spread.present?
       game.lines.point_spread.send(scope).find_or_create_by!(contestant: home_contestant, value: home_spread) if home_spread.present?
@@ -61,6 +64,8 @@ namespace :scrape do
         game.lines.under.send(scope).find_or_create_by!(value: total)
       end
 
+      Line.where(id: deactivate_ids).update_all(updated_at: Time.now, hidden: true)
+
       puts "#{start_time.is_a?(Array) ? time_string : start_time.strftime("%m/%d %l:%M %p")} #{away} (#{away_spread}) @ #{home} (#{home_spread}), O/U #{total}"
     end
   end
@@ -70,7 +75,7 @@ namespace :scrape do
 
   def normalize(strings)
     Array.wrap(strings).map do |string|
-      string == "EVEN" ? 0 : string.presence || 0
+      string == "EVEN" ? 0 : string
     end.then { |a| a.one? ? a.first : a }
   end
 end

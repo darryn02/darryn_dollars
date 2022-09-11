@@ -10,6 +10,10 @@ class Line < ApplicationRecord
     order(created_at: :desc).take
   end
 
+  def self.active
+    where.not(hidden: true)
+  end
+
   def create_line_change!(properties = {})
 
   end

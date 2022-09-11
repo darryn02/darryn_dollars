@@ -14,7 +14,7 @@ class TwilioController < ApplicationController
 
     def process
       if body.starts_with?("lines")
-        Sms::LinesPresenter.new(body.sub("lines", "")).to_s
+        Sms::LinesPresenter.new(body.sub("lines", "")).to_s.presence || "No lines currently available. Check back 2 hours prior to scheduled event start time."
       elsif body.match(/(bets|bet slip|slip)/).present?
         format_bet_slip
       elsif body.starts_with?("history")
@@ -61,7 +61,7 @@ class TwilioController < ApplicationController
     def format_account_balances
       if user.accounts.many?
         user.accounts.each do |account|
-          "#{account}: #{ActionController::Base.helpers.number_to_currency(account.wagers.sum(:net))}"
+          "#{account.name}: #{ActionController::Base.helpers.number_to_currency(account.wagers.sum(:net))}"
         end.join("\n")
       else
         ActionController::Base.helpers.number_to_currency(user.accounts.first.wagers.sum(:net))
@@ -72,7 +72,7 @@ class TwilioController < ApplicationController
     end
 
     def process_wager
-      body.split(/\n|\.\s+/).map do |str|
+      body.split(/\n|\.[^0-9]+/).map do |str|
         begin
           account, kind, scope, line, amount, competitors = WagerParser.parse(user, str)
           wager = WagerProcessor.new.create_wager(account, kind, scope, line, amount, competitors)

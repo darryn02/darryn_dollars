@@ -12,7 +12,6 @@ class WagerParser
     amount, remaining_string = extract_amount(remaining_string)
     scope, remaining_string = extract_scope(remaining_string)
     kind, line, remaining_string = extract_line(remaining_string)
-    binding.pry
     competitors, remaining_string = extract_competitors(remaining_string)
     error_if_incomplete(competitors)
 
