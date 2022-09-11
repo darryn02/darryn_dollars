@@ -24,7 +24,7 @@ class WagerParser
     return [user.accounts.first, str] if user.accounts.size <= 1
 
     matches = match_account(user, str)
-    raise AccountNotFoundError.new if matches.blank?
+    return [user.accounts.first, str] if matches.blank?
     raise AmbiguousAccountError.new if matches.many?
     [matches.first.first, str.sub(matches.first.last.to_s, "")]
   end
