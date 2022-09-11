@@ -29,7 +29,7 @@ class WagerProcessor
       account: account,
       line: latest_line,
       placed_at: Time.current,
-      amount: gross_up(amount, line)
+      amount: gross_up(amount, latest_line)
     )
   end
 
