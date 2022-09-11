@@ -21,9 +21,9 @@ module Sms
     def present(game)
       str = ""
 
-      lines = game.lines.select(&method(:scope))
+      lines = game.lines.send(scope)
 
-      lines.select(&:point_spread?).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
+      lines.point_spread.order(created_at: :desc).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
         str +=
           "#{game.starts_at.strftime("%l:%M%P")}" \
           " #{line1.contestant.competitor.abbreviation} #{"(#{line1.value})" if line1.value.negative?} vs" \
@@ -32,16 +32,16 @@ module Sms
 
       end
 
-      str.concat ", #{lines.select(&:over?).first.value}"
+      str.concat ", #{lines.over.latest.value}"
     end
 
-    def scope(line)
+    def scope
       if modifier.match?(/(first half|1st half|1h)/).present?
-        line.first_half?
+        :first_half
       elsif modifier.match?(/(second half|2nd half|2h|halftime|half time)/).present?
-        line.second_half?
+        :second_half
       else
-        line.game?
+        :game
       end
     end
   end
