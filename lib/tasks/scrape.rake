@@ -24,6 +24,7 @@ namespace :scrape do
     game_elements = page.css("section.coupon-content.more-info")
 
     deactivate_ids = Line.active.send(scope).pluck(:id)
+    activate_ids = []
 
     game_elements.map do |ge|
       start_time = nil
@@ -44,7 +45,7 @@ namespace :scrape do
       home_contestant = game.contestants.find_or_create_by!(competitor: home_team, priority: 1)
 
       away_spread, home_spread, away_ml, home_ml, total = ge.css("sp-two-way-vertical.market-type ul li").map do |line_element|
-        line_element.text.strip.upcase.presence unless line_element.css('.empty-bet')
+        line_element.text.strip.upcase.presence unless line_element.css('.empty-bet').present?
       end
 
       away_spread = away_spread&.split("(")&.first&.strip
@@ -53,21 +54,22 @@ namespace :scrape do
 
       away_spread, home_spread, away_ml, home_ml, total = normalize([away_spread, home_spread, away_ml, home_ml, total])
 
-      deactivate_ids -= game.lines.point_spread.send(scope).find_or_create_by!(contestant: away_contestant, value: away_spread).id if away_spread.present?
-      deactivate_ids -= game.lines.point_spread.send(scope).find_or_create_by!(contestant: home_contestant, value: home_spread).id if home_spread.present?
+      activate_ids.push(game.lines.point_spread.send(scope).find_or_create_by!(contestant: away_contestant, value: away_spread).id) if away_spread.present?
+      activate_ids.push(game.lines.point_spread.send(scope).find_or_create_by!(contestant: home_contestant, value: home_spread).id) if home_spread.present?
 
-      deactivate_ids -= game.lines.moneyline.send(scope).find_or_create_by!(contestant: away_contestant, value: 0, odds: away_ml).id if away_ml.present?
-      deactivate_ids -= game.lines.moneyline.send(scope).find_or_create_by!(contestant: home_contestant, value: 0, odds: home_ml).id if home_ml.present?
+      activate_ids.push(game.lines.moneyline.send(scope).find_or_create_by!(contestant: away_contestant, value: 0, odds: away_ml).id) if away_ml.present?
+      activate_ids.push(game.lines.moneyline.send(scope).find_or_create_by!(contestant: home_contestant, value: 0, odds: home_ml).id) if home_ml.present?
 
       if total.present?
-        deactivate_ids -= game.lines.over.send(scope).find_or_create_by!(value: total).id
-        deactivate_ids -= game.lines.under.send(scope).find_or_create_by!(value: total).id
+        activate_ids.push(game.lines.over.send(scope).find_or_create_by!(value: total).id)
+        activate_ids.push(game.lines.under.send(scope).find_or_create_by!(value: total).id)
       end
-
-      Line.where(id: deactivate_ids).update_all(updated_at: Time.now, hidden: true)
 
       puts "#{start_time.is_a?(Array) ? time_string : start_time.strftime("%m/%d %l:%M %p")} #{away} (#{away_spread}) @ #{home} (#{home_spread}), O/U #{total}"
     end
+
+    Line.where(id: deactivate_ids - activate_ids).update_all(updated_at: Time.now, hidden: true)
+    Line.where(id: activate_ids).update_all(updated_at: Time.now, hidden: false)
   end
 
   task :nfl_results do
