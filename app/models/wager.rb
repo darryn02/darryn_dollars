@@ -26,7 +26,7 @@ class Wager < ApplicationRecord
     str = "[#{id.presence || "x"}]" \
     " #{account if account.user.accounts.many?}" \
     " #{line}" \
-    " for $#{amount}"
+    " for #{ActionController::Base.helpers.number_to_currency(amount)}"
 
     if valid?
       str.concat(" #{status} at #{placed_at.strftime("%l:%M:%S%P")}")

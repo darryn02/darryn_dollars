@@ -26,8 +26,9 @@ namespace :scrape do
     game_elements.map do |ge|
       start_time = nil
       time_string = ge.css("sp-score-coupon.scores span.period").inner_text.strip
-      if time_string.blank? || ["First Half", "Second Half", "Halftime"].include?(time_string)
-        start_time = [Time.now.beginning_of_day..Time.now]
+      time_string ||= ge.css("sp-score-coupon.scores span.empty-score").inner_text.strip
+      if time_string.blank? || ["first half", "second half", "halftime"].include?(time_string.downcase)
+        start_time = [(Time.now - 1.days).beginning_of_day..Time.now]
       else
         start_time = Time.strptime(time_string, "%m/%d/%y %I:%M %p")
       end
