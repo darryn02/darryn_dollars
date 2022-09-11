@@ -30,6 +30,10 @@ class Game < ApplicationRecord
     competitors.map(&:abbreviation).join('/')
   end
 
+  def to_s
+    "#{starts_at.strftime("%m/%d %l:%M%P")} #{matchup}"
+  end
+
   private
 
   def digestible_attributes

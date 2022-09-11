@@ -29,7 +29,17 @@ class WagerProcessor
       account: account,
       line: latest_line,
       placed_at: Time.current,
-      amount: amount
+      amount: gross_up(amount, line)
     )
+  end
+
+  private
+
+  def gross_up(amount, line)
+    if %w[point_spread over under].exclude?(line.kind)
+      amount
+    elsif line.odds == -110
+      -1.1 * amount
+    end
   end
 end
