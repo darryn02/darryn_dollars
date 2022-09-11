@@ -39,7 +39,7 @@ class WagerProcessor
     if %w[point_spread over under].exclude?(line.kind)
       amount
     elsif line.odds == -110
-      -1.1 * amount
+      1.1 * amount
     end
   end
 end
