@@ -72,7 +72,7 @@ class TwilioController < ApplicationController
     end
 
     def process_wager
-      body.split(/\n|\.[^0-9]+/).map do |str|
+      body.split(/\n|\.\s+/).map do |str|
         begin
           account, kind, scope, line, amount, competitors = WagerParser.parse(user, str)
           wager = WagerProcessor.new.create_wager(account, kind, scope, line, amount, competitors)
