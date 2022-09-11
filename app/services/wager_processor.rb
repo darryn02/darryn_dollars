@@ -1,6 +1,7 @@
 class WagerProcessor
   class LineChange < StandardError; end
   class LineNotFound < StandardError; end
+  class LineExpired < StandardError; end
 
   def create_wager(account, kind, scope, requested_line, amount, competitors)
     relation = Line.
@@ -20,10 +21,8 @@ class WagerProcessor
 
     latest_line = relation.latest
     raise LineNotFound if latest_line.nil?
-
-    if requested_line.present?
-      raise LineChange if latest_line.value != requested_line
-    end
+    raise LineExpired if latest_line.game.starts_at.past?
+    raise LineChange if requested_line.present? && requested_line != latest_line.value
 
     Wager.create(
       account: account,

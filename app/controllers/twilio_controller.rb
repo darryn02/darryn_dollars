@@ -86,6 +86,8 @@ class TwilioController < ApplicationController
           "[x]: #{str}: Line has changed"
         rescue WagerProcessor::LineNotFound
           "[x]: #{str}: Line not found"
+        rescue WagerProcessor::LineExpired
+          "[x]: #{str}: Line has expired"
         end
       end.join("\n")
     end
