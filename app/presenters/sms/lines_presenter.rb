@@ -10,15 +10,15 @@ module Sms
         includes(:competitors, lines: { contestant: :competitor }).
         where(starts_at: Time.current..Time.current + Wager::WINDOW).
         order(starts_at: :asc).
-        map(&method(:present)).
-        join("\n").squish
+        map(&method(:format)).
+        join("\n")
     end
 
     private
 
     attr_reader :modifier
 
-    def present(game)
+    def format(game)
       str = ""
 
       lines = game.lines.active.send(scope)
