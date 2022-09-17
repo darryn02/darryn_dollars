@@ -23,7 +23,7 @@ class TwilioController < ApplicationController
         format_account_balances
       elsif body.starts_with?("cancel")
         cancel_wager(body.sub("cancel", "").squish)
-      elsif body.starts_with?("help")
+      elsif bbody.match(/(help|tips|usage|directions|instructions|guide|manual)/).present?
         format_help
       elsif body.starts_with?("scrape")
         scrape_lines(body.sub("scrape", "").squish)
