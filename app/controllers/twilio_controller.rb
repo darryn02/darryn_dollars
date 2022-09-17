@@ -40,12 +40,12 @@ class TwilioController < ApplicationController
       if user.accounts.many?
         user.accounts.each do |account|
           account.wagers.confirmed.order(id: :asc).map do |wager|
-            "#{account}: $#{format_currency(wager.amount)} #{wager.line}"
+            "#{account}: #{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
         end.join("\n")
       else
         user.accounts.first.wagers.confirmed.map do |wager|
-          "$#{format_currency(wager.amount)} #{wager.line}"
+          "#{format_currency(wager.amount)} #{wager.line}"
         end.join("\n")
       end
     end
@@ -54,12 +54,12 @@ class TwilioController < ApplicationController
       if user.accounts.many?
         user.accounts.each do |account|
           account.wagers.historical.order(id: :desc).limit(ENV.fetch("HISTORY_SIZE", 10).to_i).map do |wager|
-            "#{account}: (#{wager.status}) $#{format_currency(wager.amount)} #{wager.line}"
+            "#{account}: (#{wager.status}) #{wager.placed_at.strftime("%-m/%-d")} #{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
         end.join("\n")
       else
         user.accounts.first.wagers.historical.order(id: :desc).limit(ENV.fetch("HISTORY_SIZE", 10).to_i).map do |wager|
-          "(#{wager.status}) $#{format_currency(wager.amount)} #{wager.line}"
+          "(#{wager.status}) #{wager.placed_at.strftime("%-m/%-d")} #{format_currency(wager.amount)} #{wager.line}"
         end.join("\n")
       end
     end
