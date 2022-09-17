@@ -6,11 +6,11 @@ class LineScraper
     map = {
       'game' => 'https://www.bovada.lv/sports/football/nfl',
       'first_half' => 'https://www.bovada.lv/sports/football/nfl/first-half-lines-odd',
-      '1h' => 'https://www.bovada.lv/sports/football/nfl/first-half-lines-odd',
-      'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd',
-      '2h' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
+      'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
     }
 
+    scope = "first_half" if scope.to_s.downcase == "1h"
+    scope = "second_half" if scope.to_s.downcase == "2h"
     url = map[scope]
     browser.goto(url)
     js_doc ||= browser.element(css: "sp-next-events div.grouped-events").wait_until(timeout: 5, &:present?)
@@ -70,9 +70,11 @@ class LineScraper
     "#{deactivated_count} lines deactivated. #{activated_count} lines activated."
 
   rescue Watir::Wait::TimeoutError
-    "Timeout waiting for #{url}".tap |err|
+    "Timeout waiting for #{url}".tap do |err|
       Rails.logger.warn err
     end
+  ensure
+    browser.close
   end
 
   private
