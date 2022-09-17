@@ -14,6 +14,10 @@ class Wager < ApplicationRecord
 
   before_save :update_net
 
+  def self.historical
+    where(status: [:win, :loss, :push])
+  end
+
   def self.min_wager
     @min_wager || DEFAULT_MIN_WAGER
   end

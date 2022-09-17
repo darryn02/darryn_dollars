@@ -9,7 +9,7 @@ class TwilioController < ApplicationController
 
     def initialize(user, body)
       @user = user
-      @body = body.to_s.strip.downcase
+      @body = body.to_s.squish.downcase
     end
 
     def process
@@ -22,9 +22,11 @@ class TwilioController < ApplicationController
       elsif body.starts_with?("balance")
         format_account_balances
       elsif body.starts_with?("cancel")
-        cancel_wager(body.sub("cancel", ""))
+        cancel_wager(body.sub("cancel", "").squish)
       elsif body.starts_with?("help")
         format_help
+      elsif body.starts_with?("scrape")
+        scrape_lines(body.sub("scrape", "").squish)
       else
         process_wager
       end
@@ -37,38 +39,77 @@ class TwilioController < ApplicationController
     def format_bet_slip
       if user.accounts.many?
         user.accounts.each do |account|
-          account.wagers.confirmed.map do |wager|
-            "#{account}: $#{wager.amount} #{wager.line}"
+          account.wagers.confirmed.order(id: :asc).map do |wager|
+            "#{account}: $#{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
         end.join("\n")
       else
         user.accounts.first.wagers.confirmed.map do |wager|
-          "$#{wager.amount} #{wager.line}"
+          "$#{format_currency(wager.amount)} #{wager.line}"
         end.join("\n")
       end
     end
 
     def format_history
+      if user.accounts.many?
+        user.accounts.each do |account|
+          account.wagers.historical.order(id: :desc).limit(ENV.fetch("HISTORY_SIZE", 10).to_i).map do |wager|
+            "#{account}: (#{wager.status}) $#{format_currency(wager.amount)} #{wager.line}"
+          end.join("\n")
+        end.join("\n")
+      else
+        user.accounts.first.wagers.historical.order(id: :desc).limit(ENV.fetch("HISTORY_SIZE", 10).to_i).map do |wager|
+          "(#{wager.status}) $#{format_currency(wager.amount)} #{wager.line}"
+        end.join("\n")
+      end
     end
 
     def cancel_wager(str)
       wager_id = Integer(str, exception_false)
-      wager = Wager.find(wager_id)
-      if Time.current - wager.placed_at < WAGER::GRACE_PERIOD
+      wager = Wager.find_by(wager_id)
+      if wager.nil?
+        "Wager not found - check ID and try again"
+      elsif Time.current - wager.placed_at <= WAGER::GRACE_PERIOD
+        wager.canceled!
+        "Wager #{wager.id} canceled."
+      else
+        "Sorry, wagers can only be canceled within #{WAGER::GRACE_PERIOD} minutes after being placed."
       end
     end
 
     def format_account_balances
       if user.accounts.many?
         user.accounts.each do |account|
-          "#{account.name}: #{ActionController::Base.helpers.number_to_currency(account.wagers.sum(:net))}"
+          "#{account.name}: #{format_currency(account.wagers.sum(:net))}"
         end.join("\n")
       else
-        ActionController::Base.helpers.number_to_currency(user.accounts.first.wagers.sum(:net))
+        format_currency(user.accounts.first.wagers.sum(:net))
+      end
+    end
+
+    def scrape_lines(args)
+      if user.admin?
+        LineScraper.new.run(args.presence || "game")
+      else
+        "Nice try. Only admins can do that."
       end
     end
 
     def format_help
+      [
+        "You can say:",
+        "- lines",
+        "- lines first half (or 1st half, 1h, etc)",
+        "- lines second half (or 2nd half, 2h, etc)",
+        "- bet slip (or simply 'slip' or 'bets')",
+        "- balance",
+        "- history",
+        "- help"
+      ].join("\n")
+    end
+
+    def format_currency(str)
+      ActionController::Base.helpers.number_to_currency(str)
     end
 
     def process_wager

@@ -6,7 +6,9 @@ class LineScraper
     map = {
       'game' => 'https://www.bovada.lv/sports/football/nfl',
       'first_half' => 'https://www.bovada.lv/sports/football/nfl/first-half-lines-odd',
-      'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
+      '1h' => 'https://www.bovada.lv/sports/football/nfl/first-half-lines-odd',
+      'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd',
+      '2h' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
     }
 
     url = map[scope]
