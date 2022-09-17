@@ -65,7 +65,7 @@ class TwilioController < ApplicationController
     end
 
     def cancel_wager(str)
-      wager_id = Integer(str, exception_false)
+      wager_id = Integer(str, exception: false)
       wager = Wager.find_by(wager_id)
       if wager.nil?
         "Wager not found - check ID and try again"
