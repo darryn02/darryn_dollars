@@ -16,14 +16,14 @@ class TwilioController < ApplicationController
       if body.starts_with?("lines")
         Sms::LinesPresenter.new(body.sub("lines", "")).to_s.presence || "No lines currently available. Check back 2 hours prior to scheduled event start time."
       elsif body.match(/(bets|bet slip|slip)/).present?
-        format_bet_slip
+        format_bet_slip.presence || "You have no active wagers"
       elsif body.starts_with?("history")
-        format_history
+        format_history.presence || "No settled bets found"
       elsif body.starts_with?("balance")
         format_account_balances
       elsif body.starts_with?("cancel")
         cancel_wager(body.sub("cancel", "").squish)
-      elsif bbody.match(/(help|tips|usage|directions|instructions|guide|manual)/).present?
+      elsif body.match(/(help|tips|usage|directions|instructions|guide|manual)/).present?
         format_help
       elsif body.starts_with?("scrape")
         scrape_lines(body.sub("scrape", "").squish)
@@ -66,14 +66,18 @@ class TwilioController < ApplicationController
 
     def cancel_wager(str)
       wager_id = Integer(str, exception: false)
-      wager = Wager.find_by(wager_id)
+      wager = Wager.joins(:account).find_by(id: wager_id, accounts: { user_id: user.id })
       if wager.nil?
         "Wager not found - check ID and try again"
-      elsif Time.current - wager.placed_at <= WAGER::GRACE_PERIOD
+      elsif wager.canceled?
+        "Wager already canceled"
+      elsif Time.current - wager.placed_at > Wager::GRACE_PERIOD
+        "Sorry, wagers can only be canceled within #{Wager::GRACE_PERIOD / 60} minutes after being placed."
+      elsif wager.historical?
+        "Wager already a #{wager.status}"
+      else
         wager.canceled!
         "Wager #{wager.id} canceled."
-      else
-        "Sorry, wagers can only be canceled within #{WAGER::GRACE_PERIOD} minutes after being placed."
       end
     end
 
@@ -102,9 +106,10 @@ class TwilioController < ApplicationController
         "- lines first half (or 1st half, 1h, etc)",
         "- lines second half (or 2nd half, 2h, etc)",
         "- bet slip (or simply 'slip' or 'bets')",
+        "- cancel <wager ID> (only within #{Wager::GRACE_PERIOD / 60} minutes)",
         "- balance",
         "- history",
-        "- help"
+        "- usage (or tips, instructions, guide)"
       ].join("\n")
     end
 

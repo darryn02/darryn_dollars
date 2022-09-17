@@ -26,6 +26,10 @@ class Wager < ApplicationRecord
     @min_wager = value
   end
 
+  def historical?
+    win? || loss? || push?
+  end
+
   def to_s
     str = "[#{id.presence || "x"}]" \
     " #{account if account.user.accounts.many?}" \
