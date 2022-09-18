@@ -84,6 +84,12 @@ class LineScraper
     "Timeout waiting for #{url}".tap do |err|
       Rails.logger.warn err
     end
+
+    if scope == "second_half"
+      deactivated_count = Line.where(id: deactivate_ids).update_all(updated_at: Time.now, hidden: true)
+      Rails.logger.warn "Deactivated #{deactivated_count} second half lines."
+      "#{deactivated_count} lines deactivated."
+    end
   ensure
     browser.close
   end
