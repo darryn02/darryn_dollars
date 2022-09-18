@@ -121,6 +121,9 @@ class TwilioController < ApplicationController
       body.split(/\n|\.\s+/).map do |str|
         begin
           account, kind, scope, line, amount, competitors = WagerParser.parse(user, str)
+          if scope == :second_half
+            LineScraper.ensure_second_half_lines_are_recent!
+          end
           wager = WagerProcessor.new.create_wager(account, kind, scope, line, amount, competitors)
         rescue WagerParser::AccountNotFoundError
           "[x]: #{str}: Account not clear."

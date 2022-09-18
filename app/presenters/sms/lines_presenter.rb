@@ -5,6 +5,8 @@ module Sms
     end
 
     def to_s
+      LineScraper.ensure_second_half_lines_are_recent! if scope == :second_half
+
       Game.
         wagerable.
         includes(:competitors, lines: { contestant: :competitor }).
