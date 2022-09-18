@@ -22,14 +22,14 @@ class LineScraper
 
     scope = "first_half" if scope.to_s.downcase == "1h"
     scope = "second_half" if scope.to_s.downcase == "2h"
+    deactivate_ids = Line.active.send(scope).pluck(:id)
+    activate_ids = []
+
     url = map[scope]
     browser.goto(url)
     js_doc ||= browser.element(css: "sp-next-events div.grouped-events").wait_until(timeout: 5, &:present?)
     page = Nokogiri::HTML(js_doc.inner_html)
     game_elements = page.css("section.coupon-content.more-info")
-
-    deactivate_ids = Line.active.send(scope).pluck(:id)
-    activate_ids = []
 
     game_elements.map do |ge|
       start_time = nil
