@@ -5,6 +5,7 @@ class WagerProcessor
 
   def create_wager(account, kind, scope, requested_line, amount, competitors)
     relation = Line.
+      active.
       joins(:game).
       includes(:contestant).
       references(:contestant).
