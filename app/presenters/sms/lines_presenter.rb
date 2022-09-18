@@ -10,7 +10,6 @@ module Sms
       Game.
         wagerable.
         includes(:competitors, lines: { contestant: :competitor }).
-        where(starts_at: Time.current..Time.current + Wager::WINDOW).
         order(starts_at: :asc).
         map(&method(:format)).
         join("\n")

@@ -6,12 +6,18 @@ class Game < ApplicationRecord
   has_many :competitors, through: :contestants
   has_many :lines
 
+  def self.list_all
+    Game.order(starts_at: :asc).map do |g|
+      "[#{g.id}] #{g.starts_at.strftime("%-m/%-d %l:%M%P")} #{g.matchup}"
+    end
+  end
+
   def self.unplayed
     where('starts_at > ?', Time.current)
   end
 
   def self.wagerable
-    where('starts_at BETWEEN ? AND ?', Time.current, Time.current + Wager::WINDOW.hours)
+    where('starts_at BETWEEN ? AND ?', 12.hours.ago, Time.current + Wager::WINDOW.hours)
   end
 
   def self.today
@@ -38,7 +44,7 @@ class Game < ApplicationRecord
   end
 
   def to_s
-    "#{starts_at.strftime("%m/%d %l:%M%P")} #{matchup}"
+    "#{starts_at.strftime("%-m/%-d %l:%M%P")} #{matchup}"
   end
 
   private

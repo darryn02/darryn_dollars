@@ -39,12 +39,12 @@ class TwilioController < ApplicationController
     def format_bet_slip
       if user.accounts.many?
         user.accounts.each do |account|
-          account.wagers.confirmed.order(id: :asc).map do |wager|
+          account.wagers.confirmed.order(placed_at: :desc).map do |wager|
             "#{account}: #{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
         end.join("\n")
       else
-        user.accounts.first.wagers.confirmed.map do |wager|
+        user.accounts.first.wagers.confirmed.order(placed_at: :desc).map do |wager|
           "#{format_currency(wager.amount)} #{wager.line}"
         end.join("\n")
       end
@@ -118,7 +118,7 @@ class TwilioController < ApplicationController
     end
 
     def process_wager
-      body.split(/\n|\.\s+/).map do |str|
+      body.split(/\n|\r|\.\s+/).map(&:presence).compact.map do |str|
         begin
           account, kind, scope, line, amount, competitors = WagerParser.parse(user, str)
           if scope == :second_half

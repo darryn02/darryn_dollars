@@ -20,7 +20,7 @@ Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'LAC', region: 'Los
 Competitor.create!(sport: :nfl, nicknames: ['Boys'], abbreviation: 'DAL', region: 'Dallas', name: 'Cowboys')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'NYG', region: 'New York', name: 'Giants')
 Competitor.create!(sport: :nfl, nicknames: ['Phily', 'Philly'], abbreviation: 'PHI', region: 'Philadelphia', name: 'Eagles')
-Competitor.create!(sport: :nfl, nicknames: ['Redskins', 'Skins', 'Football Team'], abbreviation: 'WAS', region: 'Washington', name: 'Commanders')
+Competitor.create!(sport: :nfl, nicknames: ['Redskins', 'Skins', 'Football Team', 'Wash'], abbreviation: 'WAS', region: 'Washington', name: 'Commanders')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'CHI', region: 'Chicago', name: 'Bears')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'DET', region: 'Detroit', name: 'Lions')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'GB', region: 'Green Bay', name: 'Packers')
