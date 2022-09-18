@@ -5,7 +5,7 @@ class LineScraper
 
   def self.ensure_second_half_lines_are_recent!
     last_update = Line.active.maximum(:updated_at)
-    if last_update > 1.minute.ago
+    if last_update.nil? || last_update > 1.minute.ago
       run("second_half")
     end
   end
