@@ -15,6 +15,16 @@ class Line < ApplicationRecord
     where.not(hidden: true)
   end
 
+  def self.parse_scope(modifier)
+    if modifier.match?(/(first_half|first half|1st half|1h)/).present?
+      :first_half
+    elsif modifier.match?(/(second_half|second half|2nd half|2h|halftime|half time)/).present?
+      :second_half
+    else
+      :game
+    end
+  end
+
   def create_line_change!(properties = {})
 
   end

@@ -1,6 +1,6 @@
 class LineScraper
-  def self.run(scope = 'game')
-    new.run(scope)
+  def self.run(modifier = 'game')
+    new.run(modifier)
   end
 
   def self.ensure_second_half_lines_are_recent!
@@ -10,7 +10,7 @@ class LineScraper
     end
   end
 
-  def run(scope = 'game')
+  def run(modifier = 'game')
     require 'webdrivers/chromedriver'
     browser = Watir::Browser.new
 
@@ -20,8 +20,7 @@ class LineScraper
       'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
     }
 
-    scope = "first_half" if scope.to_s.downcase == "1h"
-    scope = "second_half" if scope.to_s.downcase == "2h"
+    scope = Line.parse_scope(modifier)
     deactivate_ids = Line.active.send(scope).pluck(:id)
     activate_ids = []
 

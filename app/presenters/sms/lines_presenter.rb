@@ -39,13 +39,7 @@ module Sms
     end
 
     def scope
-      if modifier.match?(/(first half|1st half|1h)/).present?
-        :first_half
-      elsif modifier.match?(/(second half|2nd half|2h|halftime|half time)/).present?
-        :second_half
-      else
-        :game
-      end
+      @scope ||= Line.parse_scope(modifier)
     end
   end
 end
