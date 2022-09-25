@@ -2,6 +2,7 @@ class Line < ApplicationRecord
   belongs_to :contestant, optional: true
   has_one :competitor, through: :contestant
   belongs_to :game
+  has_many :wagers
 
   enum kind: { point_spread: 0, moneyline: 1, over: 2, under: 3, prop: 9 }
   enum scope: { game: 0, first_half: 1, second_half: 2 }

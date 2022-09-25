@@ -1,17 +1,16 @@
 class PointSpreadScorer < Scorer
   def run
     contestants = line.game.contestants
-    them = contestants - line.contestant
-    me = contestants - them
+    me, them = contestants.partition { |c| c.id == line.contestant_id }.map(&:first)
 
     their_score = contestant_score(them)
     my_score = contestant_score(me)
 
     if my_score.blank? || their_score.blank?
       line.pending!
-    elsif my_score + value > their_score
+    elsif my_score + line.value > their_score
       line.win!
-    elsif my_score + value < their_score
+    elsif my_score + line.value < their_score
       line.loss!
     else
       line.push!

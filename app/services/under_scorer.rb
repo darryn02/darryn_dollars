@@ -1,13 +1,13 @@
 class UnderScorer < Scorer
   def run
     contestants = line.game.contestants    
-    total = contestants.sum(&method(:contestant_score)    
+    total = contestants.sum(&method(:contestant_score))
 
     if total.blank?
       line.pending!
-    elsif total < value
+    elsif total < line.value
       line.win!
-    elsif total > value
+    elsif total > line.value
       line.loss!
     else
       line.push!
