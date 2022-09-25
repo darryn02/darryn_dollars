@@ -27,6 +27,8 @@ class TwilioController < ApplicationController
         format_help
       elsif body.starts_with?("scrape")
         scrape_lines(body.sub("scrape", "").squish)
+      elsif body.starts_with?("total")
+        format_totals
       else
         process_wager
       end
@@ -82,8 +84,8 @@ class TwilioController < ApplicationController
     end
 
     def format_account_balances
-      user.accounts.map do |account|
-        balance = account.wagers.sum(:net)
+      user.accounts.includes(:wagers, :user).map do |account|
+        balance = account.wagers.sum(&:net)
         utilization = [(-1 * balance / account.credit_limit * 100).round, 0].max
         "#{format_currency(balance)} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
 
@@ -101,6 +103,19 @@ class TwilioController < ApplicationController
       else
         "Nice try. Only admins can do that."
       end
+    end
+
+    def format_totals
+      total = 0
+
+      Account.
+      includes(:wagers, :user).
+      map do |account|
+        total += balance = account.wagers.sum(&:net)
+        "#{account.user.name}: #{format_currency(balance)}"
+      end.join("\n").concat(
+        "\nTotal: #{format_currency(total)}"
+      )
     end
 
     def format_help

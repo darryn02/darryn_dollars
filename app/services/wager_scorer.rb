@@ -1,4 +1,8 @@
 class WagerScorer
+  def self.run(scope = Wager.all.confirmed)
+    new(scope).run
+  end
+
   def run(scope = Wager.all.confirmed)
     scope.
       includes(:line).
