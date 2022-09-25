@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2017_08_23_033013) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_18_043328) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -49,6 +49,7 @@ ActiveRecord::Schema[7.0].define(version: 2017_08_23_033013) do
     t.integer "priority", default: 0, null: false
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+    t.integer "scores", default: [], null: false, array: true
     t.index ["competitor_id"], name: "index_contestants_on_competitor_id"
     t.index ["game_id"], name: "index_contestants_on_game_id"
   end

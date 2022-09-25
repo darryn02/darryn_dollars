@@ -1,8 +1,8 @@
 namespace :scrape do
   desc 'Scrape NFL lines and create games and contests'
   task nfl_lines: :environment do
-    LineScraper.new.run
-    LineScraper.new.run("first_half")
+    LineScraper.run
+    LineScraper.run("first_half")
   end
 
   task nfl_second_half_lines: :environment do
@@ -10,5 +10,6 @@ namespace :scrape do
   end
 
   task :nfl_results do
+    ScoreScraper.run
   end
 end
