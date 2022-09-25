@@ -34,7 +34,7 @@ class Line < ApplicationRecord
     if odds >= 0
       amount * odds * 0.01
     else
-      amount / 0.01 / odds
+      amount / -0.01 / odds
     end
   end
 

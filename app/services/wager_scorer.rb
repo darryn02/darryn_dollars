@@ -1,8 +1,7 @@
 class WagerScorer
-  def run(scope = Wager.all)
+  def run(scope = Wager.all.confirmed)
     scope.
       includes(:line).
-      confirmed.
       find_each do |wager|
       if wager.line.win?
         wager.win! 
