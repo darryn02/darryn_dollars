@@ -9,6 +9,8 @@ gem 'haml-rails'
 gem "honeybadger"
 gem "jquery-rails"
 gem 'kaminari'
+gem 'newrelic-infinite_tracing'
+gem 'newrelic_rpm'
 gem 'nokogiri'
 gem "normalize-rails"
 gem "pg"
