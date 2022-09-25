@@ -82,16 +82,16 @@ class TwilioController < ApplicationController
     end
 
     def format_account_balances
-      if user.accounts.many?
-        user.accounts.each do |account|
-          "#{account.name}: #{format_currency(account.wagers.sum(:net))}"
-        end.join("\n")
-      else
-        account = user.accounts.first
+      user.accounts.map do |account|
         balance = account.wagers.sum(:net)
         utilization = [(-1 * balance / account.credit_limit * 100).round, 0].max
         "#{format_currency(balance)} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
-      end
+
+        [
+          account.name if user.accounts.many?,
+          "#{format_currency(account.wagers.sum(:net))}"
+        ].compact.join(": ")
+      end.join("\n")
     end
 
     def scrape_lines(args)
