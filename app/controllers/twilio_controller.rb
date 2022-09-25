@@ -87,7 +87,10 @@ class TwilioController < ApplicationController
           "#{account.name}: #{format_currency(account.wagers.sum(:net))}"
         end.join("\n")
       else
-        format_currency(user.accounts.first.wagers.sum(:net))
+        account = user.accounts.first
+        balance = account.wagers.sum(:net)
+        utilization = [(-1 * balance / account.credit_limit * 100).round, 0].max
+        "#{format_currency(balance)} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
       end
     end
 
