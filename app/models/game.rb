@@ -12,6 +12,12 @@ class Game < ApplicationRecord
     end
   end
 
+  def self.results
+    Game.order(starts_at: :asc).map do |g|
+      "[#{g.id}] #{g.starts_at.strftime("%-m/%-d %l:%M%P")} #{g.contestants.sort_by(&:priority).map { |c| "#{c.competitor.abbreviation} (#{c.scores.join(', ')})" }.join(' vs. ')}"
+    end
+  end
+
   def self.unplayed
     where('starts_at > ?', Time.current)
   end

@@ -9,7 +9,7 @@ namespace :scrape do
     LineScraper.new.run("second_half")
   end
 
-  task :nfl_results do
+  task nfl_results: :environment do
     ScoreScraper.run
   end
 end

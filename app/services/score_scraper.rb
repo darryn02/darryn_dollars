@@ -33,7 +33,7 @@ class ScoreScraper
           if scores.present? && contestant.present?
             contestant.update!(scores: scores)
           else
-            Rails.logger.warning("Couldn't find #{scores.present? ? "contestant" : "scores"} for #{team} on #{date_str}")
+            Rails.logger.warn("Couldn't find #{scores.present? ? "contestant" : "scores"} for #{team} on #{date_str}")
           end
         end
       end      
