@@ -20,7 +20,7 @@ class LineScraper
       'second_half' => 'https://www.bovada.lv/sports/football/nfl/second-half-lines-odd'
     }
 
-    scope = Line.parse_scope(modifier)
+    scope = Line.parse_scope(modifier).to_s
     deactivate_ids = Line.active.send(scope).pluck(:id)
     activate_ids = []
 
@@ -90,7 +90,7 @@ class LineScraper
       end
     end
   ensure
-    browser.close
+    browser&.close
   end
 
   private
