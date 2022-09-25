@@ -23,6 +23,8 @@ class ScoreScraper
       date = Date.parse(date_str)
 
       game_module.css("div.ScoreboardScoreCell").each do |game|
+        next unless game.css(".ScoreboardScoreCell__Time").inner_text.to_s.downcase == "final"
+
         game.css("ul.ScoreboardScoreCell__Competitors li").map do |competitor_element|
           team = competitor_element.css(".ScoreCell__TeamName").inner_text
           scores = competitor_element.css(".ScoreboardScoreCell_Linescores .ScoreboardScoreCell__Value").map(&:inner_text).map(&:to_i)

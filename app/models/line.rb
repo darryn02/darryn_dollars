@@ -5,6 +5,7 @@ class Line < ApplicationRecord
 
   enum kind: { point_spread: 0, moneyline: 1, over: 2, under: 3, prop: 9 }
   enum scope: { game: 0, first_half: 1, second_half: 2 }
+  enum result: { pending: 0, win: 1, loss: 2, push: 3 }
 
   def self.latest
     order(created_at: :desc).take
