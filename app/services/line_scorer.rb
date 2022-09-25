@@ -4,7 +4,12 @@ class LineScorer
   end
 
   def run(scope)
-    scope.includes(game: :contestants).pending.find_each do |line|
+    scope.
+    includes(game: :contestants).
+    references(:contestants).
+    where.not(contestants: { scores: [] }).
+    pending.
+    find_each do |line|
       scorer = LineScorerFactory.build(line).run
     end
   end

@@ -1,0 +1,2 @@
+class MoneylineScorer < PointSpreadScorer
+end
