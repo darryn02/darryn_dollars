@@ -106,16 +106,20 @@ class TwilioController < ApplicationController
     end
 
     def format_totals
-      total = 0
+      if user.admin?
+        total = 0
 
-      Account.
-      includes(:wagers, :user).
-      map do |account|
-        total += balance = account.wagers.sum(&:net)
-        "#{account.user.name}: #{format_currency(balance)}"
-      end.join("\n").concat(
-        "\nTotal: #{format_currency(total)}"
-      )
+        Account.
+        includes(:wagers, :user).
+        map do |account|
+          total += balance = account.wagers.sum(&:net)
+          "#{account.user.name}: #{format_currency(balance)}"
+        end.join("\n").concat(
+          "\nTotal: #{format_currency(total)}"
+        )
+      else
+        "Nice try. Only admins can do that."
+      end
     end
 
     def format_help
