@@ -26,6 +26,10 @@ class Wager < ApplicationRecord
     @min_wager = value
   end
 
+  def self.list_all
+    order(placed_at: :asc).map(&:to_s)
+  end
+
   def historical?
     win? || loss? || push?
   end
@@ -37,7 +41,7 @@ class Wager < ApplicationRecord
     " for #{ActionController::Base.helpers.number_to_currency(amount)}"
 
     if valid?
-      str.concat(" #{status} at #{placed_at.strftime("%l:%M:%S%P")}")
+      str.concat(" #{status} at #{placed_at.strftime("%-m/%-d %l:%M:%S%P")}")
     else
       str.concat(" invalid, min wager is #{DEFAULT_MIN_WAGER}")
     end

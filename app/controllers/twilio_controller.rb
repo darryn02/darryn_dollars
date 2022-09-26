@@ -115,7 +115,7 @@ class TwilioController < ApplicationController
           total += balance = account.wagers.sum(&:net)
           "#{account.user.name}: #{format_currency(balance)}"
         end.join("\n").concat(
-          "\nTotal: #{format_currency(total)}"
+          "\n\nTotal: #{format_currency(total)}"
         )
       else
         "Nice try. Only admins can do that."
