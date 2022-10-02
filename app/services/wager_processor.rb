@@ -5,11 +5,10 @@ class WagerProcessor
 
   def create_wager(account, kind, scope, requested_line, amount, competitors)
     relation = Line.
-      active.
       joins(:game).
       includes(:contestant).
       references(:contestant).
-      where(games: { starts_at: Time.current..Time.current + Wager::WINDOW}).
+      where(active_game).
       send(kind).
       send(scope)
     if kind == :over || kind == :under
@@ -22,7 +21,8 @@ class WagerProcessor
 
     latest_line = relation.latest
     raise LineNotFound if latest_line.nil?
-    raise LineExpired if latest_line.game? && latest_line.game.starts_at.past?
+    raise LineExpired if line.hidden?
+    raise LineExpired if (latest_line.game? || latest_line.first_half?) && latest_line.game.starts_at.past?
     raise LineChange if requested_line.present? && requested_line != latest_line.value
 
     Wager.create(
@@ -34,6 +34,12 @@ class WagerProcessor
   end
 
   private
+
+  def active_game
+    {
+      games: { starts_at: (Time.current - 3.hours)..(Time.current + Wager::WINDOW) }
+    }
+  end
 
   def gross_up(amount, line)
     if %w[point_spread over under].exclude?(line.kind)
