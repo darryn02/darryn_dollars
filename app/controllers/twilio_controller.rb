@@ -14,7 +14,7 @@ class TwilioController < ApplicationController
 
     def process
       if body.starts_with?("lines")
-        Sms::LinesPresenter.new(body.sub("lines", "")).to_s.presence || "No lines currently available. Check back 2 hours prior to scheduled event start time."
+        format_lines
       elsif body.match(/(bets|bet slip|slip)/).present?
         format_bet_slip.presence || "You have no active wagers"
       elsif body.starts_with?("history")
@@ -37,6 +37,13 @@ class TwilioController < ApplicationController
     private
 
     attr_reader :user, :body
+
+    def format_lines
+      lines = Sms::LinesPresenter.new(body.sub("lines", "")).to_s
+      lines.presence || "No lines currently available. Check back 2 hours prior to scheduled event start time."
+    rescue => e
+      "Sorry, an error occurred. Please retry, or text Darryn directly if the problem persists. (#{e.message})"
+    end
 
     def format_bet_slip
       if user.accounts.many?

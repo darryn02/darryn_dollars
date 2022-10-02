@@ -6,8 +6,15 @@ class LineScraper
   def self.ensure_second_half_lines_are_recent!
     last_update = Line.active.second_half.maximum(:updated_at)
     if last_update.nil? || last_update < 1.minute.ago
-      run("second_half")
+      try_times { run("second_half") }
     end
+  end
+
+  def self.try_times(tries = 2)
+    yield
+  rescue => e
+    tries -= 1
+    sleep 2 && retry if tries.positive?
   end
 
   def run(modifier = 'game')
@@ -89,6 +96,10 @@ class LineScraper
         Rails.logger.warn err
       end
     end
+  rescue => e
+    Honeybadger.notify(e)
+    Rails.logger.warn e.message
+    raise
   ensure
     browser&.close
   end

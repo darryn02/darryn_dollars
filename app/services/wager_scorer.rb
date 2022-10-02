@@ -1,6 +1,6 @@
 class WagerScorer
   def self.run(scope = Wager.all.confirmed)
-    new(scope).run
+    new.run(scope)
   end
 
   def run(scope = Wager.all.confirmed)
