@@ -21,7 +21,7 @@ class WagerProcessor
 
     latest_line = relation.latest
     raise LineNotFound if latest_line.nil?
-    raise LineExpired if line.hidden?
+    raise LineExpired if latest_line.hidden?
     raise LineExpired if (latest_line.game? || latest_line.first_half?) && latest_line.game.starts_at.past?
     raise LineChange if requested_line.present? && requested_line != latest_line.value
 
