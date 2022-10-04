@@ -9,7 +9,7 @@ class Line < ApplicationRecord
   enum result: { pending: 0, win: 1, loss: 2, push: 3 }
 
   def self.latest
-    order(created_at: :desc).take
+    order(updated_at: :desc).take
   end
 
   def self.active
