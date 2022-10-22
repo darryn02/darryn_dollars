@@ -117,7 +117,7 @@ class TwilioController < ApplicationController
 
         balance_str = [
           user.accounts.many? ? account.name : nil,
-          "#{format_currency(account.balance)} with #{account.liabilities} in play"
+          "#{format_currency(account.balance)} with #{format_currency(account.liabilities)} in play"
         ].compact.join(": ")
         "#{balance_str} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
       end.join("\n")
