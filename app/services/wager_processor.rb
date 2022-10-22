@@ -2,6 +2,7 @@ class WagerProcessor
   class LineChange < StandardError; end
   class LineNotFound < StandardError; end
   class LineExpired < StandardError; end
+  class InsufficientCredit < StandardError; end
 
   def create_wager(account, kind, scope, requested_line, amount, competitors)
     relation = Line.
@@ -24,6 +25,7 @@ class WagerProcessor
     raise LineExpired if latest_line.hidden?
     raise LineExpired if (latest_line.game? || latest_line.first_half?) && latest_line.game.starts_at.past?
     raise LineChange if requested_line.present? && requested_line != latest_line.value
+    raise InsufficientCredit if insufficient_credit?(account, amount, latest_line)
 
     Wager.create(
       account: account,
@@ -31,6 +33,14 @@ class WagerProcessor
       placed_at: Time.current,
       amount: gross_up(amount, latest_line)
     )
+  end
+
+  def gross_up(amount, line)
+    if %w[point_spread over under].exclude?(line.kind)
+      amount
+    elsif line.odds == -110
+      1.1 * amount
+    end
   end
 
   private
@@ -41,11 +51,7 @@ class WagerProcessor
     }
   end
 
-  def gross_up(amount, line)
-    if %w[point_spread over under].exclude?(line.kind)
-      amount
-    elsif line.odds == -110
-      1.1 * amount
-    end
+  def insufficient_credit?(account, amount, line)
+    account.credit_limit - account.balance - account.liabilities < gross_up(amount, line)
   end
 end

@@ -16,7 +16,7 @@ class TwilioController < ApplicationController
       if body.starts_with?("lines")
         format_lines
       elsif body.match(/(bets|bet slip|slip)/).present?
-        format_bet_slip.presence || "You have no active wagers"
+        format_bet_slip.presence || "No active wagers"
       elsif body.starts_with?("history")
         format_history.presence || "No settled bets found"
       elsif body.starts_with?("balance")
@@ -29,6 +29,8 @@ class TwilioController < ApplicationController
         scrape_lines(body.sub("scrape", "").squish)
       elsif body.starts_with?("total")
         format_totals
+      elsif body.starts_with?("action")
+        format_action(body.sub("action", "").squish)
       else
         process_wager
       end
@@ -46,14 +48,32 @@ class TwilioController < ApplicationController
     end
 
     def format_bet_slip
-      if user.accounts.many?
-        user.accounts.each do |account|
+      if user.admin?
+        format_all_wagers
+      else
+        format_user_wagers(user)
+      end
+    end
+
+    def format_all_wagers
+      User.
+        joins(:accounts).
+        where(Wager.confirmed.where("account_id = accounts.id").arel.exists).
+        distinct.
+        map do |u|
+        "#{u.name.split.first}:\n#{format_user_wagers(u)}"
+      end.join("\n")
+    end
+
+    def format_user_wagers(usr)
+      if usr.accounts.many?
+        usr.accounts.each do |account|
           account.wagers.confirmed.order(placed_at: :desc).map do |wager|
             "#{account}: #{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
         end.join("\n")
       else
-        user.accounts.first.wagers.confirmed.order(placed_at: :desc).map do |wager|
+        usr.accounts.first.wagers.confirmed.order(placed_at: :desc).map do |wager|
           "#{format_currency(wager.amount)} #{wager.line}"
         end.join("\n")
       end
@@ -92,13 +112,12 @@ class TwilioController < ApplicationController
 
     def format_account_balances
       user.accounts.includes(:wagers, :user).map do |account|
-        balance = account.wagers.sum(&:net)
-        utilization = [(-1 * balance / account.credit_limit * 100).round, 0].max
-        "#{format_currency(balance)} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
+        utilization = [((-1 * account.balance + account.liabilities) / account.credit_limit * 100).round, 0].max
+        "#{format_currency(account.balance)} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
 
         balance_str = [
           user.accounts.many? ? account.name : nil,
-          "#{format_currency(account.wagers.sum(:net))}"
+          "#{format_currency(account.balance)} with #{account.liabilities} in play"
         ].compact.join(": ")
         "#{balance_str} (Credit Limit: #{format_currency(account.credit_limit)}, #{utilization}% utilized)"
       end.join("\n")
@@ -117,13 +136,21 @@ class TwilioController < ApplicationController
         total = 0
 
         Account.
-        includes(:wagers, :user).
-        map do |account|
-          total += balance = account.wagers.sum(&:net)
-          "#{account.user.name}: #{format_currency(balance)}"
+          includes(:wagers, :user).
+          map do |account|
+          total += account.balance
+          "#{account.user.name}: #{format_currency(account.balance)}"
         end.join("\n").concat(
           "\n\nTotal: #{format_currency(total)}"
         )
+      else
+        "Nice try. Only admins can do that."
+      end
+    end
+
+    def format_action(modifier)
+      if user.admin?
+        Wager.confirmed.includes(line: :game).group("games.id, lines.kind, lines.scope")
       else
         "Nice try. Only admins can do that."
       end
@@ -167,6 +194,8 @@ class TwilioController < ApplicationController
           "[x]: #{str}: Line not found"
         rescue WagerProcessor::LineExpired
           "[x]: #{str}: Line has expired"
+        rescue WagerProcessor::InsufficientCredit
+          "[x]: #{str}: Insufficient credit. Please make a payment."
         end
       end.join("\n")
     end

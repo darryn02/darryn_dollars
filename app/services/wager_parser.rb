@@ -4,11 +4,15 @@ class WagerParser
   class IncompleteWagerError < StandardError; end
 
   def self.parse(user, wager_string)
-    WagerParser.new.parse(user, wager_string)
+    WagerParser.new(user).parse(wager_string)
   end
 
-  def parse(user, remaining_string)
-    account, remaining_string = extract_account(user, remaining_string)
+  def initialize(user)
+    @user = user
+  end
+
+  def parse(remaining_string)
+    account, remaining_string = extract_account(remaining_string)
     amount, remaining_string = extract_amount(remaining_string)
     scope, remaining_string = extract_scope(remaining_string)
     kind, line, remaining_string = extract_line(remaining_string)
@@ -20,16 +24,18 @@ class WagerParser
 
   private
 
-  def extract_account(user, str)
+  attr_reader :user
+
+  def extract_account(str)
     return [user.accounts.first, str] if user.accounts.size <= 1
 
-    matches = match_account(user, str)
+    matches = match_account(str)
     return [user.accounts.first, str] if matches.blank?
     raise AmbiguousAccountError.new if matches.many?
     [matches.first.first, str.sub(matches.first.last.to_s, "")]
   end
 
-  def match_account(user, str)
+  def match_account(str)
     user.
       accounts.
       map { |a| [a, str.match(/^\W*#{[a.name, a.nickname].join("|")}/i)] }.

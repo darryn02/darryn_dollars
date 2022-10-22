@@ -7,12 +7,25 @@ module Sms
     def to_s
       LineScraper.ensure_second_half_lines_are_recent! if scope == :second_half
 
-      Game.
+      lines = Game.
         wagerable.
         includes(:competitors, lines: { contestant: :competitor }).
         order(starts_at: :asc).
         map(&method(:format)).
         join("\n")
+
+      upcoming = Game.
+        upcoming.
+        includes(:competitors, lines: { contestant: :competitor }).
+        order(starts_at: :asc).
+        map(&method(:format)).
+        join("\n")
+
+      if upcoming.present?
+        "#{lines}\n\nUpcoming (unofficial):\n#{upcoming}"
+      else
+        lines
+      end
     end
 
     private

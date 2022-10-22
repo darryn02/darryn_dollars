@@ -26,6 +26,10 @@ class Game < ApplicationRecord
     where('starts_at BETWEEN ? AND ?', 12.hours.ago, Time.current + Wager::WINDOW)
   end
 
+  def self.upcoming
+    where('starts_at BETWEEN ? AND ?', Time.current + Wager::WINDOW, Time.current + Wager::PREVIEW_WINDOW)
+  end
+
   def self.today
     where(
       "date_trunc('day', starts_at) = ?",
