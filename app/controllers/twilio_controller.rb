@@ -20,6 +20,7 @@ class TwilioController < ApplicationController
       elsif body.starts_with?("history")
         format_history.presence || "No settled bets found"
       elsif body.starts_with?("balance")
+        # ensure_balances_are_current!
         format_account_balances
       elsif body.starts_with?("cancel")
         cancel_wager(body.sub("cancel", "").squish)
@@ -39,6 +40,12 @@ class TwilioController < ApplicationController
     private
 
     attr_reader :user, :body
+
+    def ensure_balances_are_current!
+      ScoreScraper.run
+      LineScorer.run
+      WagerScorer.run
+    end
 
     def format_lines
       lines = Sms::LinesPresenter.new(body.sub("lines", "")).to_s
@@ -134,6 +141,9 @@ class TwilioController < ApplicationController
     def format_totals
       if user.admin?
         total = 0
+        ScoreScraper.run
+        LineScorer.run
+        WagerScorer.run
 
         Account.
           includes(:wagers, :user).
