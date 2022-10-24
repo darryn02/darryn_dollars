@@ -20,7 +20,7 @@ class TwilioController < ApplicationController
       elsif body.starts_with?("history")
         format_history.presence || "No settled bets found"
       elsif body.starts_with?("balance")
-        # ensure_balances_are_current!
+        ensure_balances_are_current!
         format_account_balances
       elsif body.starts_with?("cancel")
         cancel_wager(body.sub("cancel", "").squish)
@@ -42,9 +42,13 @@ class TwilioController < ApplicationController
     attr_reader :user, :body
 
     def ensure_balances_are_current!
-      ScoreScraper.run
-      LineScorer.run
-      WagerScorer.run
+      if Wager.confirmed.where(user.accounts.where("accounts.id = wagers.account_id").arel.exists).exists?
+        if Line.pending.exists?
+          ScoreScraper.run
+          LineScorer.run
+        end
+        WagerScorer.run
+      end
     end
 
     def format_lines

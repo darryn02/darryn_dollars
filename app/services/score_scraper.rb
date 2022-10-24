@@ -4,13 +4,11 @@ class ScoreScraper
   end
 
   def run(week = nil)
-    week = ((DateTime.current - DateTime.new(2022, 9, 8)) / 7.0).ceil if week.nil?
-
     require 'webdrivers/chromedriver'
+
     browser = Watir::Browser.new
-
+    week = ((DateTime.current - DateTime.new(2022, 9, 8)) / 7.0).ceil if week.nil?
     url = "https://www.espn.com/nfl/scoreboard/_/week/#{week}/year/2022/seasontype/2"
-
     browser.goto(url)
 
     js_doc ||= browser.element(css: "div.PageLayout__Main").wait_until(timeout: 5, &:present?)
@@ -37,6 +35,8 @@ class ScoreScraper
           end
         end
       end      
+    ensure
+      browser&.close
     end
   end
 end
