@@ -78,7 +78,7 @@ class TwilioController < ApplicationController
 
     def format_user_wagers(usr)
       if usr.accounts.many?
-        usr.accounts.each do |account|
+        usr.accounts.map do |account|
           account.wagers.confirmed.order(placed_at: :desc).map do |wager|
             "#{account}: #{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
@@ -92,7 +92,7 @@ class TwilioController < ApplicationController
 
     def format_history
       if user.accounts.many?
-        user.accounts.each do |account|
+        user.accounts.map do |account|
           account.wagers.historical.order(placed_at: :desc).limit(ENV.fetch("HISTORY_SIZE", 10).to_i).map do |wager|
             "#{account}: (#{wager.status}) #{wager.placed_at.strftime("%-m/%-d")} #{format_currency(wager.amount)} #{wager.line}"
           end.join("\n")
