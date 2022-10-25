@@ -216,7 +216,7 @@ class TwilioController < ApplicationController
   end
 
   def sms
-    respond CommandProcessor.process(user, params[:Body])
+    respond CommandProcessor.process(user, params[:Body])[0..1600]
   end
 
   private
