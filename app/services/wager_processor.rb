@@ -52,6 +52,6 @@ class WagerProcessor
   end
 
   def insufficient_credit?(account, amount, line)
-    account.credit_limit - account.balance - account.liabilities < gross_up(amount, line)
+    account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
   end
 end
