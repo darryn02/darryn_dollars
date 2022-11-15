@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_25_045346) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_15_052306) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -97,6 +97,15 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_25_045346) do
     t.index ["scope"], name: "index_lines_on_scope"
   end
 
+  create_table "payments", force: :cascade do |t|
+    t.decimal "amount", null: false
+    t.datetime "submitted_at", null: false
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_payments_on_account_id"
+  end
+
   create_table "users", id: :serial, force: :cascade do |t|
     t.boolean "admin"
     t.string "name", null: false
@@ -125,6 +134,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_25_045346) do
   add_foreign_key "contestants", "games"
   add_foreign_key "lines", "contestants", on_delete: :nullify
   add_foreign_key "lines", "games", on_delete: :cascade
+  add_foreign_key "payments", "accounts", on_delete: :cascade
   add_foreign_key "wagers", "accounts", on_delete: :cascade
   add_foreign_key "wagers", "lines"
 end

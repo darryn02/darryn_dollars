@@ -1,6 +1,7 @@
 class Account < ApplicationRecord
   belongs_to :user
   has_many :wagers
+  has_many :payments
 
   def self.list_all
     Account.includes(:user, wagers: { line: { game: :contestants } }).map do |account|
@@ -22,10 +23,22 @@ class Account < ApplicationRecord
   end
 
   def compute_balance
+    wager_sum + payment_sum
+  end
+
+  def wager_sum
     if wagers.loaded?
       wagers.sum(&:net)
     else
       wagers.sum(:net)
+    end
+  end
+
+  def payment_sum
+    if payments.loaded?
+      payments.sum(&:amount)
+    else
+      payments.sum(:amount)
     end
   end
 
