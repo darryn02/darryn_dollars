@@ -36,10 +36,10 @@ class Wager < ApplicationRecord
   end
 
   def to_s
-    str = "[#{id.presence || "x"}]" \
-    " #{account if account.user.accounts.many?}" \
-    " #{line}" \
-    " for #{ActionController::Base.helpers.number_to_currency(amount)}"
+    str = "[#{id.presence || "x"}] " \
+    "#{account if account.user.accounts.many?} " \
+    "#{ActionController::Base.helpers.number_to_currency(amount)} " \
+    "#{line}"
 
     if valid?
       str.concat(" #{status} at #{placed_at.strftime("%-m/%-d %l:%M:%S%P")}")

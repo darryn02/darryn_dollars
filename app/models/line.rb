@@ -17,9 +17,9 @@ class Line < ApplicationRecord
   end
 
   def self.parse_scope(modifier)
-    if modifier.match?(/(first_half|first half|1st half|1h)/).present?
+    if modifier.match?(/(first_half|first half|1st half|1 half|1h)/).present?
       :first_half
-    elsif modifier.match?(/(second_half|second half|2nd half|2h|halftime|half time)/).present?
+    elsif modifier.match?(/(second_half|second half|2nd half|2 half|2h|halftime|half time)/).present?
       :second_half
     else
       :game
@@ -39,21 +39,41 @@ class Line < ApplicationRecord
   end
 
   def to_s
-    "#{competitor.present? ? competitor.abbreviation : game.short_matchup}" \
-    " #{kind if %w[over under].include?(kind)}" \
-    " #{value_string}" \
-    " #{"(#{odds}, #{scope})"}".squish
+    "#{competitor.present? ? competitor.abbreviation : game.short_matchup} " \
+    "#{kind_string(kind)}" \
+    "#{value_string(kind)}" \
+    " #{"(#{odds}#{scope_str(scope)})"}".squish
   end
 
   private
 
-  def value_string
-    if value < 0
+  def value_string(kind)
+    if %w[over under].include?(kind)
       value.to_s
-    elsif value > 0
-      "+#{value}"
     else
-      "PICK"
+      if value < 0
+        value.to_s
+      elsif value > 0
+        "+#{value}"
+      else
+        "PICK"
+      end
+    end
+  end
+
+  def kind_string(kind)
+    if kind == "over"
+      "O"
+    elsif kind == "under"
+      "U"
+    end
+  end
+
+  def scope_str(scope)
+    if scope == "first_half"
+      "1H"
+    elsif scope == "second_half"
+      "2H"
     end
   end
 end

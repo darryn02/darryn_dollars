@@ -48,19 +48,7 @@ class WagerParser
   end
 
   def extract_scope(str)
-    types = ["1st half", "first half", "1 half", "1h", "2nd half", "second half", "2half", "2 half", "2h", "halftime"]
-    scope = str.match(/(#{types.join("|")})/i)&.captures&.first.to_s
-    [parsed_scope(scope), str.sub(scope, "")]
-  end
-
-  def parsed_scope(raw_scope)
-    if ["1st half", "first half", "1 half", "1 half", "1h"].include?(raw_scope)
-      :first_half
-    elsif ["2nd half", "second half", "2half", "2 half", "2h", "halftime"].include?(raw_scope)
-      :second_half
-    else
-      :game
-    end
+    Line.parse_scope(str)
   end
 
   def extract_line(str)

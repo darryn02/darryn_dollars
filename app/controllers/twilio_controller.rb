@@ -145,9 +145,13 @@ class TwilioController < ApplicationController
     def format_totals
       if user.admin?
         total = 0
-        ScoreScraper.run
-        LineScorer.run
-        WagerScorer.run
+        if Wager.confirmed.exists?
+          if Line.pending.exists?
+            ScoreScraper.run
+            LineScorer.run
+          end
+          WagerScorer.run
+        end
 
         Account.
           includes(:wagers, :user).
@@ -173,14 +177,19 @@ class TwilioController < ApplicationController
     def format_help
       [
         "You can say:",
-        "- lines",
-        "- lines first half (or 1st half, 1h, etc)",
-        "- lines second half (or 2nd half, 2h, etc)",
-        "- bet slip (or simply 'slip' or 'bets')",
-        "- cancel <wager ID> (only within #{Wager::GRACE_PERIOD / 60} minutes)",
-        "- balance",
-        "- history",
-        "- usage (or tips, instructions, guide)"
+        "- 'lines'",
+        "- 'lines first half' (or 1st half, 1h, etc)",
+        "- 'lines second half' (or 2nd half, 2h, etc)",
+        "- 'bet slip' (or simply 'slip' or 'bets')",
+        "- 'cancel <wager ID>' (only within #{Wager::GRACE_PERIOD / 60} minutes)",
+        "- 'balance'",
+        "- 'history'",
+        "- 'usage' (or tips, instructions, guide) for this info",
+        "",
+        "- To bet, say things like 'NE -3 $100' or 'pats over 40 $50'.",
+        "- If you just want the latest line, you can say 'NE $100' or 'NE/NYJ under $100', etc",
+        "- To bet the first or second half, include a modifier like '1h' or '2nd half', 'halftime', etc."
+        "- The amount must always have a dollar sign. Team full names, nicknames, city, and abbreviations are valid"
       ].join("\n")
     end
 
