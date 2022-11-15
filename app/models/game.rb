@@ -8,7 +8,7 @@ class Game < ApplicationRecord
 
   def self.list_all
     Game.order(starts_at: :asc).map do |g|
-      "[#{g.id}] #{g.starts_at.strftime("%-m/%-d %l:%M%P")} #{g.matchup}"
+      "[#{g.id}] #{g.starts_at&.strftime("%-m/%-d %l:%M%P") || 'TBA'} #{g.matchup}"
     end
   end
 

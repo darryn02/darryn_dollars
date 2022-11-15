@@ -188,7 +188,7 @@ class TwilioController < ApplicationController
         "",
         "- To bet, say things like 'NE -3 $100' or 'pats over 40 $50'.",
         "- If you just want the latest line, you can say 'NE $100' or 'NE/NYJ under $100', etc",
-        "- To bet the first or second half, include a modifier like '1h' or '2nd half', 'halftime', etc."
+        "- To bet the first or second half, include a modifier like '1h' or '2nd half', 'halftime', etc.",
         "- The amount must always have a dollar sign. Team full names, nicknames, city, and abbreviations are valid"
       ].join("\n")
     end
