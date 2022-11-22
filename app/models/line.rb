@@ -42,7 +42,7 @@ class Line < ApplicationRecord
     "#{competitor.present? ? competitor.abbreviation : game.short_matchup} " \
     "#{kind_string(kind)}" \
     "#{value_string(kind)}" \
-    " #{"(#{odds}#{scope_str(scope)})"}".squish
+    " #{"(#{odds} #{scope_str(scope)})"}".squish
   end
 
   private
