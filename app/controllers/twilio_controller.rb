@@ -144,7 +144,6 @@ class TwilioController < ApplicationController
 
     def format_totals
       if user.admin?
-        total = 0
         if Wager.confirmed.exists?
           if Line.pending.exists?
             ScoreScraper.run
@@ -153,13 +152,16 @@ class TwilioController < ApplicationController
           WagerScorer.run
         end
 
+        total = 0
         Account.
           includes(:wagers, :user).
           map do |account|
-          total += account.balance
+          total -= account.balance
           "#{account.user.name}: #{format_currency(account.balance)}"
         end.join("\n").concat(
-          "\n\nTotal: #{format_currency(total)}"
+          "\n\nBook Balance: #{format_currency(total)}"
+        ).concat(
+          "\nBook Grand Total: #{format_currency(total + Payment.sum(:amount))}"
         )
       else
         "Nice try. Only admins can do that."
