@@ -27,9 +27,9 @@ class ScoreScraper
           team = competitor_element.css(".ScoreCell__TeamName").inner_text
           scores = competitor_element.css(".ScoreboardScoreCell_Linescores .ScoreboardScoreCell__Value").map(&:inner_text).map(&:to_i)
           competitor = Competitor.find_by_string(team)
-          contestant = Contestant.joins(:game).where(competitor: competitor).where("date_trunc('day', games.starts_at) = ?", date).first
-          if scores.present? && contestant.present?
-            contestant.update!(scores: scores)
+          contestant = Contestant.joins(:game).where(competitor: competitor).where("date_trunc('day', games.starts_at) = ?", date)
+          if scores.present? && contestant.any?
+            contestant.update_all(scores: scores, updated_at: Time.current)
           else
             Rails.logger.warn("Couldn't find #{scores.present? ? "contestant" : "scores"} for #{team} on #{date_str}")
           end
