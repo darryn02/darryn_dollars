@@ -1,5 +1,5 @@
 %h1 Games
-= simple_form_for BettingSlip.new do |f|
+= simple_form_for BetSlip.new do |f|
 
   - @games.each do |game|
     %h2= game.description
@@ -15,4 +15,3 @@
             %td= contestant.name
             %td= f.input :line_ids, as: :boolean, id: contestant.lines.point_spreads.latest.id, value: contestant.lines.point_spreads.latest.value
             %td= contestant.lines.over_unders.latest.value
-

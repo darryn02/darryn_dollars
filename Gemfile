@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "3.1.2"
+ruby "3.2.1"
 
 gem "autoprefixer-rails"
 gem "delayed_job_active_record"
@@ -9,8 +9,6 @@ gem 'haml-rails'
 gem "honeybadger"
 gem "jquery-rails"
 gem 'kaminari'
-gem 'newrelic-infinite_tracing'
-gem 'newrelic_rpm'
 gem 'nokogiri'
 gem "normalize-rails"
 gem "pg"
