@@ -1,0 +1,2 @@
+class BetSlip < ApplicationRecord
+end

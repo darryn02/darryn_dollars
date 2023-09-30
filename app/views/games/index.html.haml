@@ -1,17 +1,17 @@
 %h1 Games
-= simple_form_for BetSlip.new do |f|
-
-  - @games.each do |game|
+- @games.each do |game|
     %h2= game.description
     - game.contests.order(primary: :desc).each do |contest|
       %h3= contest.name
       %table
-        %tr
-          %th Team
-          %th Spread
-          %th Over/Under
-        - contest.contestants.each do |contestant|
+        %thead
           %tr
-            %td= contestant.name
-            %td= f.input :line_ids, as: :boolean, id: contestant.lines.point_spreads.latest.id, value: contestant.lines.point_spreads.latest.value
-            %td= contestant.lines.over_unders.latest.value
+            %th Team
+            %th Spread
+            %th Over/Under
+        %tbody
+          - contest.contestants.each.with_index do |contestant, i|
+            %tr
+              %td= contestant.name
+              %td= contestant.lines.point_spread.latest.value
+              %td= i % 2 == 0 ? "O #{contestant.lines.over.latest.value}" : "U #{contestant.lines.under.latest.value}"
