@@ -72,6 +72,10 @@ GEM
       execjs (~> 2)
     awesome_print (1.9.2)
     bindex (0.8.1)
+    bootstrap (5.3.1)
+      autoprefixer-rails (>= 9.1.0)
+      popper_js (>= 2.11.8, < 3)
+      sassc-rails (>= 2.0.0)
     builder (3.2.4)
     bullet (7.0.7)
       activesupport (>= 3.0.0)
@@ -149,6 +153,9 @@ GEM
     honeybadger (5.0.2)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
+    importmap-rails (1.2.1)
+      actionpack (>= 6.0.0)
+      railties (>= 6.0.0)
     jquery-rails (4.5.1)
       rails-dom-testing (>= 1, < 3)
       railties (>= 4.2.0)
@@ -204,6 +211,7 @@ GEM
     phony_rails (0.15.0)
       activesupport (>= 3.0)
       phony (>= 2.18.12)
+    popper_js (2.11.8)
     pry (0.14.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -290,8 +298,6 @@ GEM
     rspec-support (3.12.0)
     ruby2_keywords (0.0.5)
     rubyzip (2.3.2)
-    sass-rails (6.0.0)
-      sassc-rails (~> 2.1, >= 2.1.1)
     sassc (2.4.0)
       ffi (~> 1.9)
     sassc-rails (2.1.2)
@@ -376,6 +382,7 @@ PLATFORMS
 DEPENDENCIES
   autoprefixer-rails
   awesome_print
+  bootstrap
   bullet
   bundler-audit
   capybara-selenium
@@ -388,6 +395,7 @@ DEPENDENCIES
   haml-rails
   high_voltage
   honeybadger
+  importmap-rails
   jquery-rails
   kaminari
   launchy
@@ -407,7 +415,7 @@ DEPENDENCIES
   refills
   reform-rails
   rspec-rails
-  sass-rails
+  sassc-rails
   shoulda-matchers
   simple_form
   simplecov

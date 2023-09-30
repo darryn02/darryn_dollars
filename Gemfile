@@ -3,10 +3,12 @@ source "https://rubygems.org"
 ruby "3.2.1"
 
 gem "autoprefixer-rails"
+gem "bootstrap"
 gem "delayed_job_active_record"
 gem "flutie"
 gem 'haml-rails'
 gem "honeybadger"
+gem "importmap-rails"
 gem "jquery-rails"
 gem 'kaminari'
 gem 'nokogiri'
@@ -18,7 +20,7 @@ gem "rack-canonical-host"
 gem "rails", "~> 7.0.0"
 gem "reform-rails"
 gem "recipient_interceptor"
-gem "sass-rails"
+gem "sassc-rails"
 gem "simple_form"
 gem "skylight"
 gem "sprockets"
