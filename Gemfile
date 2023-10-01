@@ -22,7 +22,6 @@ gem "reform-rails"
 gem "recipient_interceptor"
 gem "sassc-rails"
 gem "simple_form"
-gem "skylight"
 gem "sprockets"
 gem "title"
 gem 'twilio-ruby'

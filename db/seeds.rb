@@ -33,3 +33,5 @@ Competitor.create!(sport: :nfl, nicknames: ['Zona', 'Cards'], abbreviation: 'ARI
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'LAR', region: 'Los Angeles', name: 'Rams')
 Competitor.create!(sport: :nfl, nicknames: ['Forty Niners', 'Forty-Niners', '9ers', 'Niners'], abbreviation: 'SF', region: 'San Francisco', name: '49ers')
 Competitor.create!(sport: :nfl, nicknames: ['Hawks'], abbreviation: 'SEA', region: 'Seattle', name: 'Seahawks')
+Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'NFC', region: 'NFC', name: 'NFC Conference')
+Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'AFC', region: 'AFC', name: 'AFC Conference')

@@ -1,5 +1,8 @@
 class GamesController < ApplicationController
   def index
-    @games = Game.unplayed.includes(contests: { contestants: :lines })
+    @games = Game.
+      wagerable.
+      includes(:competitors, lines: { contestant: :competitor }).
+      order(starts_at: :asc)
   end
 end

@@ -9,7 +9,7 @@ en:
   time:
     formats:
       default:
-        "%a, %b %-d, %Y at %r"
+        "%a, %b %-d, %Y at %l:%M%P"
       date:
         "%b %-d, %Y"
       short:

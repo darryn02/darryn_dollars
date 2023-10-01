@@ -18,7 +18,7 @@ threads(threads_count, threads_count)
 
 preload_app!
 
-rackup DefaultRackup
+#rackup DefaultRackup
 environment ENV.fetch("RACK_ENV", "development")
 
 on_worker_boot do

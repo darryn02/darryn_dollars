@@ -16,7 +16,11 @@
 </head>
 <body class="<%= body_class %>">
   <%= render "flashes" -%>
-  <%= yield %>
+  <nav class="navbar navbar-default navbar-fixed-bottom">
+    <div class="container">
+      <%= yield %>
+    </div>
+  </nav>
   <%= render "javascript" %>
   <%= render "css_overrides" %>
 </body>

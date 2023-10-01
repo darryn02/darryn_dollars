@@ -1,17 +1,23 @@
-%h1 Games
+%h1 Game Lines
 - @games.each do |game|
-    %h2= game.description
-    - game.contests.order(primary: :desc).each do |contest|
-      %h3= contest.name
-      %table
-        %thead
-          %tr
-            %th Team
-            %th Spread
-            %th Over/Under
-        %tbody
-          - contest.contestants.each.with_index do |contestant, i|
-            %tr
-              %td= contestant.name
-              %td= contestant.lines.point_spread.latest.value
-              %td= i % 2 == 0 ? "O #{contestant.lines.over.latest.value}" : "U #{contestant.lines.under.latest.value}"
+  - lines = game.lines.reject(&:hidden?).select(&:game?)
+  - lines.select(&:point_spread?).sort_by(&:created_at).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
+
+    %table{ class: "table table-bordered table-responsive" }
+      %thead
+        %tr
+          %th
+          %th Team
+          %th Spread
+          %th Over/Under
+      %tbody
+        %tr
+          %td= game.starts_at.strftime("%m/%-d/%Y")
+          %td= line1.contestant.competitor.abbreviation
+          %td= line1.value
+          %td= "O #{lines.select(&:over?).first.value}"
+        %tr
+          %td= game.starts_at.strftime("%l:%M%P")
+          %td= line2.contestant.competitor.abbreviation
+          %td= line2.value
+          %td= "U #{lines.select(&:under?).first.value}"
