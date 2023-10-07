@@ -10,14 +10,26 @@
   <%= javascript_importmap_tags %>
 </head>
 <body class="<%= body_class %>">
+  <nav class="navbar navbar-default" role="navigation">
+    <div class="navbar-header text-center">
+      <%= link_to "Darryn Dollars", root_path, class: "navbar-brand" %>
+    </div>
+  </nav>
+
   <%= render "flashes" %>
   <%= yield %>
   <nav class="navbar fixed-bottom bg-body-tertiary">
     <div class="container-fluid">
-      <%= link_to "Lines", games_path, class: "navbar-nav" %>
-      <%= link_to "Wager", edit_bet_slip_path, class: "navbar-nav" %>
-      <%= link_to "Bet Slip", bet_slip_path, class: "navbar-nav" %>
-      <%= link_to account_path, class: "navbar-nav" do %>
+      <%= link_to games_path, class: "navbar-nav main-nav" do %>
+        <i class = "bi bi-newspaper"></i>
+      <% end %>
+      <%= link_to new_bet_slip_path, class: "navbar-nav main-nav" do %>
+        <i class = "bi bi-currency-dollar"></i>
+      <% end %>
+      <%= link_to bet_slips_path, class: "navbar-nav main-nav" do %>
+        <i class = "bi bi-stickies"></i>
+      <% end %>
+      <%= link_to account_path, class: "navbar-nav main-nav" do %>
         <i class="bi bi-bank"></i>
       <% end %>
     </div>

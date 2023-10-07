@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   post 'twilio/sms'
   resources :games, only: [:index]
-  resource :bet_slip, only: [:edit, :update, :show]
+  resources :bet_slips, only: [:index, :new, :create, :show]
   resource :account, only: [:show]
   root to: 'games#index'
 end
