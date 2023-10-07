@@ -177,6 +177,7 @@ GEM
     kaminari-core (1.2.2)
     launchy (2.5.2)
       addressable (~> 2.8)
+    libv8-node (18.16.0.0)
     listen (3.8.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
@@ -193,6 +194,8 @@ GEM
     method_source (1.0.0)
     mini_mime (1.1.5)
     mini_portile2 (2.8.4)
+    mini_racer (0.8.0)
+      libv8-node (~> 18.16.0.0)
     minitest (5.20.0)
     net-imap (0.3.7)
       date
@@ -391,6 +394,7 @@ DEPENDENCIES
   database_cleaner
   delayed_job_active_record
   dotenv-rails
+  execjs
   factory_bot
   flutie
   formulaic
@@ -402,6 +406,7 @@ DEPENDENCIES
   kaminari
   launchy
   listen
+  mini_racer
   nokogiri
   normalize-rails
   pg

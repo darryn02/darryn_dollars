@@ -27,4 +27,5 @@ Rails.application.configure do
   config.i18n.raise_on_missing_translations = true
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
   config.action_mailer.default_url_options = { host: "localhost:3000" }
+  config.sass.inline_source_maps = true
 end

@@ -16,4 +16,6 @@ en:
         "%B %d"
 
   titles:
-    application: Darryn dollars
+    application: Darryn Dollars
+    games:
+      index: Current Lines

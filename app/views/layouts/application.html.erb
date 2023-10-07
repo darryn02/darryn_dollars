@@ -4,23 +4,25 @@
   <meta charset="utf-8" />
   <meta name="ROBOTS" content="NOODP" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <%#
-    Configure default and controller-, and view-specific titles in
-    config/locales/en.yml. For more see:
-    https://github.com/calebthompson/title#usage
-  %>
   <title><%= title %></title>
-  <%= stylesheet_link_tag :application, media: "all" %>
+  <%= stylesheet_link_tag :application, "data-turbo-track": "reload", media: "all" %>
   <%= csrf_meta_tags %>
-    <%= javascript_importmap_tags %>
+  <%= javascript_importmap_tags %>
 </head>
 <body class="<%= body_class %>">
-  <%= render "flashes" -%>
-  <nav class="navbar navbar-default navbar-fixed-bottom">
-    <div class="container">
-      <%= yield %>
+  <%= render "flashes" %>
+  <%= yield %>
+  <nav class="navbar fixed-bottom bg-body-tertiary">
+    <div class="container-fluid">
+      <%= link_to "Lines", games_path, class: "navbar-nav" %>
+      <%= link_to "Wager", edit_bet_slip_path, class: "navbar-nav" %>
+      <%= link_to "Bet Slip", bet_slip_path, class: "navbar-nav" %>
+      <%= link_to account_path, class: "navbar-nav" do %>
+        <i class="bi bi-bank"></i>
+      <% end %>
     </div>
   </nav>
+
   <%= render "javascript" %>
   <%= render "css_overrides" %>
 </body>
