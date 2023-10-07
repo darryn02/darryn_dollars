@@ -5,6 +5,7 @@ class Wager < ApplicationRecord
   GRACE_PERIOD = ENV.fetch("WAGER_GRACE_PERIOD_MINUTES", 2).to_i.minutes
 
   belongs_to :account
+  belongs_to :bet_slip
   belongs_to :line
   has_one :contestant, through: :line
 

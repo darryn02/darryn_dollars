@@ -1,6 +1,7 @@
 class Account < ApplicationRecord
   belongs_to :user
-  has_many :wagers
+  has_many :bet_slips
+  has_many :wagers, through: :bet_slips
   has_many :payments
 
   def self.list_all

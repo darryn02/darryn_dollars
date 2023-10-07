@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_24_135729) do
+ActiveRecord::Schema[7.0].define(version: 2023_10_07_064622) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -30,6 +30,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_24_135729) do
   create_table "bet_slips", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "account_id", null: false
+    t.index ["account_id"], name: "index_bet_slips_on_account_id"
   end
 
   create_table "competitors", id: :serial, force: :cascade do |t|
@@ -130,16 +132,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_24_135729) do
     t.decimal "net"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+    t.bigint "bet_slip_id", null: false
     t.index ["account_id"], name: "index_wagers_on_account_id"
+    t.index ["bet_slip_id"], name: "index_wagers_on_bet_slip_id"
     t.index ["line_id"], name: "index_wagers_on_line_id"
   end
 
   add_foreign_key "accounts", "users", on_delete: :cascade
+  add_foreign_key "bet_slips", "accounts", on_delete: :cascade
   add_foreign_key "contestants", "competitors"
   add_foreign_key "contestants", "games"
   add_foreign_key "lines", "contestants", on_delete: :nullify
   add_foreign_key "lines", "games", on_delete: :cascade
   add_foreign_key "payments", "accounts", on_delete: :cascade
   add_foreign_key "wagers", "accounts", on_delete: :cascade
+  add_foreign_key "wagers", "bet_slips", on_delete: :cascade
   add_foreign_key "wagers", "lines"
 end
