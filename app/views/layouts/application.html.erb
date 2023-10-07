@@ -20,18 +20,26 @@
   <%= yield %>
   <nav class="navbar fixed-bottom bg-body-tertiary">
     <div class="container-fluid">
-      <%= link_to games_path, class: "navbar-nav main-nav" do %>
-        <i class = "bi bi-newspaper"></i>
-      <% end %>
-      <%= link_to new_bet_slip_path, class: "navbar-nav main-nav" do %>
-        <i class = "bi bi-currency-dollar"></i>
-      <% end %>
-      <%= link_to bet_slips_path, class: "navbar-nav main-nav" do %>
-        <i class = "bi bi-stickies"></i>
-      <% end %>
-      <%= link_to account_path, class: "navbar-nav main-nav" do %>
-        <i class="bi bi-bank"></i>
-      <% end %>
+      <div class = "navbar-nav main-nav col-xs-3 text-center">
+        <%= link_to games_path do %>
+          <i class = "bi bi-newspaper"></i><br>Lines
+        <% end %>
+      </div>
+      <div class = "navbar-nav main-nav col-xs-3 text-center">
+        <%= link_to new_bet_slip_path do %>
+          <i class = "bi bi-currency-dollar"></i><br>Wager
+        <% end %>
+      </div>
+      <div class = "navbar-nav main-nav col-xs-3 text-center">
+        <%= link_to bet_slips_path do %>
+          <i class = "bi bi-stickies"></i><br>Bet Slip
+        <% end %>
+      </div>
+      <div class = "navbar-nav main-nav col-xs-3 text-center">
+        <%= link_to account_path do %>
+          <i class = "bi bi-bank"></i><br>Account
+        <% end %>
+      </div>
     </div>
   </nav>
 
