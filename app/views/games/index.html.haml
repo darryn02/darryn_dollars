@@ -14,10 +14,24 @@
         %tr
           %td= game.starts_at.strftime("%m/%-d/%Y")
           %td= line1.contestant.competitor.abbreviation
-          %td= line1.value
-          %td= "O #{lines.select(&:over?).first.value}"
+          %td.hover.bet-trigger
+            = link_to "#betOffcanvas-#{line1.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line1.id}" do
+              = line1.value.positive? ? "+#{line1.value}" : line1.value
+            = render "bet_form", line: line1, user: current_user
+          %td.hover.bet-trigger
+            - line = lines.select(&:over?).first
+            = render "bet_form", line: line, user: current_user
+            = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do
+              = "O #{line.value}"
         %tr
           %td= game.starts_at.strftime("%l:%M%P")
           %td= line2.contestant.competitor.abbreviation
-          %td= line2.value
-          %td= "U #{lines.select(&:under?).first.value}"
+          %td.hover.bet-trigger
+            = render "bet_form", line: line2, user: current_user
+            = link_to "#betOffcanvas-#{line2.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line2.id}" do
+              = line2.value.positive? ? "+#{line2.value}" : line2.value
+          %td.hover.bet-trigger
+            - line = lines.select(&:under?).first
+            = render "bet_form", line: line, user: current_user
+            = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do
+              = "U #{line.value}"
