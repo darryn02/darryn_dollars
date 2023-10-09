@@ -9,7 +9,10 @@ Rails.application.configure do
   config.consider_all_requests_local       = false
   config.action_controller.perform_caching = true
   config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present?
-  config.assets.js_compressor = Uglifier.new(harmony: true)
+  config.assets.configure do |env|
+    env.js_compressor  = :uglifier # or :closure, :yui
+    env.css_compressor = :sass   # or :yui
+  end
   config.assets.compile = false
   config.action_controller.asset_host = ENV.fetch("ASSET_HOST", ENV.fetch("APPLICATION_HOST"))
   config.log_level = :debug
