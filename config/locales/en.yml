@@ -1,4 +1,11 @@
 en:
+  activerecord:
+    errors:
+      models:
+        wager:
+          attributes:
+            amount:
+              greater_than_or_equal_to: "must be at least $%{count}"
   date:
     formats:
       default:

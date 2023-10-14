@@ -12,10 +12,47 @@ body .container.main {
   padding-bottom: 88px;
 }
 
+.navbar-brand {
+  color: #061A5C
+}
+
 .main-nav i {
   font-size: 2rem;
 }
 
 table td.hover:hover {
   background-color: rgba(0,0,0,.075);
+}
+
+.fade-in-down-out {
+  animation:
+    fade-in-down 1s ease,
+    fade-out 1.5s linear 5s forwards;
+}
+
+$flash-blue: #22648b;
+$flash-red: #a11a1a;
+
+// Spacing
+$base-spacing: 20px;
+$xxs-spacing: $base-spacing / 5;
+$xs-spacing: $base-spacing / 4;
+$small-spacing: $base-spacing / 2;
+$medium-small-spacing: $base-spacing * 0.75;
+$medium-spacing: $base-spacing * 1.5;
+$large-spacing: $base-spacing * 2;
+$largest-spacing: $base-spacing * 5;
+
+// Font Weights
+$normal-font-weight: 400;
+$bold-font-weight: 700;
+
+.flashes {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  text-align: center;
+  font-weight: $bold-font-weight;
+  margin: 0 auto $large-spacing;
+  z-index: 1000;
 }

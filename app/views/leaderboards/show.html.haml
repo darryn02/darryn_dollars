@@ -1,0 +1,12 @@
+%h1 Leaderboard
+
+%table.table.table-striped.table-success
+  %thead.table-light
+    %tr
+      %td #
+      %td Name
+  %tbody.table-group-divider
+    - @accounts.each_with_index do |account, index|
+      %tr
+        %td= index
+        %td= account.qualified_name

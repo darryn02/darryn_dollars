@@ -12,11 +12,11 @@
 <body class="<%= body_class %>">
   <nav class="navbar navbar-default bg-body-tertiary" role="navigation">
     <div class="container-fluid">
-      <div class="navbar-brand">
+      <div class="navbar-brand d-flex align-items-center fs-2">
         <%= link_to root_path do %>
           <% image_tag "logo.png", class: "d-inline-block align-text-top", style: 'height:50px;width:100px;' %>
         <% end %>
-        Darryn Dollars
+        arryn Dollars
       </div>
     </div>
   </nav>
@@ -33,18 +33,18 @@
         <% end %>
       </div>
       <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to new_bet_slip_path do %>
-          <i class = "bi bi-currency-dollar"></i><br>Wager
+        <%= link_to bet_slip_wagers_path do %>
+          <i class = "bi bi-receipt"></i><br>Bet Slip
         <% end %>
       </div>
       <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to bet_slips_path do %>
-          <i class = "bi bi-stickies"></i><br>Bet Slip
+        <%= link_to history_wagers_path do %>
+          <i class = "bi bi-clock-history"></i><br>History
         <% end %>
       </div>
       <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to account_path do %>
-          <i class = "bi bi-bank"></i><br>Account
+        <%= link_to leaderboard_path do %>
+          <i class = "bi bi-trophy-fill"></i><br>Leaderboard
         <% end %>
       </div>
     </div>

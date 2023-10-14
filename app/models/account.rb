@@ -19,12 +19,20 @@ class Account < ApplicationRecord
     nickname || name
   end
 
+  def qualified_name
+    if to_s.downcase.strip == "default"
+      user.name
+    else
+      "#{user.name} (#{to_s})"
+    end
+  end
+
   def balance
     @balance ||= compute_balance
   end
 
   def compute_balance
-    wager_sum + payment_sum
+    initial_balance + wager_sum + payment_sum
   end
 
   def wager_sum

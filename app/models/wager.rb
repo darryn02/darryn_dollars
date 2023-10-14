@@ -9,12 +9,14 @@ class Wager < ApplicationRecord
   belongs_to :line
   has_one :contestant, through: :line
 
-  enum status: { confirmed: 0, win: 1, loss: 2, push: 3, canceled: 4 }
+  enum status: { pending: 0, confirmed: 1, win: 2, loss: 3, push: 4, canceled: 5 }
 
   validates :amount, presence: true, numericality: { greater_than_or_equal_to: DEFAULT_MIN_WAGER }
   validates :line, presence: true
+  validates :account, presence: true
 
   before_save :update_net
+  before_validation :set_placed_at
 
   def self.historical
     where(status: [:win, :loss, :push])
@@ -38,24 +40,25 @@ class Wager < ApplicationRecord
 
   def to_s
     str = "[#{id.presence || "x"}] " \
-    "#{account if account.user.accounts.many?} " \
-    "#{ActionController::Base.helpers.number_to_currency(amount)} " \
-    "#{line}"
+      "#{account if account.user.accounts.many?} " \
+      "#{ActionController::Base.helpers.number_to_currency(amount)} " \
+      "#{line}".
+      squish
+  end
 
-    if valid?
-      str.concat(" #{status} at #{placed_at.strftime("%-m/%-d %l:%M:%S%P")}")
-    else
-      str.concat(" invalid, min wager is #{DEFAULT_MIN_WAGER}")
-    end
-
-    str.squish
+  def potential_profit
+    line.payout(amount)
   end
 
   private
 
   def update_net
-    return self.net = line.payout(amount) if win?
+    return self.net = potential_profit if win?
     return self.net = -amount if loss?
     self.net = 0
+  end
+
+  def set_placed_at
+    self.placed_at = Time.now
   end
 end

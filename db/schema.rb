@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_08_050515) do
+ActiveRecord::Schema[7.0].define(version: 2023_10_14_044003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -22,6 +22,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_08_050515) do
     t.decimal "credit_limit", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "initial_balance", default: "0.0", null: false
+    t.boolean "leaderboard_visible", default: false, null: false
     t.index ["name"], name: "index_accounts_on_name"
     t.index ["nickname"], name: "index_accounts_on_nickname"
     t.index ["user_id"], name: "index_accounts_on_user_id"
@@ -31,6 +33,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_08_050515) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "account_id", null: false
+    t.integer "status", default: 0, null: false
     t.index ["account_id"], name: "index_bet_slips_on_account_id"
   end
 

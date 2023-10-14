@@ -1,0 +1,8 @@
+- if @error.present?
+  :plain
+    window.showErrorFlash("#{j @error }");
+    $("#betOffcanvas-#{ @line_id }").offcanvas('hide');
+- elsif @notice.present?
+  :plain
+    window.showSuccessFlash("#{ j @notice }");
+    $("#betOffcanvas-#{ @line_id }").offcanvas('hide');

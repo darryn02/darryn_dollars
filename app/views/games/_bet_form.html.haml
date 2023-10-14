@@ -5,7 +5,7 @@
       %button.btn-close{ data: { bs_dismiss: "offcanvas" }, "aria-label" => "Close" }
     .offcanvas-body
       .bet-form.d-flex
-        = simple_form_for(Wager.new) do |f|
+        = simple_form_for(Wager.new(line_id: line.id), remote: true) do |f|
           = f.input :line_id, as: :hidden, value: line.id
 
           .row.mb-1
@@ -13,10 +13,10 @@
               %h6= line
           .row.mb-1
             .col
-              - if user.accounts.many?
-                = f.input :account, as: :select, collection: user.accounts
-              - else
-                = f.input :account, as: :hidden, value: user.accounts.first.id
+              -# if user.accounts.many?
+              = f.input :account_id, collection: user.accounts, include_blank: false
+              -# else
+                =# f.hidden_field :account_id, value: user.accounts.first.id
           .row.mb-1
             .col
               = f.input :amount, as: :string, input_html: { class: "js-wager-amount-bet", data: { type: "currency", odds: "#{line.odds}" } }

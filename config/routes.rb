@@ -2,8 +2,15 @@ Rails.application.routes.draw do
   devise_for :users
   post 'twilio/sms'
   resources :games, only: [:index]
-  resources :wagers, only: [:create, :update, :destroy]
-  resources :bet_slips, only: [:index, :new, :create, :show]
+  resources :lines, only: [:index]
+  resources :wagers, only: [:create, :update, :destroy] do
+    collection do
+      get :bet_slip
+      get :history
+    end
+  end
+  resources :bet_slips, only: [:index, :show, :update, :destroy]
+  resource :leaderboard, only: [:show]
   resource :account, only: [:show]
   root to: 'games#index'
 end
