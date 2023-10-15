@@ -14,6 +14,27 @@ class Wager < ApplicationRecord
   validates :amount, presence: true, numericality: { greater_than_or_equal_to: DEFAULT_MIN_WAGER }
   validates :line, presence: true
   validates :account, presence: true
+  validate :game_has_not_started
+  validate :line_must_be_active
+  validate :account_has_sufficient_credit
+
+  def game_has_not_started
+    if (line.game? || line.first_half?) && line.game.starts_at.past?
+      errors.add(:line, "has expired, game is underway")
+    end
+  end
+
+  def line_must_be_active
+    if line.where(hidden: true)
+      errors.add(:line, "has moved")
+    end
+  end
+
+  def account_has_sufficient_credit
+    if account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
+      errors.add(:accout, "has insufficient credit")
+    end
+  end
 
   before_save :update_net
   before_validation :set_placed_at

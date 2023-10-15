@@ -1,16 +1,13 @@
 .container
   .offcanvas.offcanvas-bottom{ id: "betOffcanvas-#{line.id}", tabindex: "-1", "aria-labelledby" => "betOffcanvasLabel-#{line.id}" }
     .offcanvas-header
-      %h4.offcanvas-title{ id: "betOffcanvasLabel-#{line.id}" } Place a Bet
+      %h4.offcanvas-title{ id: "betOffcanvasLabel-#{line.id}" }= line
       %button.btn-close{ data: { bs_dismiss: "offcanvas" }, "aria-label" => "Close" }
     .offcanvas-body
       .bet-form.d-flex
         = simple_form_for(Wager.new(line_id: line.id), remote: true) do |f|
           = f.input :line_id, as: :hidden, value: line.id
 
-          .row.mb-1
-            .col
-              %h6= line
           .row.mb-1
             .col
               - if user.accounts.many?

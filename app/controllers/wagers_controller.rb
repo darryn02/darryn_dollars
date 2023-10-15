@@ -44,10 +44,15 @@ class WagersController < ApplicationController
     if @wagers.size.zero?
       redirect_to bet_slip_wagers_path, error: "No pending wagers to confirm."
     else
+      errors = []
       @wagers.each do |wager|
-        wager.confirmed!
+        begin
+          wager.confirmed!
+        rescue ActiveRecord::RecordInvalid => e
+          errors << "#{wager}: #{e.message.sub('Validation failed:', '')}"
+        end
       end
-      redirect_to bet_slip_wagers_path, notice: "#{@wagers.size} wagers confirmed!"
+      redirect_to bet_slip_wagers_path, notice: (["#{@wagers.size - errors.size} wagers confirmed."] + errors).join("<br>")
     end
   end
 

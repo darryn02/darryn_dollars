@@ -1,0 +1,51 @@
+%h1.pt-3 Lines
+
+%ul.nav.nav-tabs
+  %li.nav-item
+    = link_to "Game", lines_path, class: "nav-link #{'active' if @scope == :game}", "aria-current" => "page"
+  %li.nav-item
+    = link_to "First Half", lines_path(scope: "first_half"), class: "nav-link #{'active' if @scope == :first_half}", "aria-current" => "page"
+  %li.nav-item
+    = link_to "Second Half", lines_path(scope: "second_half"), class: "nav-link second-half-lines #{'active' if @scope == :second_half}", "aria-current" => "page"
+
+- if @lines_by_game.count.zero?
+  .blank-state.blank-state-lg
+    %i.bi.bi-emoji-frown
+    %h2 No #{@scope.to_s.titleize} Lines Currently Available
+    %p Please check back later
+- else
+  - @lines_by_game.each do |game, lines|
+    - lines.select(&:point_spread?).sort_by(&:created_at).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
+
+      %table{ class: "table table-responsive" }
+        %thead
+          %tr
+            %th
+            %th Team
+            %th Spread
+            %th Over/Under
+        %tbody
+          %tr
+            %td= game.starts_at.strftime("%m/%-d/%Y")
+            %td= line1.contestant.competitor.abbreviation
+            %td.bet-trigger
+              = link_to "#betOffcanvas-#{line1.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line1.id}" do
+                = line1.value.positive? ? "+#{line1.value}" : line1.value
+              = render "bet_form", line: line1, user: current_user
+            %td.bet-trigger
+              - line = lines.select(&:over?).first
+              = render "bet_form", line: line, user: current_user
+              = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do
+                = "O #{line.value}"
+          %tr
+            %td= game.starts_at.strftime("%l:%M%P")
+            %td= line2.contestant.competitor.abbreviation
+            %td.bet-trigger
+              = render "bet_form", line: line2, user: current_user
+              = link_to "#betOffcanvas-#{line2.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line2.id}" do
+                = line2.value.positive? ? "+#{line2.value}" : line2.value
+            %td.bet-trigger
+              - line = lines.select(&:under?).first
+              = render "bet_form", line: line, user: current_user
+              = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do
+                = "U #{line.value}"

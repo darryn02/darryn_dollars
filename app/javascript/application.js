@@ -148,3 +148,13 @@ function cleanUp() {
 
 window.showSuccessFlash = showSuccessFlash;
 window.showErrorFlash = showErrorFlash;
+
+//
+// Spinner overlay
+//
+
+
+$("a.second-half-lines").on("click", function() {
+  $("div.spanner").addClass("show");
+  $("div.overlay").addClass("show");
+});
