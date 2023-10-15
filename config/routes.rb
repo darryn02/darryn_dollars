@@ -13,6 +13,6 @@ Rails.application.routes.draw do
   end
   resources :bet_slips, only: [:index, :show, :update, :destroy]
   resource :leaderboard, only: [:show]
-  resource :account, only: [:show]
+  resource :account, only: [:show, :update]
   root to: 'lines#index'
 end

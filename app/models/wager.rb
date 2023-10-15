@@ -78,7 +78,7 @@ class Wager < ApplicationRecord
   end
 
   def account_has_sufficient_credit
-    unless account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
+    if account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
       errors.add(:accout, "has insufficient credit")
     end
   end

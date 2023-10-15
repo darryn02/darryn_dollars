@@ -1,15 +1,24 @@
 %h1.pt-3 Leaderboard
-
-%table.table.table-striped
-  %thead.table-light
-    %tr
-      %td #
-      %td Name
-  %tbody.table-group-divider
-    - @accounts.each_with_index do |account, index|
+- if current_user.accounts.where(leaderboard_visible: true).any?
+  %table.table.table-striped
+    %thead.table-light
       %tr
-        - if index == 0
-          %td.bi.bi-trophy
-        - else
-          %td= index + 1
-        %td= account.qualified_name
+        %td #
+        %td Name
+    %tbody.table-group-divider
+      - @accounts.each_with_index do |account, index|
+        %tr
+          - if index == 0
+            %td.bi.bi-trophy
+          - else
+            %td= index + 1
+          %td= account.qualified_name
+- else
+  .blank-state.blank-state-lg
+    %i.bi.bi-emoji-frown
+    %h2 Pay to Play!
+    %p If you want to see the leaderboard, you need to agree to be included in it. Don't worry, no amounts will be shown. :-)
+    = link_to "Include My Accounts and Show Me the Leaders!",
+      account_path(current_user.accounts.first),
+      method: :put,
+      class: "btn btn-primary"
