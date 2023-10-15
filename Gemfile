@@ -4,7 +4,7 @@ ruby "3.2.1"
 
 gem "autoprefixer-rails"
 gem "bootstrap"
-gem "compass"
+gem "compass-rails"
 gem "delayed_job_active_record"
 gem "devise"
 gem "flutie"
