@@ -23,7 +23,7 @@ class Account < ApplicationRecord
     if to_s.downcase.strip == "default"
       user.name
     else
-      "#{user.name} (#{to_s})"
+      "#{user.name} #{to_s.present? ? "(#{to_s})" : ''}".squish
     end
   end
 

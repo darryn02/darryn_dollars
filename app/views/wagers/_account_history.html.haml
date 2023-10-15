@@ -28,5 +28,7 @@
           .text-success= "Won: #{currency(wager.net)}"
         - elsif wager.loss?
           .text-danger= "Loss: #{currency(wager.net)}"
-        - else
+        - elsif wager.push?
           .text-secondary= "Push"
+        - else
+          .text-secondary= "Pending"

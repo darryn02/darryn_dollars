@@ -14,7 +14,7 @@ class WagersController < ApplicationController
   def history
     @wagers_by_account = current_user.
       wagers.
-      #where.not(status: [:pending, :confirmed]).
+      where.not(status: [:pending, :canceled]).
       order(created_at: :desc).
       includes(:account, :line, :contestant).
       group_by(&:account)
