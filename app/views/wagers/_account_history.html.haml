@@ -1,6 +1,13 @@
 .card.text-bg-primary{ style: "width: 100%;" }
   .card-body
-    %h5.card-title= "Balance: #{currency(account.balance)}"
+    - utilization = [((-1 * account.balance + account.liabilities) / account.credit_limit * 100).round, 0].max
+    .card-title
+      %h4.mb-1
+        Balance:
+        %span{ class: (account.balance.negative? ? "text-danger" : "text-success") }= currency(account.balance)
+        - if account.wagers.confirmed.any?
+          %span.fw-lighter= "(#{currency(account.liabilities)} in play)"
+      %h6= "Credit Limit: #{currency(account.credit_limit)} (#{utilization}%)"
     %p.card-text
       .float-start
         Starting Balance: #{currency(account.initial_balance)}
