@@ -5,7 +5,7 @@ import "popper"
 import "bootstrap"
 
 $(function() {
-  $(".bet-form .js-wager-amount-bet").on("input", function() {
+  $(".bet-form .js-wager-amount-bet").on("change", function() {
     const $this = $(this);
     const odds = 100.0 / parseFloat($this.data("odds"));
     const amountBet = parseFloat($this.val().replace("$", ""));
@@ -17,7 +17,7 @@ $(function() {
     }
   });
 
-  $(".bet-form .js-wager-to-win").on("input", function() {
+  $(".bet-form .js-wager-to-win").on("change", function() {
     const $this = $(this);
     const odds = 100.0 / parseFloat($this.data("odds"));
     const toWin = parseFloat($this.val().replace("$", ""));

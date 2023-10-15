@@ -4,4 +4,8 @@
 - elsif @notice.present?
   :plain
     window.showSuccessFlash("#{ j @notice }");
-    $("#wager-#{ @wager.id }").remove();
+    var pendingWagers = $("#pending-wager-18").closest(".pending-bet-slip").find("ul li").length;
+    if(pendingWagers == 1)
+      $("#pending-wager-18").closest(".pending-bet-slip").remove();
+    else
+      $("#pending-wager-#{ @wager.id }").remove();

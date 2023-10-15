@@ -6,7 +6,7 @@ class LinesController < ApplicationController
       active.
       send(scope).
       joins(:game).
-      # merge(Game.wagerable).
+      merge(Game.wagerable).
       references(:game).
       includes(:competitor).
       order("games.starts_at").
