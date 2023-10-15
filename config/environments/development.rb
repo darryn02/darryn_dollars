@@ -32,4 +32,5 @@ Rails.application.configure do
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
   config.action_mailer.default_url_options = { host: "localhost:3000" }
   config.sass.inline_source_maps = true
+  config.hosts << "fd62-73-167-77-116.ngrok-free.app"
 end
