@@ -5,7 +5,7 @@ import "popper"
 import "bootstrap"
 
 $(function() {
-  $(".bet-form .js-wager-amount-bet").on("change", function() {
+  $(".bet-form .js-wager-amount-bet").on("input", function() {
     const $this = $(this);
     const odds = 100.0 / parseFloat($this.data("odds"));
     const amountBet = parseFloat($this.val().replace("$", ""));
@@ -13,11 +13,11 @@ $(function() {
       var toWin = odds < 0 ? amountBet * odds : amountBet / odds;
       var otherInput = $this.closest(".row").find("input.js-wager-to-win").first();
       otherInput.val(roundToTwo(toWin));
-      otherInput.trigger("blur");
+      formatCurrency(otherInput);
     }
   });
 
-  $(".bet-form .js-wager-to-win").on("change", function() {
+  $(".bet-form .js-wager-to-win").on("input", function() {
     const $this = $(this);
     const odds = 100.0 / parseFloat($this.data("odds"));
     const toWin = parseFloat($this.val().replace("$", ""));
@@ -26,7 +26,7 @@ $(function() {
       var amountBet = odds < 0 ? toWin / odds : toWin * odds;
       var otherInput = $this.closest(".row").find("input.js-wager-amount-bet").first();
       otherInput.val(roundToTwo(amountBet));
-      otherInput.trigger("blur");
+      formatCurrency(otherInput);
     }
   });
 });
