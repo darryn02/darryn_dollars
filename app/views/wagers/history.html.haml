@@ -11,4 +11,11 @@
         .tab-pane.fade.show{ id: "account-#{account.id}-tab-pane", class: (index.zero? ? "active" : ""), role: "tabpanel", "aria-labelledby" => "account-#{account.id}-tab", tabindex: "0" }
           = render "account_history", account: account
   - else
-    = render "account_history", account: @wagers_by_account.keys.first
+    - account = @wagers_by_account.keys.first
+    - if account.present?
+      = render "account_history", account: account
+    - else
+      .blank-state.blank-state-lg
+        %i.bi.bi-emoji-frown
+        %h2 Nothing to see here
+        %p Come bacm after you've won or lost something.
