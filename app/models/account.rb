@@ -51,6 +51,22 @@ class Account < ApplicationRecord
     end
   end
 
+  def win_sum
+    if wagers.loaded?
+      wagers.select(&:win?).sum(&:amount)
+    else
+      wagers.win.sum(:amount)
+    end
+  end
+
+  def lose_sum
+    if wagers.loaded?
+      wagers.select(&loss?).sum(&:amount)
+    else
+      wagers.loss.sum(:amount)
+    end
+  end
+
   def liabilities
     if wagers.loaded?
       wagers.confirmed.sum(&:amount)

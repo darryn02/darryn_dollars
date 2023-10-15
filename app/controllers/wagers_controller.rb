@@ -8,16 +8,16 @@ class WagersController < ApplicationController
       group_by { |wager| [wager.status, wager.account] }.
       map { |(status, account), wagers|
         BetSlipViewModel.new(status, account, wagers)
-      }.sort_by { |bet_slip| [bet_slip.status.to_i, bet_slip.account.name.to_s] }.
-      reverse
+      }.sort_by(&method(:bet_slip_sort_order))
   end
 
   def history
-    @wagers = current_user.
+    @wagers_by_account = current_user.
       wagers.
       #where.not(status: [:pending, :confirmed]).
       order(created_at: :desc).
-      includes(:account, :line, :contestant)
+      includes(:account, :line, :contestant).
+      group_by(&:account)
   end
 
   def create
@@ -36,6 +36,28 @@ class WagersController < ApplicationController
       @notice = "Wager #{@wager.id} has been cancelled."
     else
       @error = "Confirmed wagers cannot be cancelled.".html_safe
+    end
+  end
+
+  def confirm_pending
+    @wagers = current_user.wagers.pending
+    if @wagers.size.zero?
+      redirect_to bet_slip_wagers_path, error: "No pending wagers to confirm."
+    else
+      @wagers.each do |wager|
+        wager.confirmed!
+      end
+      redirect_to bet_slip_wagers_path, notice: "#{@wagers.size} wagers confirmed!"
+    end
+  end
+
+  def cancel_pending
+    @wagers = current_user.wagers.pending
+    if @wagers.size.zero?
+      redirect_to bet_slip_wagers_path, error: "No pending wagers to cancel."
+    else
+      @wagers.destroy_all
+      redirect_to bet_slip_wagers_path, notice: "#{@wagers.size} wagers cancelled"
     end
   end
 
@@ -69,5 +91,12 @@ class WagersController < ApplicationController
 
   def sanitize_params
     params[:wager][:amount] = params[:wager][:amount].gsub(/[\$\,]/, "")
+  end
+
+  def bet_slip_sort_order(bet_slip)
+    [
+      bet_slip.status == "pending" ? 0 : 1,
+      bet_slip.account.name.to_s
+    ]
   end
 end

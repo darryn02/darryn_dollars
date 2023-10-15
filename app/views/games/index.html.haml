@@ -1,9 +1,9 @@
-%h1 Game Lines
+%h1.pt-3 Game Lines
 - @games.each do |game|
   - lines = game.lines.reject(&:hidden?).select(&:game?)
   - lines.select(&:point_spread?).sort_by(&:created_at).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
 
-    %table{ class: "table table-bordered table-responsive" }
+    %table{ class: "table table-responsive" }
       %thead
         %tr
           %th
@@ -14,11 +14,11 @@
         %tr
           %td= game.starts_at.strftime("%m/%-d/%Y")
           %td= line1.contestant.competitor.abbreviation
-          %td.hover.bet-trigger
+          %td.bet-trigger
             = link_to "#betOffcanvas-#{line1.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line1.id}" do
               = line1.value.positive? ? "+#{line1.value}" : line1.value
             = render "bet_form", line: line1, user: current_user
-          %td.hover.bet-trigger
+          %td.bet-trigger
             - line = lines.select(&:over?).first
             = render "bet_form", line: line, user: current_user
             = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do
@@ -26,11 +26,11 @@
         %tr
           %td= game.starts_at.strftime("%l:%M%P")
           %td= line2.contestant.competitor.abbreviation
-          %td.hover.bet-trigger
+          %td.bet-trigger
             = render "bet_form", line: line2, user: current_user
             = link_to "#betOffcanvas-#{line2.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line2.id}" do
               = line2.value.positive? ? "+#{line2.value}" : line2.value
-          %td.hover.bet-trigger
+          %td.bet-trigger
             - line = lines.select(&:under?).first
             = render "bet_form", line: line, user: current_user
             = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do

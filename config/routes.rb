@@ -7,6 +7,8 @@ Rails.application.routes.draw do
     collection do
       get :bet_slip
       get :history
+      post :confirm_pending
+      delete :cancel_pending
     end
   end
   resources :bet_slips, only: [:index, :show, :update, :destroy]
