@@ -4,19 +4,15 @@ class ScoreScraper
   end
 
   def run(week = nil, season = nil)
-    require 'webdrivers/chromedriver'
+    require 'open-uri'
 
-    browser = Watir::Browser.new
     raw_week = ((DateTime.current  - DateTime.new(2023, 9, 13)) / 7.0).ceil
     week = (raw_week % 18 + 1) if week.nil?
     season = raw_week / 18 + 2 if season.nil?
     url = "https://www.espn.com/nfl/scoreboard/_/week/#{week}/year/2023/seasontype/#{season}"
-    browser.goto(url)
+    document = Nokogiri::HTML.parse(URI.open(url))
 
-    js_doc ||= browser.element(css: "div.PageLayout__Main").wait_until(timeout: 5, &:present?)
-    page = Nokogiri::HTML(js_doc.inner_html)
-    game_modules = page.css("section.gameModules")
-
+    game_modules = document.css("div.PageLayout__Main section.gameModules")
     game_modules.each do |game_module|
 
       date_str = game_module.css("header .Card__Header__Title").inner_text
@@ -37,8 +33,6 @@ class ScoreScraper
           end
         end
       end
-    ensure
-      browser&.close
     end
   end
 end
