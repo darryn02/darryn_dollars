@@ -6,6 +6,6 @@
     window.showSuccessFlash("#{ j @notice }");
     var pendingWagers = $("#pending-wager-#{ @wager.id }").closest(".pending-bet-slip").find("ul li").length;
     if(pendingWagers == 1)
-      $("#pending-wager-18").closest(".pending-bet-slip").remove();
+      $("#pending-wager-#{ @wager.id }").closest(".pending-bet-slip").remove();
     else
       $("#pending-wager-#{ @wager.id }").remove();
