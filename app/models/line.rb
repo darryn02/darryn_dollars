@@ -26,6 +26,10 @@ class Line < ApplicationRecord
     end
   end
 
+  def active?
+    !hidden
+  end
+
   def create_line_change!(properties = {})
 
   end

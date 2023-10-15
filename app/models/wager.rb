@@ -25,7 +25,7 @@ class Wager < ApplicationRecord
   end
 
   def line_must_be_active
-    if line.where(hidden: true)
+    if line.hidden?
       errors.add(:line, "has moved")
     end
   end
