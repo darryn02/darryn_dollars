@@ -18,24 +18,6 @@ class Wager < ApplicationRecord
   validate :line_must_be_active
   validate :account_has_sufficient_credit
 
-  def game_has_not_started
-    if (line.game? || line.first_half?) && line.game.starts_at.past?
-      errors.add(:line, "has expired, game is underway")
-    end
-  end
-
-  def line_must_be_active
-    if line.hidden?
-      errors.add(:line, "has moved")
-    end
-  end
-
-  def account_has_sufficient_credit
-    if account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
-      errors.add(:accout, "has insufficient credit")
-    end
-  end
-
   before_save :update_net
   before_validation :set_placed_at
 
@@ -80,5 +62,32 @@ class Wager < ApplicationRecord
 
   def set_placed_at
     self.placed_at = Time.now
+  end
+
+
+  def game_has_not_started
+    if (line.game? || line.first_half?) && line.game.starts_at.past?
+      errors.add(:line, "has expired, past game start time")
+    end
+  end
+
+  def line_must_be_active
+    if line.hidden?
+      errors.add(:line, "has moved")
+    end
+  end
+
+  def account_has_sufficient_credit
+    unless account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
+      errors.add(:accout, "has insufficient credit")
+    end
+  end
+
+  def gross_up(amount, line)
+    if %w[point_spread over under].exclude?(line.kind)
+      amount
+    elsif line.odds == -110
+      1.1 * amount
+    end
   end
 end
