@@ -7,15 +7,15 @@ class ScoreScraper
     require 'webdrivers/chromedriver'
 
     browser = Watir::Browser.new
-    raw_week = ((DateTime.current  - DateTime.new(2022, 9, 15)) / 7.0).ceil
+    raw_week = ((DateTime.current  - DateTime.new(2023, 9, 13)) / 7.0).ceil
     week = (raw_week % 18 + 1) if week.nil?
     season = raw_week / 18 + 2 if season.nil?
-    url = "https://www.espn.com/nfl/scoreboard/_/week/#{week}/year/2022/seasontype/#{season}"
+    url = "https://www.espn.com/nfl/scoreboard/_/week/#{week}/year/2023/seasontype/#{season}"
     browser.goto(url)
 
     js_doc ||= browser.element(css: "div.PageLayout__Main").wait_until(timeout: 5, &:present?)
     page = Nokogiri::HTML(js_doc.inner_html)
-    game_modules = page.css("section.gameModules")    
+    game_modules = page.css("section.gameModules")
 
     game_modules.each do |game_module|
 
@@ -36,7 +36,7 @@ class ScoreScraper
             Rails.logger.warn("Couldn't find #{scores.present? ? "contestant" : "scores"} for #{team} on #{date_str}")
           end
         end
-      end      
+      end
     ensure
       browser&.close
     end
