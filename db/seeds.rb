@@ -1,5 +1,5 @@
 user = User.create!(name: 'The Book', email: "darryn.campbell@gmail.com", mobile: "+16179218408", admin: true)
-Account.create!(user: user, name: "Default", credit_limit: 2000)
+Account.create!(user: user, credit_limit: 2000)
 
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'BUF', region: 'Buffalo', name: 'Bills')
 Competitor.create!(sport: :nfl, nicknames: [], abbreviation: 'MIA', region: 'Miami', name: 'Dolphins')

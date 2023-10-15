@@ -13,10 +13,10 @@
               %h6= line
           .row.mb-1
             .col
-              -# if user.accounts.many?
-              = f.input :account_id, collection: user.accounts, include_blank: false
-              -# else
-                =# f.hidden_field :account_id, value: user.accounts.first.id
+              - if user.accounts.many?
+                = f.input :account_id, collection: user.accounts, include_blank: false
+              - else
+                = f.hidden_field :account_id, value: user.accounts.first.id
           .row.mb-1
             .col
               = f.input :amount, as: :string, input_html: { class: "js-wager-amount-bet", data: { type: "currency", odds: "#{line.odds}" } }

@@ -16,7 +16,7 @@ class Account < ApplicationRecord
   end
 
   def to_s
-    nickname || name
+    (nickname || name).to_s
   end
 
   def qualified_name

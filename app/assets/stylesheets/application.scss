@@ -5,7 +5,6 @@
 @import "base/base";
 @import "refills/flashes";
 
-@import "bootstrap";
 @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css");
 
 body .container.main {
@@ -14,6 +13,18 @@ body .container.main {
 
 .navbar-brand {
   color: #061A5C
+}
+
+.history .card-body {
+  background-color: $dark-blue;
+}
+
+.bg-theme-2 {
+  background-color: $theme-primary-2;
+}
+
+.bg-theme-3 {
+  background-color: $theme-primary-3;
 }
 
 .main-nav i {

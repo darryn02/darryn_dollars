@@ -1,12 +1,15 @@
 class WagersController < ApplicationController
   def bet_slip
-    @pending_bet_slip = current_user.accounts.first.bet_slips.pending.sole
-    @pending_wagers, @confirmed_wagers = current_user.
+    @bet_slips = current_user.
       wagers.
       where(status: [:pending, :confirmed]).
       includes(:account, :line, :contestant).
       order(created_at: :asc).
-      partition(&:pending?)
+      group_by { |wager| [wager.status, wager.account] }.
+      map { |(status, account), wagers|
+        BetSlipViewModel.new(status, account, wagers)
+      }.sort_by { |bet_slip| [bet_slip.status.to_i, bet_slip.account.name.to_s] }.
+      reverse
   end
 
   def history
@@ -50,7 +53,7 @@ class WagersController < ApplicationController
   def create_wager
     wager = slip.wagers.build(wager_params)
     if wager.save
-      @notice = "Added to your bet slip. You now have #{slip.wagers.count} pending wager(s).".html_safe
+      @notice = "Added to your bet slip. You now have #{current_user.wagers.pending.count} pending wager(s).".html_safe
     else
       @error = "There was a problem creating your wager. #{wager.errors.full_messages.join('. ')}".html_safe
     end
