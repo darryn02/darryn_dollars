@@ -25,30 +25,32 @@
   <div class="main container">
     <%= yield %>
   </div>
-  <nav class="navbar fixed-bottom bg-body-tertiary">
-    <div class="container-fluid">
-      <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to lines_path do %>
-          <i class = "bi bi-newspaper"></i><br>Lines
-        <% end %>
+  <% if current_user.present? %>
+    <nav class="navbar fixed-bottom bg-body-tertiary">
+      <div class="container-fluid">
+        <div class = "navbar-nav main-nav col-xs-3 text-center">
+          <%= link_to lines_path do %>
+            <i class = "bi bi-newspaper"></i><br>Lines
+          <% end %>
+        </div>
+        <div class = "navbar-nav main-nav col-xs-3 text-center">
+          <%= link_to bet_slip_wagers_path do %>
+            <i class = "bi bi-receipt"></i><br>Bet Slip
+          <% end %>
+        </div>
+        <div class = "navbar-nav main-nav col-xs-3 text-center">
+          <%= link_to history_wagers_path do %>
+            <i class = "bi bi-clock-history"></i><br>History
+          <% end %>
+        </div>
+        <div class = "navbar-nav main-nav col-xs-3 text-center">
+          <%= link_to leaderboard_path do %>
+            <i class = "bi bi-trophy-fill"></i><br>Leaderboard
+          <% end %>
+        </div>
       </div>
-      <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to bet_slip_wagers_path do %>
-          <i class = "bi bi-receipt"></i><br>Bet Slip
-        <% end %>
-      </div>
-      <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to history_wagers_path do %>
-          <i class = "bi bi-clock-history"></i><br>History
-        <% end %>
-      </div>
-      <div class = "navbar-nav main-nav col-xs-3 text-center">
-        <%= link_to leaderboard_path do %>
-          <i class = "bi bi-trophy-fill"></i><br>Leaderboard
-        <% end %>
-      </div>
-    </div>
-  </nav>
+    </nav>
+  <% end %>
 
   <div class="overlay"></div>
   <div class="spanner">
