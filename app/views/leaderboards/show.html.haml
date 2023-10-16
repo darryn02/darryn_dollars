@@ -1,5 +1,5 @@
 %h1.pt-3 Leaderboard
-- if current_user.accounts.where(leaderboard_visible: true).any?
+- if current_user.accounts.where(leaderboard_visible: true).any? || current_user.admin?
   %table.table.table-striped
     %thead.table-light
       %tr
