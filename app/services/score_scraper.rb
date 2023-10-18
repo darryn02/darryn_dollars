@@ -9,28 +9,26 @@ class ScoreScraper
     raw_week = ((DateTime.current  - DateTime.new(2023, 9, 13)) / 7.0).ceil
     week = (raw_week % 18 + 1) if week.nil?
     season = raw_week / 18 + 2 if season.nil?
-    url = "https://www.espn.com/nfl/scoreboard/_/week/#{week}/year/2023/seasontype/#{season}"
-    document = Nokogiri::HTML.parse(URI.open(url))
 
-    game_modules = document.css("div.PageLayout__Main section.gameModules")
-    game_modules.each do |game_module|
+    url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=#{week}"
 
-      date_str = game_module.css("header .Card__Header__Title").inner_text
-      date = Date.parse(date_str)
+    json = JSON.parse(URI.open(url).read)
+    json["events"].map do |event|
+      competition = event["competitions"].find { |c| c["type"]["abbreviation"] == "STD" }
+      next unless competition["status"]["type"]["completed"]
 
-      game_module.css("div.ScoreboardScoreCell").each do |game|
-        next unless game.css(".ScoreboardScoreCell__Time").inner_text.to_s.downcase.starts_with?("final")
+      date = DateTime.parse(competition["date"]).in_time_zone("UTC")
+      competition["competitors"].each do |competitor|
 
-        game.css("ul.ScoreboardScoreCell__Competitors li").map do |competitor_element|
-          team = competitor_element.css(".ScoreCell__TeamName").inner_text
-          scores = competitor_element.css(".ScoreboardScoreCell_Linescores .ScoreboardScoreCell__Value").map(&:inner_text).map(&:to_i)
-          competitor = Competitor.find_by_string(team)
-          contestant = Contestant.joins(:game).where(competitor: competitor).where("date_trunc('day', games.starts_at) = ?", date)
-          if scores.present? && contestant.any?
-            contestant.update_all(scores: scores, updated_at: Time.current)
-          else
-            Rails.logger.warn("Couldn't find #{scores.present? ? "contestant" : "scores"} for #{team} on #{date_str}")
-          end
+        db_competitor = Competitor.find_by_string(competitor["team"]["name"])
+        if db_competitor.blank?
+          Rails.logger.warn("Couldn't find Competitor #{competitor["team"]["name"]}")
+          next
+        end
+
+        scores = competitor["linescores"].map { |s| s["value"] }
+        contestant = Contestant.joins(:game).where(competitor: db_competitor).where(games: { starts_at: date - 1.hour..date + 1.hour }).each do |c|
+          c.update!(scores: scores)
         end
       end
     end
