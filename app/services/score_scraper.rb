@@ -10,7 +10,7 @@ class ScoreScraper
     week = (raw_week % 18 + 1) if week.nil?
     season = raw_week / 18 + 2 if season.nil?
 
-    url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=#{week}"
+    url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=#{week}&seasontype=#{season}"
 
     json = JSON.parse(URI.open(url).read)
     json["events"].map do |event|

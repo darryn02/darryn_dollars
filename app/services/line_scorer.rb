@@ -9,7 +9,7 @@ class LineScorer
     references(:contestants).
     where.not(contestants: { scores: [] }).
     find_each do |line|
-      scorer = LineScorerFactory.build(line).run
+      LineScorerFactory.build(line).run
     end
   end
 end
