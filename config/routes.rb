@@ -14,5 +14,17 @@ Rails.application.routes.draw do
   resources :bet_slips, only: [:index, :show, :update, :destroy]
   resource :leaderboard, only: [:show]
   resource :account, only: [:show, :update]
+
+  namespace :admin do
+    resource :dashboard, only: [:show] do
+      member do
+        get :fetch_lines
+        get :fetch_scores
+        get :score_lines
+        get :score_wagers
+      end
+    end
+  end
+
   root to: 'lines#index'
 end

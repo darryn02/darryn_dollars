@@ -1,16 +1,21 @@
 class OverScorer < Scorer
   def run
-    contestants = line.game.contestants    
+    contestants = line.game.contestants
     total = contestants.sum(&method(:contestant_score))
 
-    if total.blank?
-      line.pending!
-    elsif total > line.value
-      line.win!
-    elsif total < line.value
-      line.loss!
-    else
-      line.push!
+    { wins: 0, losses: 0, pushes: 0 }.tap do |results|
+      if total.blank?
+        line.pending!
+      elsif total > line.value
+        line.win!
+        results[:wins] += 1
+      elsif total < line.value
+        line.loss!
+        results[:losses] += 1
+      else
+        line.push!
+        results[:pushes] += 1
+      end
     end
   end
 

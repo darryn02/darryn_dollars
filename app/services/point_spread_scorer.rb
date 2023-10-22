@@ -6,14 +6,19 @@ class PointSpreadScorer < Scorer
     their_score = contestant_score(them)
     my_score = contestant_score(me)
 
-    if my_score.blank? || their_score.blank?
-      line.pending!
-    elsif my_score + line.value > their_score
-      line.win!
-    elsif my_score + line.value < their_score
-      line.loss!
-    else
-      line.push!
+    { wins: 0, losses: 0, pushes: 0 }.tap do |results|
+      if my_score.blank? || their_score.blank?
+        line.pending!
+      elsif my_score + line.value > their_score
+        line.win!
+        results[:wins] += 1
+      elsif my_score + line.value < their_score
+        line.loss!
+        results[:losses] += 1
+      else
+        line.push!
+        results[:pushes] += 1
+      end
     end
   end
 

@@ -9,6 +9,7 @@ class ScoreScraper
     raw_week = ((DateTime.current  - DateTime.new(2023, 9, 13)) / 7.0).ceil
     week = (raw_week % 18 + 1) if week.nil?
     season = raw_week / 18 + 2 if season.nil?
+    update_count = 0
 
     url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=#{week}&seasontype=#{season}"
 
@@ -29,8 +30,10 @@ class ScoreScraper
         scores = competitor["linescores"].map { |s| s["value"] }
         contestant = Contestant.joins(:game).where(competitor: db_competitor).where(games: { starts_at: date - 1.hour..date + 1.hour }).each do |c|
           c.update!(scores: scores)
+          update_count += 1
         end
       end
     end
+    "#{update_count} contestant scores updated."
   end
 end

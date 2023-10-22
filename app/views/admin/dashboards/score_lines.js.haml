@@ -1,0 +1,6 @@
+- if @error.present?
+  :plain
+    window.showErrorFlash("#{j @error }");
+- elsif @notice.present?
+  :plain
+    window.showSuccessFlash("#{ j @notice }");

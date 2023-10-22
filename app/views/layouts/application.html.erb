@@ -48,6 +48,13 @@
             <i class = "bi bi-trophy-fill"></i><br>Leaderboard
           <% end %>
         </div>
+        <% if current_user.admin? %>
+          <div class = "navbar-nav main-nav col-xs-3 text-center">
+            <%= link_to admin_dashboard_path do %>
+              <i class = "bi bi-building"></i><br>Admin
+            <% end %>
+          </div>
+        <% end %>
       </div>
     </nav>
   <% end %>

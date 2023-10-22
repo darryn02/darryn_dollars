@@ -4,16 +4,22 @@ class WagerScorer
   end
 
   def run(scope = Wager.all.confirmed)
+    wins, losses, pushes = 0, 0, 0
+
     scope.
       includes(:line).
       find_each do |wager|
-      if wager.line.win?
-        wager.win! 
-      elsif wager.line.loss?
-        wager.loss! 
-      elsif wager.line.push?
-        wager.push! 
-      end
+        if wager.line.win?
+          wager.win!
+          wins += 1
+        elsif wager.line.loss?
+          wager.loss!
+          losses += 1
+        elsif wager.line.push?
+          wager.push!
+          pushes += 1
+        end
     end
+    "Wagers scored: #{wins} wins, #{losses} losses, #{pushes} pushes."
   end
 end

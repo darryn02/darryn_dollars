@@ -1,0 +1,26 @@
+%h1.pt-3 Admin
+
+.mb-1.btn.btn-warning
+  = link_to "Fetch Lines",
+    fetch_lines_admin_dashboard_path,
+    remote: true
+%br
+.mb-1.btn.btn-warning
+  = link_to "Fetch 2nd Half Lines",
+    fetch_lines_admin_dashboard_path(scope: :second_half),
+    remote: true
+%br
+.mb-1.btn.btn-warning
+  = link_to "Fetch Scores",
+    fetch_scores_admin_dashboard_path,
+    remote: true
+%br
+.mb-1.btn.btn-success
+  = link_to "Score Lines",
+    score_lines_admin_dashboard_path,
+    remote: true
+%br
+.mb-1.btn.btn-success
+  = link_to "Score Wagers",
+    score_wagers_admin_dashboard_path,
+    remote: true
