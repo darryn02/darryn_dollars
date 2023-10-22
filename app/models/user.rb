@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-  devise :database_authenticatable, :recoverable, :rememberable, :validatable
+  devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :timeoutable
 
   has_many :accounts
   has_many :wagers, through: :accounts

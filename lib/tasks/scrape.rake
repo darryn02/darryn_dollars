@@ -1,12 +1,20 @@
 namespace :scrape do
   desc 'Scrape NFL lines and create games and contests'
   task nfl_lines: :environment do
-    LineScraper.run
-    LineScraper.run("first_half")
+    if ENV["USE_ODDS_API"] == "1"
+      LinesApiClient.update_lines(:first_half)
+    else
+      LineScraper.run
+      LineScraper.run("first_half")
+    end
   end
 
   task nfl_second_half_lines: :environment do
-    LineScraper.new.run("second_half")
+    if ENV["USE_ODDS_API"] == "1"
+      LinesApiClient.update_lines(:second_half)
+    else
+      LineScraper.new.run("second_half")
+    end
   end
 
   task nfl_results: :environment do

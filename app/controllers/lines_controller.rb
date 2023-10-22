@@ -20,6 +20,12 @@ class LinesController < ApplicationController
   end
 
   def ensure_second_half_lines_are_recent!
-    LineScraper.ensure_second_half_lines_are_recent! if scope == :second_half
+    if scope == :second_half
+      if ENV["USE_ODDS_API"] == "1"
+        LinesApiClient.ensure_second_half_lines_are_recent!
+      else
+        LineScraper.ensure_second_half_lines_are_recent!
+      end
+    end
   end
 end
