@@ -72,6 +72,7 @@ class WagersController < ApplicationController
     unless current_user.admin?
       scope = scope.joins(:account).where(accounts: { user_id: current_user.id })
     end
+    scope
   end
 
   def valid_account_id?
