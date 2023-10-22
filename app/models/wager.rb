@@ -42,7 +42,7 @@ class Wager < ApplicationRecord
   end
 
   def to_s
-    str = "[#{id.presence || "x"}] " \
+    str =
       "#{ActionController::Base.helpers.number_to_currency(amount)} " \
       "#{line}".
       squish

@@ -1,19 +1,14 @@
 class WagersController < ApplicationController
   def bet_slip
-    @bet_slips = wagers.
+    @bet_slips = wagers([:pending, :confirmed]).
       group_by { |wager| [wager.status, wager.account] }.
       map { |(status, account), wagers|
-        BetSlipViewModel.new(status, account, wagers)
+        BetSlipViewModel.new(status, account, wagers, current_user)
       }.sort_by(&method(:bet_slip_sort_order))
   end
 
   def history
-    @wagers_by_account = user_scope.
-      wagers.
-      where.not(status: [:pending, :canceled]).
-      order(created_at: :desc).
-      includes(:account, :line, :contestant).
-      group_by(&:account)
+    @wagers_by_account = wagers([:pending, :canceled]).group_by(&:account)
   end
 
   def create
@@ -64,10 +59,10 @@ class WagersController < ApplicationController
 
   private
 
-  def wagers
+  def wagers(statuses)
     scope = Wager.
-      where(status: [:pending, :confirmed]).
-      includes(:account, :line, :contestant).
+      where(status: statuses).
+      includes(:line, :contestant, account: [user: :accounts]).
       order(created_at: :asc)
     unless current_user.admin?
       scope = scope.joins(:account).where(accounts: { user_id: current_user.id })
