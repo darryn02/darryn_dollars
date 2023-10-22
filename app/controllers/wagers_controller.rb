@@ -1,10 +1,6 @@
 class WagersController < ApplicationController
   def bet_slip
-    @bet_slips = user_scope.
-      wagers.
-      where(status: [:pending, :confirmed]).
-      includes(:account, :line, :contestant).
-      order(created_at: :asc).
+    @bet_slips = wagers.
       group_by { |wager| [wager.status, wager.account] }.
       map { |(status, account), wagers|
         BetSlipViewModel.new(status, account, wagers)
@@ -68,9 +64,14 @@ class WagersController < ApplicationController
 
   private
 
-  def user_scope
-    return User.all if current_user.admin?
-    current_user
+  def wagers
+    scope = Wager.
+      where(status: [:pending, :confirmed]).
+      includes(:account, :line, :contestant).
+      order(created_at: :asc)
+    unless current_user.admin?
+      scope = scope.joins(:account).where(accounts: { user_id: current_user.id })
+    end
   end
 
   def valid_account_id?
