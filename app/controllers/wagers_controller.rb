@@ -1,6 +1,6 @@
 class WagersController < ApplicationController
   def bet_slip
-    @bet_slips = current_user.
+    @bet_slips = user_scope.
       wagers.
       where(status: [:pending, :confirmed]).
       includes(:account, :line, :contestant).
@@ -12,7 +12,7 @@ class WagersController < ApplicationController
   end
 
   def history
-    @wagers_by_account = current_user.
+    @wagers_by_account = user_scope.
       wagers.
       where.not(status: [:pending, :canceled]).
       order(created_at: :desc).
@@ -67,6 +67,11 @@ class WagersController < ApplicationController
   end
 
   private
+
+  def user_scope
+    return User.all if current_user.admin?
+    current_user
+  end
 
   def valid_account_id?
     if current_user.account_ids.exclude?(wager_params[:account_id].to_i)
