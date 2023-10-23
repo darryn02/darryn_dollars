@@ -11,12 +11,12 @@ class Wager < ApplicationRecord
 
   enum status: { pending: 0, confirmed: 1, win: 2, loss: 3, push: 4, canceled: 5 }
 
-  validates :amount, presence: true, numericality: { greater_than_or_equal_to: DEFAULT_MIN_WAGER }
-  validates :line, presence: true
-  validates :account, presence: true
-  validate :game_has_not_started
-  validate :line_must_be_active
-  validate :account_has_sufficient_credit
+  validates :amount, presence: true, numericality: { greater_than_or_equal_to: DEFAULT_MIN_WAGER }, on: :create
+  validates :line, presence: true, on: :create
+  validates :account, presence: true, on: :create
+  validate :game_has_not_started, on: :create
+  validate :line_must_be_active, on: :create
+  validate :account_has_sufficient_credit, on: :create
 
   before_save :update_net
   before_validation :set_placed_at
