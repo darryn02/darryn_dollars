@@ -8,7 +8,7 @@ class WagersController < ApplicationController
   end
 
   def history
-    @wagers_by_account = wagers([:pending, :canceled]).group_by(&:account)
+    @wagers_by_account = wagers([:win, :loss, :push]).group_by(&:account)
   end
 
   def create
