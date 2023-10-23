@@ -23,7 +23,7 @@ class Game < ApplicationRecord
   end
 
   def self.wagerable
-    where('starts_at BETWEEN ? AND ?', 12.hours.ago, Time.current + Wager::WINDOW)
+    where('starts_at BETWEEN ? AND ?', 3.hours.ago, Time.current + Wager::WINDOW)
   end
 
   def self.upcoming

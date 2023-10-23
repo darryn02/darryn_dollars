@@ -66,28 +66,20 @@ class Wager < ApplicationRecord
 
 
   def game_has_not_started
-    if (line.game? || line.first_half?) && line.game.starts_at.past?
+    if line.active? && (line.game? || line.first_half?) && line.game.starts_at.past?
       errors.add(:line, "has expired, past game start time")
     end
   end
 
   def line_must_be_active
     if line.hidden?
-      errors.add(:line, "has moved")
+      errors.add(:line, "is no longer active")
     end
   end
 
   def account_has_sufficient_credit
-    if account.credit_limit + account.balance - account.liabilities < gross_up(amount, line)
+    if account.credit_limit + account.balance - account.liabilities < amount
       errors.add(:accout, "has insufficient credit")
-    end
-  end
-
-  def gross_up(amount, line)
-    if %w[point_spread over under].exclude?(line.kind)
-      amount
-    elsif line.odds == -110
-      1.1 * amount
     end
   end
 end
