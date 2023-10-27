@@ -4,8 +4,9 @@
   - if @wagers_by_account.keys.many?
     %ul.nav.nav-tabs#account-tabs{ role: "tablist" }
       - @wagers_by_account.each_with_index do |(account, wagers), index|
+        - tab_name = current_user.admin? ? account.qualified_name : account.to_s
         %li.nav-item{ role: "presentation" }
-          %button.nav-link{ id: "account-#{account.id}-tab", class: (index.zero? ? "active" : ""), data: { bs_toggle: "tab", bs_target: "#account-#{account.id}-tab-pane" }, type: "button", role: "tab", "aria-controls" => "account-#{account.id}-tab-pane", "aria-selected" => (index.zero? ? "true" : "false") }= account
+          %button.nav-link{ id: "account-#{account.id}-tab", class: (index.zero? ? "active" : ""), data: { bs_toggle: "tab", bs_target: "#account-#{account.id}-tab-pane" }, type: "button", role: "tab", "aria-controls" => "account-#{account.id}-tab-pane", "aria-selected" => (index.zero? ? "true" : "false") }= tab_name
     .tab-content#account-tabs-content
       - @wagers_by_account.each_with_index do |(account, wagers), index|
         .tab-pane.fade.show{ id: "account-#{account.id}-tab-pane", class: (index.zero? ? "active" : ""), role: "tabpanel", "aria-labelledby" => "account-#{account.id}-tab", tabindex: "0" }
