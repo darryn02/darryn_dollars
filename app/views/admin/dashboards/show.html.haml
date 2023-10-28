@@ -1,17 +1,5 @@
 %h1.pt-3 Admin
 
-%ul.list-group.list-group-flush
-  - @accounts.each_with_index do |account, index|
-    %li.d-flex.list-group-item.align-items-center{ id: "account-#{account.id}", class: ( index % 2 == 0 ? "bg-theme-2" : "bg-theme-3") }
-      .ms-5.flex-fill= account.qualified_name
-      = currency(-1 * account.balance)
-  %li.d-flex.list-group-item.align-items-center{ class: "bg-theme-1"}
-    .ms-5.flex-fill Total
-    = currency(-1 * @accounts.sum(&:balance))
-  - grand_total = -1 * (@accounts.sum(&:balance) + Payment.sum(:amount))
-  %li.d-flex.list-group-item.align-items-center{ class: (grand_total >= 0 ? "bg-success" : "bg-danger") }
-    .ms-5.flex-fill Grand Total
-    = currency(grand_total)
 .actions.mt-3
   .mb-1.btn.btn-warning
     = link_to "Fetch Lines",
@@ -21,11 +9,11 @@
     = link_to "Fetch 2nd Half Lines",
       fetch_lines_admin_dashboard_path(scope: :second_half),
       remote: true
-  .mb-1.btn.btn-warning
+  %br
+  .mb-1.btn.btn-success
     = link_to "Fetch Scores",
       fetch_scores_admin_dashboard_path,
       remote: true
-  %br
   .mb-1.btn.btn-success
     = link_to "Score Lines",
       score_lines_admin_dashboard_path,
@@ -34,3 +22,20 @@
     = link_to "Score Wagers",
       score_wagers_admin_dashboard_path,
       remote: true
+.card.text-bg-primary.mt-3{ style: "width: 100%;" }
+  .card-body
+    .card-title
+      %h4.mb-1
+        Account Summary
+  %ul.list-group.list-group-flush
+    - @accounts.each_with_index do |account, index|
+      %li.d-flex.list-group-item.align-items-center{ id: "account-#{account.id}", class: ( index % 2 == 0 ? "bg-theme-2" : "bg-theme-3") }
+        .ms-5.flex-fill= account.qualified_name
+        = currency(-1 * account.balance)
+    %li.d-flex.list-group-item.align-items-center{ class: "bg-theme-1"}
+      .ms-5.flex-fill Total
+      = currency(-1 * @accounts.sum(&:balance))
+    - grand_total = -1 * (@accounts.sum(&:balance) + Payment.sum(:amount))
+    %li.d-flex.list-group-item.align-items-center{ class: (grand_total >= 0 ? "bg-success" : "bg-danger") }
+      .ms-5.flex-fill Grand Total
+      = currency(grand_total)
