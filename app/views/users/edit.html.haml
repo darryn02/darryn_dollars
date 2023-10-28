@@ -1,0 +1,8 @@
+%h1.pt-3 User Settings
+
+= simple_form_for(@user) do |f|
+  .mb-3
+    = f.input :name
+    = f.input :password
+    = f.input :password_confirmation
+    = f.submit class: "mt-3"

@@ -12,7 +12,12 @@ body .container.main {
 }
 
 .navbar-brand {
-  color: #061A5C
+  color: #061A5C;
+  border-right: 0;
+}
+
+.navbar .nav-link {
+  border: 0;
 }
 
 .history .card-body {

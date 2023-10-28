@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   resources :bet_slips, only: [:index, :show, :update, :destroy]
   resource :leaderboard, only: [:show]
   resource :account, only: [:show, :update]
+  resources :users, only: [:edit, :update]
 
   namespace :admin do
     resource :dashboard, only: [:show] do

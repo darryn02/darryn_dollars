@@ -12,12 +12,34 @@
 <body class="<%= body_class %>">
   <nav class="navbar navbar-default bg-body-tertiary" role="navigation">
     <div class="container-fluid">
-      <div class="navbar-brand d-flex align-items-center fs-2 flex-fill">
+      <div class="navbar-brand d-flex align-items-center fs-2">
         <%= link_to root_path do %>
           <% image_tag "logo.png", class: "d-inline-block align-text-top", style: 'height:50px;width:100px;' %>
         <% end %>
         arryn Dollars
       </div>
+      <% if current_user.present? %>
+        <div class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"><%= current_user.name.split.first %></a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarScrollingDropdown">
+              <li>
+                <%= link_to edit_user_path(current_user), class: "dropdown-item" do %>
+                  <i class = "bi bi-gear me-1"></i>
+                  Settings
+                <% end %>
+              </li>
+              <li>
+                  <hr class="dropdown-divider">
+              </li>
+              <li>
+                <%= link_to destroy_user_session_path, method: :delete, class: "dropdown-item" do %>
+                  <i class = "bi bi-box-arrow-right me-1"></i>
+                  Sign Out
+                <% end %>
+              </li>
+          </ul>
+        </div>
+      <% end %>
     </div>
   </nav>
 
