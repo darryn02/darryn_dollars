@@ -1,7 +1,7 @@
 module Admin
   class DashboardsController < ApplicationController
     def show
-
+      @accounts = Account.all
     end
 
     def fetch_lines

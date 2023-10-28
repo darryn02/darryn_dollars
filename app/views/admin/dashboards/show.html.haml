@@ -1,26 +1,32 @@
 %h1.pt-3 Admin
 
-.mb-1.btn.btn-warning
-  = link_to "Fetch Lines",
-    fetch_lines_admin_dashboard_path,
-    remote: true
-%br
-.mb-1.btn.btn-warning
-  = link_to "Fetch 2nd Half Lines",
-    fetch_lines_admin_dashboard_path(scope: :second_half),
-    remote: true
-%br
-.mb-1.btn.btn-warning
-  = link_to "Fetch Scores",
-    fetch_scores_admin_dashboard_path,
-    remote: true
-%br
-.mb-1.btn.btn-success
-  = link_to "Score Lines",
-    score_lines_admin_dashboard_path,
-    remote: true
-%br
-.mb-1.btn.btn-success
-  = link_to "Score Wagers",
-    score_wagers_admin_dashboard_path,
-    remote: true
+%ul.list-group.list-group-flush
+  - @accounts.each_with_index do |account, index|
+    %li.d-flex.list-group-item.align-items-center{ id: "account-#{account.id}", class: ( index % 2 == 0 ? "bg-theme-2" : "bg-theme-3") }
+      .ms-5.flex-fill= account.qualified_name
+      = currency(account.balance)
+  %li.d-flex.list-group-item.align-items-center{ class: "bg-theme-1"}
+    .ms-5.flex-fill Total
+    = currency(@accounts.sum(&:balance))
+.actions.mt-3
+  .mb-1.btn.btn-warning
+    = link_to "Fetch Lines",
+      fetch_lines_admin_dashboard_path,
+      remote: true
+  .mb-1.btn.btn-warning
+    = link_to "Fetch 2nd Half Lines",
+      fetch_lines_admin_dashboard_path(scope: :second_half),
+      remote: true
+  .mb-1.btn.btn-warning
+    = link_to "Fetch Scores",
+      fetch_scores_admin_dashboard_path,
+      remote: true
+  %br
+  .mb-1.btn.btn-success
+    = link_to "Score Lines",
+      score_lines_admin_dashboard_path,
+      remote: true
+  .mb-1.btn.btn-success
+    = link_to "Score Wagers",
+      score_wagers_admin_dashboard_path,
+      remote: true
