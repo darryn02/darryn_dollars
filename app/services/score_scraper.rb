@@ -3,7 +3,7 @@ class ScoreScraper
 
   API_SPORT_MAP = {
     nfl: ["football/nfl", DateTime.new(2023, 9, 6), 18],
-    ncaaf: ["football/college-football", DateTime.new(2023, 8, 25), 15],
+    ncaaf: ["football/college-football", DateTime.new(2023, 8, 28), 15],
     # nba: ["basketball/nba", DateTime.now, 1],
     # ncaab: ["basketball/mens-college-basketball", DateTime.now, 1]
   }
@@ -17,7 +17,7 @@ class ScoreScraper
 
     api_sport, regular_season_start_date, regular_season_weeks = API_SPORT_MAP[sport]
     raw_week = ((DateTime.current  - regular_season_start_date) / 7.0).ceil
-    week = (raw_week % regular_season_weeks) if week.nil?
+    week = [1, (raw_week % regular_season_weeks)].max if week.nil?
     season = [3, raw_week / regular_season_weeks + 2].min if season.nil?
 
     url = File.join("https://site.api.espn.com/apis/site/v2/sports/", api_sport, "scoreboard?week=#{week}&seasontype=#{season}")
