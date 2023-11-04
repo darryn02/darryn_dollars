@@ -70,9 +70,7 @@ class LinesApiClient
   def parse_and_assert_lines(json, scope, activate_ids)
     Array.wrap(json).map do |event|
       home = Competitor.find_by_string(event["home_team"], sport: sport)
-      binding.pry if home.nil?
       away = Competitor.find_by_string(event["away_team"], sport: sport)
-      binding.pry if away.nil?
       commence_time = DateTime.parse(event["commence_time"])
 
       next if event["bookmakers"].blank?
