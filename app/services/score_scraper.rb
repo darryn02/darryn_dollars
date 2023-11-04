@@ -32,7 +32,7 @@ class ScoreScraper
       date = DateTime.parse(competition["date"]).in_time_zone("UTC")
       competition["competitors"].each do |competitor|
 
-        db_competitor = Competitor.find_by_string(competitor["team"]["name"])
+        db_competitor = Competitor.find_by_string(competitor["team"]["displayName"])
         if db_competitor.blank?
           Rails.logger.warn("Couldn't find Competitor #{competitor["team"]["name"]}")
           missing_competitor_count += 1
