@@ -30,6 +30,10 @@ class Game < ApplicationRecord
     where('starts_at BETWEEN ? AND ?', Time.current + Wager::WINDOW, Time.current + Wager::PREVIEW_WINDOW)
   end
 
+  def self.in_progress
+    where(starts_at: (Time.current - 5.hours)..Time.current)
+  end
+
   def self.today
     where(
       "date_trunc('day', starts_at) = ?",

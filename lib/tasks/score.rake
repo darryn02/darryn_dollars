@@ -4,7 +4,7 @@ namespace :score do
     WagerScorer.run
   end
 
-  task :lines => 'scrape:nfl_results'  do
+  task :lines => ['scrape:nfl_results', 'scrape:ncaaf_results']  do
     LineScorer.run
   end
 end

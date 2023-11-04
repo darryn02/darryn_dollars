@@ -2,17 +2,38 @@
 
 .actions.mt-3
   .mb-1.btn.btn-warning
-    = link_to "Fetch Lines",
-      fetch_lines_admin_dashboard_path,
+    = link_to "Fetch NFL Lines",
+      fetch_lines_admin_dashboard_path(sport: :nfl, scope: :game),
       remote: true
   .mb-1.btn.btn-warning
-    = link_to "Fetch 2nd Half Lines",
-      fetch_lines_admin_dashboard_path(scope: :second_half),
+    = link_to "Fetch NFL 1st Half Lines",
+      fetch_lines_admin_dashboard_path(sport: :nfl, scope: :first_half),
+      remote: true
+  .mb-1.btn.btn-warning
+    = link_to "Fetch NFL 2nd Half Lines",
+      fetch_lines_admin_dashboard_path(sport: :nfl, scope: :second_half),
+      remote: true
+  %br
+  .mb-1.btn.btn-warning
+    = link_to "Fetch NCAAF Lines",
+      fetch_lines_admin_dashboard_path(sport: :ncaaf, scope: :game),
+      remote: true
+  .mb-1.btn.btn-warning
+    = link_to "Fetch NCAAF 1st Half Lines",
+      fetch_lines_admin_dashboard_path(sport: :ncaaf, scope: :first_half),
+      remote: true
+  .mb-1.btn.btn-warning
+    = link_to "Fetch NCAAF 2nd Half Lines",
+      fetch_lines_admin_dashboard_path(sport: :ncaaf, scope: :second_half),
       remote: true
   %br
   .mb-1.btn.btn-success
-    = link_to "Fetch Scores",
-      fetch_scores_admin_dashboard_path,
+    = link_to "Fetch NFL Scores",
+      fetch_scores_admin_dashboard_path(sport: :nfl),
+      remote: true
+  .mb-1.btn.btn-success
+    = link_to "Fetch NCAAF Scores",
+      fetch_scores_admin_dashboard_path(sport: :ncaaf),
       remote: true
   .mb-1.btn.btn-success
     = link_to "Score Lines",
@@ -35,7 +56,7 @@
     %li.d-flex.list-group-item.align-items-center{ class: "bg-theme-1"}
       .ms-5.flex-fill Total
       = currency(-1 * @accounts.sum(&:balance))
-    - grand_total = -1 * (@accounts.sum(&:balance) + Payment.sum(:amount))
+    - grand_total = -1 * (@accounts.sum(&:balance) - Payment.sum(:amount))
     %li.d-flex.list-group-item.align-items-center{ class: (grand_total >= 0 ? "bg-success" : "bg-danger") }
       .ms-5.flex-fill Grand Total
       = currency(grand_total)

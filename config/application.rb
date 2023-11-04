@@ -21,7 +21,7 @@ module DarrynDollars
       generate.test_framework :rspec
       generate.view_specs false
     end
-    config.action_controller.action_on_unpermitted_parameters = :raise
+    config.action_controller.action_on_unpermitted_parameters = :log
     config.active_job.queue_adapter = :delayed_job
 
     config.time_zone = 'Eastern Time (US & Canada)'

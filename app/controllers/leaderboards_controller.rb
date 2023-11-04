@@ -3,7 +3,7 @@ class LeaderboardsController < ApplicationController
     @accounts = Account.
       where(leaderboard_visible: true).
       includes(:user, :wagers, :payments).
-      sort_by(&:balance).
+      sort_by(&:winnings).
       reverse
   end
 end

@@ -4,6 +4,7 @@ class LinesController < ApplicationController
   def index
     @lines_by_game = Line.
       active.
+      send(sport).
       send(scope).
       joins(:game).
       merge(Game.wagerable).
@@ -15,6 +16,10 @@ class LinesController < ApplicationController
 
   private
 
+  def sport
+    @sport ||= (params[:sport].to_s.presence_in(Game.sports.keys) || "nfl").to_sym
+  end
+
   def scope
     @scope ||= (params[:scope].to_s.presence_in(Line::scopes.keys) || "game").to_sym
   end
@@ -22,7 +27,7 @@ class LinesController < ApplicationController
   def ensure_second_half_lines_are_recent!
     if scope == :second_half
       if ENV["USE_ODDS_API"] == "1"
-        LinesApiClient.ensure_second_half_lines_are_recent!
+        LinesApiClient.ensure_second_half_lines_are_recent!(sport: sport)
       else
         LineScraper.ensure_second_half_lines_are_recent!
       end

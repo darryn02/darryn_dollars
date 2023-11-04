@@ -16,6 +16,14 @@ class Line < ApplicationRecord
     where.not(hidden: true)
   end
 
+  def self.nfl
+    joins(:game).merge(Game.nfl)
+  end
+
+  def self.ncaaf
+    joins(:game).merge(Game.ncaaf)
+  end
+
   def self.parse_scope(modifier)
     if modifier.match?(/(first_half|first half|1st half|1 half|1h)/).present?
       :first_half

@@ -18,9 +18,6 @@
             .col
               = f.input :amount, as: :string, input_html: { class: "js-wager-amount-bet", data: { type: "currency", odds: "#{line.odds}" } }
             .col
-              = label_tag "wager_to_win", class: "string required" do
-                %abbr{ "title" => "required" } *
-                To Win
-              = text_field_tag "wager_to_win", nil, class: "js-wager-to-win", "data-type" => "currency", "data-odds" => "#{line.odds}"
-            .col.d-flex.align-items-end
-              = f.submit "Add to Bet Slip", class: "btn btn-primary"
+              = f.input :to_win, as: :string, input_html: { class: "js-wager-to-win", data: { type: "currency", odds: "#{line.odds}" } }
+            .col.d-flex.align-items-center
+              = f.submit "Add to Bet Slip", class: "btn btn-primary", style: "max-height: 50px"

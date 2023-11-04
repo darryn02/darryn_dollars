@@ -14,9 +14,9 @@ class Wager < ApplicationRecord
   validates :amount, presence: true, numericality: { greater_than_or_equal_to: DEFAULT_MIN_WAGER }, on: :create
   validates :line, presence: true, on: :create
   validates :account, presence: true, on: :create
-  validate :game_has_not_started, on: :create
-  validate :line_must_be_active, on: :create
-  validate :account_has_sufficient_credit, on: :create
+  validate :game_has_not_started
+  validate :line_must_be_active
+  validate :account_has_sufficient_credit
 
   before_save :update_net
   before_validation :set_placed_at
@@ -52,6 +52,9 @@ class Wager < ApplicationRecord
     line.payout(amount)
   end
 
+  def to_win
+  end
+
   private
 
   def update_net
@@ -61,23 +64,31 @@ class Wager < ApplicationRecord
   end
 
   def set_placed_at
-    self.placed_at = Time.now
+    if changes["status"] == ["pending", "confirmed"]
+      self.placed_at = Time.now
+    end
   end
 
 
   def game_has_not_started
+    return if persisted? && changes["status"] != ["pending", "confirmed"]
+
     if line.active? && (line.game? || line.first_half?) && line.game.starts_at.past?
       errors.add(:line, "has expired, past game start time")
     end
   end
 
   def line_must_be_active
+    return if persisted? && changes["status"] != ["pending", "confirmed"]
+
     if line.hidden?
       errors.add(:line, "is no longer active")
     end
   end
 
   def account_has_sufficient_credit
+    return if persisted? && changes["status"] != ["pending", "confirmed"]
+
     if account.credit_limit + account.balance - account.liabilities < amount
       errors.add(:accout, "has insufficient credit")
     end

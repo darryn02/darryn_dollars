@@ -31,8 +31,12 @@ class Account < ApplicationRecord
     @balance ||= compute_balance
   end
 
+  def winnings
+    @winnings ||= initial_balance + wager_sum
+  end
+
   def compute_balance
-    initial_balance + wager_sum + payment_sum
+    winnings + payment_sum
   end
 
   def wager_sum

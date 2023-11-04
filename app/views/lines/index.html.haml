@@ -1,12 +1,30 @@
 %h1.pt-3 Lines
 
 %ul.nav.nav-tabs
-  %li.nav-item
-    = link_to "Game", lines_path, class: "nav-link #{'active' if @scope == :game}", "aria-current" => "page"
-  %li.nav-item
-    = link_to "First Half", lines_path(scope: "first_half"), class: "nav-link #{'active' if @scope == :first_half}", "aria-current" => "page"
-  %li.nav-item
-    = link_to "Second Half", lines_path(scope: "second_half"), class: "nav-link second-half-lines #{'active' if @scope == :second_half}", "aria-current" => "page"
+  %li.nav-item.dropdown
+    - if @sport == :nfl
+      = link_to "NFL (#{@scope.to_s.humanize})", "#", class: "nav-link dropdown-toggle active", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false", "aria-current" => "page"
+    - else
+      = link_to "NFL", "#", class: "nav-link dropdown-toggle", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false"
+    %ul.dropdown-menu
+      %li.dropdown-items
+        = link_to "Game", lines_path(sport: :nfl, scope: :game), class: "dropdown-item"
+      %li.dropdown-items
+        = link_to "First Half", lines_path(sport: :nfl, scope: :first_half), class: "dropdown-item"
+      %li.dropdown-items
+        = link_to "Second Half", lines_path(sport: :nfl, scope: :second_half), class: "dropdown-item"
+  %li.nav-item.dropdown
+    - if @sport == :ncaaf
+      = link_to "NCAAF (#{@scope.to_s.humanize})", "#", class: "nav-link dropdown-toggle active", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false", "aria-current" => "page"
+    - else
+      = link_to "NCAAF", "#", class: "nav-link dropdown-toggle", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false"
+    %ul.dropdown-menu
+      %li.dropdown-items
+        = link_to "Game", lines_path(sport: :ncaaf, scope: :game), class: "dropdown-item"
+      %li.dropdown-items
+        = link_to "First Half", lines_path(sport: :ncaaf, scope: :first_half), class: "dropdown-item"
+      %li.dropdown-items
+        = link_to "Second Half", lines_path(sport: :ncaaf, scope: :second_half), class: "dropdown-item"
 
 - if @lines_by_game.count.zero?
   .blank-state.blank-state-lg
