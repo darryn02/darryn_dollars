@@ -18,7 +18,7 @@ class LineScorer
       end
 
     scores.each_with_object("") do |(kind, results), str|
-      str += "#{kind}: #{results[:wins]} wins, #{results[:losses]} losses, #{results[:pushes]} pushes\n"
+      str.concat("#{kind}: #{results[:wins]} wins, #{results[:losses]} losses, #{results[:pushes]} pushes\n")
     end.presence || "No updates"
   end
 end
