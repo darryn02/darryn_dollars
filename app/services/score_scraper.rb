@@ -41,8 +41,10 @@ class ScoreScraper
 
         scores = competitor["linescores"].map { |s| s["value"] }
         contestant = Contestant.joins(:game).where(competitor: db_competitor).where(games: { starts_at: date - 1.hour..date + 1.hour }).each do |c|
-          c.update!(scores: scores)
-          update_count += 1
+          if c.scores != scores
+            c.update!(scores: scores)
+            update_count += 1
+          end
         end
       end
     end
