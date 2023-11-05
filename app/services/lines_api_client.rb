@@ -52,7 +52,8 @@ class LinesApiClient
         url = File.join(url, "events/#{event_metadata[:id]}")
       end
     end
-    url = File.join(url, "odds/?apiKey=#{ENV['ODDS_API_KEY']}&bookmakers=bovada,draftkings,betonlineag&markets=#{markets(scope)}")
+    bookmakers = scope == :second_half ? "bovada" : "bovada,betonlineag"
+    url = File.join(url, "odds/?apiKey=#{ENV['ODDS_API_KEY']}&bookmakers=#{bookmakers}&markets=#{markets(scope)}")
 
     f = URI.open(url)
     requests_remaining = f.meta["x-requests-remaining"]
