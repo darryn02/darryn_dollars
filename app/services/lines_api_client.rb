@@ -37,23 +37,22 @@ class LinesApiClient
 
   attr_reader :sport
 
-  def fetch_scoped_lines(scope, event_metadata: nil)
+  def fetch_scoped_lines(scope, event_metadata: nil, activate_ids: [])
     deactivate_ids = Line.active.send(sport).send(scope).pluck(:id)
-    activate_ids = []
 
     url = File.join(URL_BASE, API_SPORT_MAP[sport])
     if event_metadata.present?
       if event_metadata.is_a?(Array)
         event_metadata.each do |meta|
           next if scope == :first_half && meta[:starts_at].past?
-          fetch_scoped_lines(scope, event_metadata: meta)
+          fetch_scoped_lines(scope, event_metadata: meta, activate_ids: activate_ids)
         end
         return
       else
         url = File.join(url, "events/#{event_metadata[:id]}")
       end
     end
-    url = File.join(url, "odds/?apiKey=#{ENV['ODDS_API_KEY']}&bookmakers=bovada&markets=#{markets(scope)}")
+    url = File.join(url, "odds/?apiKey=#{ENV['ODDS_API_KEY']}&bookmakers=bovada,draftkings,betonlineag&markets=#{markets(scope)}")
 
     f = URI.open(url)
     requests_remaining = f.meta["x-requests-remaining"]
@@ -125,7 +124,12 @@ class LinesApiClient
   end
 
   def extract_lines_from_markets(event)
-    event["bookmakers"].first["markets"].each_with_object({}) do |market, lines|
+    bookmaker =
+      event["bookmakers"].find { |b| b["key"] == "bovada" } ||
+      event["bookmakers"].find { |b| b["key"] == "draftkings" } ||
+      event["bookmakers"].first
+
+    bookmaker["markets"].each_with_object({}) do |market, lines|
       case market["key"]
       when "spreads", "spreads_h1", "spreads_h2"
         lines[:home_spread] = market["outcomes"].find { |x| x["name"] == event["home_team"] }["point"]
