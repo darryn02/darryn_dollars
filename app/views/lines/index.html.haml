@@ -43,8 +43,8 @@
       - @lines_by_game.each do |game, lines|
         - lines.select(&:point_spread?).sort_by(&:created_at).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
           %tr.border-0
-            %td.align-bottom.pb-0.border-bottom-0.lh-1= game.starts_at.strftime("%m/%-d/%Y")
-            %td.align-middle.pb-0.border-bottom-0.lh-1= line1.contestant.competitor.abbreviation
+            %td.align-bottom.pb-1.border-bottom-0.lh-1= game.starts_at.strftime("%m/%-d/%Y")
+            %td.align-middle.pb-1.border-bottom-0.lh-1= line1.contestant.competitor.abbreviation
             %td.border-bottom-0.lh-1.bet-trigger
               = link_to "#betOffcanvas-#{line1.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line1.id}" do
                 = line1.value.positive? ? "+#{line1.value}" : line1.value
@@ -56,8 +56,8 @@
                 = link_to "#betOffcanvas-#{line.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line.id}" do
                   = "O #{line.value}"
           %tr
-            %td.align-top.pt-0.lh-1.border-bottom-0= game.starts_at.strftime("%l:%M%P")
-            %td.align-middle.pt-0.lh-1.border-bottom-0= line2.contestant.competitor.abbreviation
+            %td.align-top.pt-1.lh-1.border-bottom-0= game.starts_at.strftime("%l:%M%P")
+            %td.align-middle.pt-1.lh-1.border-bottom-0= line2.contestant.competitor.abbreviation
             %td.border-bottom-0.pt-0.lh-1.bet-trigger
               = render "bet_form", line: line2, user: current_user
               = link_to "#betOffcanvas-#{line2.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line2.id}" do
