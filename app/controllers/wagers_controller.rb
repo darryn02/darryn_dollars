@@ -63,7 +63,7 @@ class WagersController < ApplicationController
     scope = Wager.
       where(status: statuses).
       includes(:line, :contestant, account: [user: :accounts]).
-      order(created_at: :desc)
+      order(placed_at: :desc)
     unless current_user.admin?
       scope = scope.joins(:account).where(accounts: { user_id: current_user.id })
     end
