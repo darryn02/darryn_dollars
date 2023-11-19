@@ -6,13 +6,17 @@ module Admin
 
     def fetch_lines
       if params[:scope].to_s == "second_half"
-        if ENV["USE_ODDS_API"] == "1"
+        if ENV["USE_BOVADA_API"] == "1"
+          @notice = BovadaApiClient.update_lines(sport: params[:sport])
+        elsif ENV["USE_ODDS_API"] == "1"
           @notice = LinesApiClient.update_lines(sport: params[:sport], scope: :second_half)
         else
           @notice = LineScraper.new.run("second_half")
         end
       else
-        if ENV["USE_ODDS_API"] == "1"
+        if ENV["USE_BOVADA_API"] == "1"
+          @notice = BovadaApiClient.update_lines(sport: params[:sport])
+        elsif ENV["USE_ODDS_API"] == "1"
           @notice = LinesApiClient.update_lines(sport: params[:sport], scope: :first_half)
         else
           @notice = LineScraper.run

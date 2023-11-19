@@ -1,7 +1,9 @@
 namespace :scrape do
   desc 'Scrape NFL lines and create games and contests'
   task nfl_lines: :environment do
-    if ENV["USE_ODDS_API"] == "1"
+    if ENV["USE_BOVADA_API"] == "1"
+       BovadaApiClient.update_lines(sport: :nfl)
+    elsif ENV["USE_ODDS_API"] == "1"
       return unless nfl_wagerable?
       LinesApiClient.update_lines(sport: :nfl, scope: :first_half)
     else
@@ -11,7 +13,9 @@ namespace :scrape do
   end
 
   task nfl_second_half_lines: :environment do
-    if ENV["USE_ODDS_API"] == "1"
+    if ENV["USE_BOVADA_API"] == "1"
+      BovadaApiClient.update_lines(sport: :nfl)
+    elsif ENV["USE_ODDS_API"] == "1"
       LinesApiClient.update_lines(sport: :nfl, scope: :second_half)
     else
       LineScraper.new.run("second_half")
