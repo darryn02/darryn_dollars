@@ -19,7 +19,7 @@ class Competitor < ApplicationRecord
       or(where(name: str)).
       or(where(full_name: str)).
       or(where("? = ANY(nicknames)", str))
-    scope = scope.send(sport) if sport.presence_in(self.sports.keys)
+    scope = scope.send(sport) if sport.to_s.presence_in(self.sports.keys)
     scope.first
   end
 
