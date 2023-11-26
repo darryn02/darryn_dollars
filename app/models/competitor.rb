@@ -20,7 +20,7 @@ class Competitor < ApplicationRecord
       or(where(full_name: str)).
       or(where("? = ANY(nicknames)", str))
     scope = scope.send(sport) if sport.to_s.presence_in(self.sports.keys)
-    scope.first
+    scope.sole
   end
 
   def self.find_by_string!(str, sport: nil)

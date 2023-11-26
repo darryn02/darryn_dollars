@@ -9,7 +9,7 @@ class LinesController < ApplicationController
       joins(:game).
       merge(Game.wagerable).
       references(:game).
-      includes(:competitor).
+      includes(:competitor, :game).
       order("games.starts_at").
       group_by(&:game)
   end
