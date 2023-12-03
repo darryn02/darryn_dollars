@@ -29,7 +29,7 @@ class BovadaApiClient
     deactivate_ids = Line.active.send(sport).pluck(:id)
 
     url = File.join(URL_BASE, API_SPORT_MAP[sport])
-    json = JSON.parse(URI.open(url, "Cookie" => "VISITED=true").read)
+    json = JSON.parse(URI.open(url, "Cookie" => ENV["BOVADA_COOKIE"]).read)
 
     lines = parse_and_assert_lines(json)
     activate_ids = lines.map(&:id)
