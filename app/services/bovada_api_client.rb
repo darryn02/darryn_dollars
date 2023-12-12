@@ -76,8 +76,9 @@ class BovadaApiClient
 
   def extract_lines_from_markets(event, game, away_contestant, home_contestant)
     game_lines = event["displayGroups"].find { |c| c["description"] == "Game Lines" }
-    relevant_markets = game_lines["markets"].select(&method(:relevant_market?))
+    return [] if game_lines.blank?
 
+    relevant_markets = game_lines["markets"].select(&method(:relevant_market?))
     relevant_markets.flat_map do |market|
       find_or_create_line(market, game, away_contestant, home_contestant)
     end.compact
