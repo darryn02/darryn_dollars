@@ -8,11 +8,11 @@ class ScoreScraper
     # ncaab: ["basketball/mens-college-basketball", DateTime.now, 1]
   }
 
-  def self.run(sport, week = nil, season = nil)
-    new.run(sport.to_sym, week, season)
+  def self.run(sport, week = nil)
+    new.run(sport.to_sym, week)
   end
 
-  def run(sport, week = nil, season = nil)
+  def run(sport, week = nil)
     require 'open-uri'
 
     api_sport, regular_season_start_date, regular_season_weeks = API_SPORT_MAP[sport]

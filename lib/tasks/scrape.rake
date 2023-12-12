@@ -4,7 +4,7 @@ namespace :scrape do
     if ENV["USE_BOVADA_API"] == "1"
        BovadaApiClient.update_lines(sport: :nfl)
     elsif ENV["USE_ODDS_API"] == "1"
-      return unless nfl_wagerable?
+      exit unless nfl_wagerable?
       LinesApiClient.update_lines(sport: :nfl, scope: :first_half)
     else
       LineScraper.run
@@ -31,13 +31,13 @@ namespace :scrape do
   end
 
   task nfl_results: :environment do
-    return unless Game.nfl.in_progress.exists?
+    exit unless Game.nfl.in_progress.exists?
 
     ScoreScraper.run(:nfl)
   end
 
   task ncaaf_results: :environment do
-    return unless Game.ncaaf.in_progress.joins(:contestants).where(contestants: { scores: [] }).exists?
+    exit unless Game.ncaaf.in_progress.joins(:contestants).where(contestants: { scores: [] }).exists?
 
     ScoreScraper.run(:ncaaf)
   end
