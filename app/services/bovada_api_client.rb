@@ -45,8 +45,9 @@ class BovadaApiClient
   def parse_and_assert_lines(json)
     return [] if (json = Array.wrap(json).first).blank?
 
-    json["events"].flat_map do |event|
-      home_team, away_team = event["competitors"].partition { |c| c["home"] }.map { |c| c.first["name"].gsub(/\(.*?\)/, "").squish }
+    json["events"].flat_map { |event|
+      home_team, away_team = event["competitors"].partition { |c| c["home"] }.
+        map { |c| c.first["name"].gsub(/\(.*?\)/, "").squish }
 
       home = Competitor.find_by_string(home_team, sport: sport)
       away = Competitor.find_by_string(away_team, sport: sport)
@@ -58,7 +59,7 @@ class BovadaApiClient
       home_contestant = game.contestants.find_or_create_by!(competitor: home, priority: 1)
 
       extract_lines_from_markets(event, game, away_contestant, home_contestant)
-    end
+    }.compact
   end
 
   def find_or_create_game!(start_time, competitor_ids = [])

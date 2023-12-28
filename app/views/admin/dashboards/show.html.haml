@@ -65,9 +65,9 @@
             %td.text-nowrap{ style: "width: 50px" }= currency(account.balance)
         %tr
           %td Totals
-          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:winnings) >= 0 ? "table-info" : "table-danger") }= currency(@accounts.sum(&:winnings))
+          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:winnings) < 0 ? "table-info" : "table-danger") }= currency(-1 * @accounts.sum(&:winnings))
           %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:payment_sum) > 0 ? "table-warning" : "") }= currency(-1 * @accounts.sum(&:payment_sum))
-          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:balance) >= 0 ? "table-success" : "table-danger") }= currency(@accounts.sum(&:balance))
+          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:balance) < 0 ? "table-success" : "table-danger") }= currency(-1 * @accounts.sum(&:balance))
 
 .card.text-bg-primary.mt-3{ style: "width: 100%;" }
   .card-body
@@ -78,7 +78,7 @@
     .payment-form
       = simple_form_for([:admin, Payment.new]) do |f|
         .mb-3
-          = f.input :account_id, collection: Account.all, label_method: :to_s, value_method: :id
+          = f.input :account_id, collection: Account.all, label_method: :qualified_name, value_method: :id
         .mb-3
           = f.input :amount, as: :string, class: "form-control", input_html: { data: { type: "currency" } }
         = f.submit "Submit", class: "btn btn-primary"
