@@ -5,7 +5,7 @@
       %h4.mb-1
         Balance:
         %span{ class: (account.balance.negative? ? "text-danger" : "text-success") }= currency(account.balance)
-        - if wagers.confirmed.any?
+        - if wagers.any?(&:confirmed?)
           %span.fw-lighter= "(#{currency(account.liabilities)} in play)"
       %h6= "Credit Limit: #{currency(account.credit_limit)} (#{utilization}%)"
     %p.card-text
