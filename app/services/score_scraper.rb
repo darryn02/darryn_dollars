@@ -28,7 +28,7 @@ class ScoreScraper
     missing_competitor_count = 0
     json["events"].map do |event|
       competition = event["competitions"].find { |c| c["type"]["abbreviation"] == "STD" }
-      next unless competition["status"]["type"]["completed"]
+      next unless competition&.dig("status", "type", "completed")
 
       date = DateTime.parse(competition["date"]).in_time_zone("UTC")
       competition["competitors"].each do |competitor|
@@ -41,7 +41,7 @@ class ScoreScraper
         end
 
         scores = competitor["linescores"].map { |s| s["value"] }
-        Contestant.joins(:game).where(competitor: db_competitor).where(games: { starts_at: date - 1.hour..date + 1.hour }).each do |c|
+        Contestant.joins(:game).where(competitor: db_competitor).where(games: { starts_at: date - 2.hours..date + 2.hours }).each do |c|
           if c.scores != scores
             c.update!(scores: scores)
             update_count += 1

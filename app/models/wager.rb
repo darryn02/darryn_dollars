@@ -10,15 +10,16 @@ class Wager < ApplicationRecord
 
   enum status: { pending: 0, confirmed: 1, win: 2, loss: 3, push: 4, canceled: 5 }
 
+  before_validation :set_placed_at
+  before_save :update_net
+
   validates :amount, presence: true, numericality: { greater_than_or_equal_to: DEFAULT_MIN_WAGER }, on: :create
   validates :line, presence: true, on: :create
   validates :account, presence: true, on: :create
+  validates :placed_at, presence: true, if: :confirming?
   validate :game_has_not_started
   validate :line_must_be_active
   validate :account_has_sufficient_credit
-
-  before_save :update_net
-  before_validation :set_placed_at
 
   def self.historical
     where(status: [:win, :loss, :push])
@@ -63,14 +64,11 @@ class Wager < ApplicationRecord
   end
 
   def set_placed_at
-    if changes["status"] == ["pending", "confirmed"]
-      self.placed_at = Time.now
-    end
+    self.placed_at = Time.now if confirming?
   end
 
-
   def game_has_not_started
-    return if persisted? && changes["status"] != ["pending", "confirmed"]
+    return if confirming?
 
     if line.active? && (line.game? || line.first_half?) && line.game.starts_at.past?
       errors.add(:line, "has expired, past game start time")
@@ -78,7 +76,7 @@ class Wager < ApplicationRecord
   end
 
   def line_must_be_active
-    return if persisted? && changes["status"] != ["pending", "confirmed"]
+    return if confirming?
 
     if line.hidden?
       errors.add(:line, "is no longer active")
@@ -86,10 +84,14 @@ class Wager < ApplicationRecord
   end
 
   def account_has_sufficient_credit
-    return if persisted? && changes["status"] != ["pending", "confirmed"]
+    return if confirming?
 
     if account.credit_limit + account.balance - account.liabilities < amount
       errors.add(:accout, "has insufficient credit")
     end
+  end
+
+  def confirming?
+    persisted? && changes["status"] != ["pending", "confirmed"]
   end
 end

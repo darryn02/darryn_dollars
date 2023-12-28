@@ -24,6 +24,8 @@ Rails.application.routes.draw do
         get :score_wagers
       end
     end
+
+    resource :payments, only: [:create]
   end
 
   root to: 'lines#index'

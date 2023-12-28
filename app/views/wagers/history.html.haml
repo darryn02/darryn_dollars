@@ -10,11 +10,11 @@
     .tab-content#account-tabs-content
       - @wagers_by_account.each_with_index do |(account, wagers), index|
         .tab-pane.fade.show{ id: "account-#{account.id}-tab-pane", class: (index.zero? ? "active" : ""), role: "tabpanel", "aria-labelledby" => "account-#{account.id}-tab", tabindex: "0" }
-          = render "account_history", account: account
+          = render "account_history", account: account, wagers: wagers
   - else
-    - account = @wagers_by_account.keys.first
+    - account, wagers = @wagers_by_account.first
     - if account.present?
-      = render "account_history", account: account
+      = render "account_history", account: account, wagers: wagers
     - else
       .blank-state.blank-state-lg
         %i.bi.bi-emoji-frown

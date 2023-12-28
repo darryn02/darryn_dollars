@@ -48,19 +48,37 @@
     .card-title
       %h4.mb-1
         Account Summary
-  %ul.list-group.list-group-flush
-    - @accounts.each_with_index do |account, index|
-      %li.d-flex.list-group-item.align-items-center{ id: "account-#{account.id}", class: ( index % 2 == 0 ? "bg-theme-2" : "bg-theme-3") }
-        .ms-5.flex-fill= account.qualified_name
-        = currency(account.balance)
-    - grand_total = -1 * (@accounts.sum(&:balance) - Payment.sum(:amount))
-    %li.d-flex.list-group-item.align-items-center{ class: (grand_total >= 0 ? "bg-success" : "bg-danger") }
-      .ms-5.flex-fill Total
-      = currency(grand_total)
-    %li.d-flex.list-group-item.align-items-center{ class: "bg-info"}
-      .ms-5.flex-fill Payments
-      = currency(-1 * Payment.sum(:amount))
-    - balance = -1 * @accounts.sum(&:balance)
-    %li.d-flex.list-group-item.align-items-center{ class: (balance >= 0 ? "bg-success" : "bg-danger") }
-      .ms-5.flex-fill Outstanding
-      = currency(balance)
+
+    %table.table.table-dark.table-striped
+      %thead
+        %tr
+          %th Account
+          %th.text-nowrap Winnings
+          %th.text-nowrap Payments
+          %th.text-nowrap Balance
+      %tbody
+        - @accounts.each_with_index do |account, index|
+          %tr
+            %td= account.qualified_name
+            %td.text-nowrap{ style: "width: 50px" }= currency(account.winnings)
+            %td.text-nowrap{ style: "width: 50px" }= currency(account.payment_sum)
+            %td.text-nowrap{ style: "width: 50px" }= currency(account.balance)
+        %tr
+          %td Totals
+          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:winnings) >= 0 ? "table-info" : "table-danger") }= currency(@accounts.sum(&:winnings))
+          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:payment_sum) > 0 ? "table-warning" : "") }= currency(-1 * @accounts.sum(&:payment_sum))
+          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:balance) >= 0 ? "table-success" : "table-danger") }= currency(@accounts.sum(&:balance))
+
+.card.text-bg-primary.mt-3{ style: "width: 100%;" }
+  .card-body
+    .card-title
+      %h4.mb-1
+        Enter Payment
+
+    .payment-form
+      = simple_form_for([:admin, Payment.new]) do |f|
+        .mb-3
+          = f.input :account_id, collection: Account.all, label_method: :to_s, value_method: :id
+        .mb-3
+          = f.input :amount, as: :string, class: "form-control", input_html: { data: { type: "currency" } }
+        = f.submit "Submit", class: "btn btn-primary"
