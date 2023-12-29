@@ -43,7 +43,7 @@ class WagersController < ApplicationController
           errors << "#{wager}: #{e.message.sub('Validation failed:', '')}"
         end
       end
-      redirect_to bet_slip_wagers_path, notice: (["#{@wagers.size - errors.size} wagers confirmed."] + errors).join("<br>")
+      redirect_to bet_slip_wagers_path, notice: (["#{@wagers.size - errors.size} wagers confirmed."] + errors).join("<br>").html_safe
     end
   end
 
@@ -54,6 +54,36 @@ class WagersController < ApplicationController
     else
       @wagers.destroy_all
       redirect_to bet_slip_wagers_path, notice: "#{@wagers.size} wagers cancelled"
+    end
+  end
+
+  def mark_as_win
+    @wager = Wager.find(params[:id])
+    if @wager.confirmed?
+      @wager.win!
+      redirect_to bet_slip_wagers_path, notice: "Wager #{@wager.id} has been scored a win."
+    else
+      redirect_to bet_slip_wagers_path, error: "Wager #{@wager.id} cannot be scored as it is not confirmed."
+    end
+  end
+
+  def mark_as_loss
+    @wager = Wager.find(params[:id])
+    if @wager.confirmed?
+      @wager.loss!
+      redirect_to bet_slip_wagers_path, notice: "Wager #{@wager.id} has been scored a loss."
+    else
+      redirect_to bet_slip_wagers_path, error: "Wager #{@wager.id} cannot be scored as it is not confirmed."
+    end
+  end
+
+  def mark_as_push
+    @wager = Wager.find(params[:id])
+    if @wager.confirmed?
+      @wager.push!
+      redirect_to bet_slip_wagers_path, notice: "Wager #{@wager.id} has been scored a push."
+    else
+      redirect_to bet_slip_wagers_path, error: "Wager #{@wager.id} cannot be scored as it is not confirmed."
     end
   end
 

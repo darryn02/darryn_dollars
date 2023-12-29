@@ -8,6 +8,9 @@ Rails.application.routes.draw do
       get :history
       post :confirm_pending
       delete :cancel_pending
+      get :mark_as_win
+      get :mark_as_loss
+      get :mark_as_push
     end
   end
   resources :bet_slips, only: [:index, :show, :update, :destroy]
