@@ -27,7 +27,7 @@ class ScoreScraper
     update_count = 0
     missing_competitor_count = 0
     json["events"].map do |event|
-      competition = event["competitions"].find { |c| c["type"]["abbreviation"] == "STD" }
+      competition = event["competitions"].find { |c| ["STD", "Bowl Game"].include?(c["type"]["abbreviation"]) }
       next unless competition&.dig("status", "type", "completed")
 
       date = DateTime.parse(competition["date"]).in_time_zone("UTC")
