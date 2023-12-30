@@ -68,7 +68,7 @@ class Wager < ApplicationRecord
   end
 
   def game_has_not_started
-    return if confirming?
+    return unless confirming?
 
     if line.active? && (line.game? || line.first_half?) && line.game.starts_at.past?
       errors.add(:line, "has expired, past game start time")
@@ -76,7 +76,7 @@ class Wager < ApplicationRecord
   end
 
   def line_must_be_active
-    return if confirming?
+    return unless confirming?
 
     if line.hidden?
       errors.add(:line, "is no longer active")
@@ -84,7 +84,7 @@ class Wager < ApplicationRecord
   end
 
   def account_has_sufficient_credit
-    return if confirming?
+    return unless confirming?
 
     if account.credit_limit + account.balance - account.liabilities < amount
       errors.add(:accout, "has insufficient credit")
@@ -92,6 +92,6 @@ class Wager < ApplicationRecord
   end
 
   def confirming?
-    persisted? && changes["status"] != ["pending", "confirmed"]
+    persisted? && changes["status"] == ["pending", "confirmed"]
   end
 end
