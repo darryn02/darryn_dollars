@@ -5,6 +5,7 @@ class BovadaApiClient
 
   API_SPORT_MAP = {
     nfl: "football/nfl",
+    super_bowl: "football/super-bowl",
     ncaaf: "football/college-football",
     nba: "basketball/nba",
     ncaab: "basketball/college-basketball",
@@ -32,6 +33,11 @@ class BovadaApiClient
     json = JSON.parse(URI.open(url, "Cookie" => ENV["BOVADA_COOKIE"]).read)
 
     lines = parse_and_assert_lines(json)
+    if lines.empty?
+      url = File.join(URL_BASE, API_SPORT_MAP[:super_bowl])
+      json = JSON.parse(URI.open(url, "Cookie" => ENV["BOVADA_COOKIE"]).read)
+    end
+
     activate_ids = lines.map(&:id)
     deactivated_count = Line.where(id: deactivate_ids - activate_ids).update_all(updated_at: Time.now, hidden: true)
     activated_count = Line.where(id: activate_ids - deactivate_ids).update_all(updated_at: Time.now, hidden: false)
