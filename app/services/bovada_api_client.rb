@@ -36,6 +36,7 @@ class BovadaApiClient
     if lines.empty?
       url = File.join(URL_BASE, API_SPORT_MAP[:super_bowl])
       json = JSON.parse(URI.open(url, "Cookie" => ENV["BOVADA_COOKIE"]).read)
+      lines = parse_and_assert_lines(json)
     end
 
     activate_ids = lines.map(&:id)
