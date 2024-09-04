@@ -7,7 +7,7 @@ class LinesController < ApplicationController
       send(sport).
       send(scope).
       joins(:game).
-      merge(Game.wagerable).
+      merge(Game.viewable).
       references(:game).
       includes(:competitor, :game).
       order("games.starts_at").

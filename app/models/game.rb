@@ -26,6 +26,10 @@ class Game < ApplicationRecord
     where('starts_at BETWEEN ? AND ?', 3.hours.ago, Time.current + Wager::WINDOW)
   end
 
+  def self.viewable
+    where('starts_at BETWEEN ? AND ?', 3.hours.ago, Time.current + 3.days)
+  end
+
   def self.upcoming
     where('starts_at BETWEEN ? AND ?', Time.current + Wager::WINDOW, Time.current + Wager::PREVIEW_WINDOW)
   end
@@ -59,6 +63,10 @@ class Game < ApplicationRecord
 
   def to_s
     "#{starts_at.strftime("%-m/%-d %l:%M%P")} #{matchup}"
+  end
+
+  def wagerable
+    starts_at.between?(3.hours.ago, Time.current + Wager::WINDOW)
   end
 
   private
