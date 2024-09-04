@@ -65,7 +65,7 @@ class Game < ApplicationRecord
     "#{starts_at.strftime("%-m/%-d %l:%M%P")} #{matchup}"
   end
 
-  def wagerable
+  def wagerable?
     starts_at.between?(3.hours.ago, Time.current + Wager::WINDOW)
   end
 
