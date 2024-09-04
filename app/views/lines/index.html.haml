@@ -70,7 +70,7 @@
                 = link_to "#betOffcanvas-#{line2.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line2.id}" do
                   = line2.value.positive? ? "+#{line2.value}" : line2.value
               - else
-                  = line2.value.positive? ? "+#{line2.value}" : line2.value
+                = line2.value.positive? ? "+#{line2.value}" : line2.value
             %td.border-bottom-0.pt-0.lh-1.bet-trigger
               - line = lines.select(&:under?).first
               - if line.present?
