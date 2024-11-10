@@ -56,8 +56,8 @@ class BovadaApiClient
       home_team, away_team = event["competitors"].partition { |c| c["home"] }.
         map { |c| c.first["name"].gsub(/\(.*?\)/, "").squish }
 
-      home = Competitor.find_by_string(home_team, sport: sport)
-      away = Competitor.find_by_string(away_team, sport: sport)
+      home = Competitor.find_by_string!(home_team, sport: sport)
+      away = Competitor.find_by_string!(away_team, sport: sport)
       start_time = Time.at(event["startTime"] / 1000.0)
       live = event["live"]
 

@@ -21,6 +21,8 @@ class Competitor < ApplicationRecord
       or(where("? = ANY(nicknames)", str))
     scope = scope.send(sport) if sport.to_s.presence_in(self.sports.keys)
     scope.sole
+  rescue ActiveRecord::RecordNotFound
+    nil
   end
 
   def self.find_by_string!(str, sport: nil)

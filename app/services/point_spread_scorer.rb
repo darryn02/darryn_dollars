@@ -1,7 +1,7 @@
 class PointSpreadScorer < Scorer
   def run
     contestants = line.game.contestants
-    me, them = contestants.partition { |c| c.id == line.contestant_id }.map(&:first)
+    me, them = contestants.partition { |c| c&.id == line.contestant_id }.map(&:first)
     if me.blank? || them.blank?
       Rails.logger.error("Line #{line.id} with contestant_id #{line.contestant_id} did not match a game contestant (#{contestants.map { |c| c&.id }})")
       return
