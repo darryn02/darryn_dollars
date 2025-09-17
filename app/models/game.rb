@@ -27,7 +27,7 @@ class Game < ApplicationRecord
   end
 
   def self.viewable
-    where('starts_at BETWEEN ? AND ?', 3.hours.ago, Time.current + 3.days)
+    where('starts_at BETWEEN ? AND ?', 3.hours.ago, Time.current + 6.days)
   end
 
   def self.upcoming

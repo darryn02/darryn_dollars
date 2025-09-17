@@ -1,4 +1,6 @@
 class Account < ApplicationRecord
+  CHAD = ENV.fetch("CHAD_ACCOUNT_ID", 7).to_i
+
   belongs_to :user
   has_many :bet_slips
   has_many :wagers, through: :bet_slips
