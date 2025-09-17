@@ -3,7 +3,7 @@ class Line < ApplicationRecord
   has_one :competitor, through: :contestant
   belongs_to :game
   has_many :wagers
-  has_many :chump_wagers, class_name: "Wager", foreign_key: "line_id", -> { where.not(account_id: Account.CHAD) }
+  has_many :chump_wagers, -> { where.not(account_id: Account::CHAD) }, class_name: "Wager", foreign_key: "line_id"
 
   enum kind: { point_spread: 0, moneyline: 1, over: 2, under: 3, prop: 9 }
   enum scope: { game: 0, first_half: 1, second_half: 2 }
