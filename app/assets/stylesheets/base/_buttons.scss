@@ -1,3 +1,6 @@
 $_button-background-color: $action-color;
 $_button-background-color-hover: shade($action-color, 20%);
 
+#lines-table td {
+  padding: 0.25rem 0.25rem;
+}

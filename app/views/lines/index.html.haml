@@ -32,7 +32,7 @@
     %h2 No #{@scope.to_s.titleize} Lines Currently Available
     %p Please check back later
 - else
-  %table{ class: "table table-responsive mt-0 p-0" }
+  %table{ id: "lines-table", class: "table table-responsive mt-0 p-0" }
     %thead
       %tr
         %th
