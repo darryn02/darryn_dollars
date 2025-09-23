@@ -5,6 +5,7 @@ class Game < ApplicationRecord
   has_many :contestants
   has_many :competitors, through: :contestants
   has_many :lines
+  has_many :wagers, through: :lines
 
   def self.list_all
     Game.order(starts_at: :asc).map do |g|
