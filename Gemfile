@@ -24,7 +24,6 @@ gem "recipient_interceptor"
 gem "sassc-rails"
 gem "simple_form"
 gem "sprockets"
-gem 'mini_racer'
 gem 'execjs'
 gem "title"
 gem 'twilio-ruby'

@@ -190,7 +190,6 @@ GEM
     launchy (3.0.1)
       addressable (~> 2.8)
       childprocess (~> 5.0)
-    libv8-node (18.19.0.0)
     listen (3.9.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
@@ -208,8 +207,6 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     mini_portile2 (2.8.7)
-    mini_racer (0.14.1)
-      libv8-node (~> 18.19.0.0)
     minitest (5.25.1)
     net-http (0.4.1)
       uri
@@ -432,7 +429,6 @@ DEPENDENCIES
   kaminari
   launchy
   listen
-  mini_racer
   nokogiri
   normalize-rails
   pg
