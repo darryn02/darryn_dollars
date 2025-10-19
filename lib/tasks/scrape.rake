@@ -31,13 +31,13 @@ namespace :scrape do
   end
 
   task nfl_results: :environment do
-    exit unless Game.nfl.joins(:wagers).where(wagers: { status: :pending }).exists?
+    exit unless Game.nfl.joins(:wagers).where(wagers: { status: :confirmed }).exists?
 
     ScoreScraper.run(:nfl)
   end
 
   task ncaaf_results: :environment do
-    exit unless Game.ncaaf.joins(:wagers).where(wagers: { status: :pending }).exists?
+    exit unless Game.ncaaf.joins(:wagers).where(wagers: { status: :confirmed }).exists?
 
     ScoreScraper.run(:ncaaf)
   end
