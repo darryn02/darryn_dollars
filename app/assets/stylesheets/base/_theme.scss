@@ -378,15 +378,14 @@ body .container.main {
 // Sport / scope nav
 // ---------------------------------------------------------------------------
 
+// No overflow here. Each pill opens a dropdown, and setting overflow on one
+// axis computes the other to `auto` as well, which clipped the open menu
+// against the 44px-tall strip. Two sports never needed to scroll anyway.
 .dd-scope-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: .5rem;
   margin-bottom: 1rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-
-  &::-webkit-scrollbar { display: none; }
 }
 
 .dd-scope-pill {
