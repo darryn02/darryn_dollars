@@ -17,8 +17,11 @@ class LinesController < ApplicationController
 
   private
 
+  # A sport that is switched off is not just hidden from the nav - asking for
+  # it by hand falls back to whatever is on, so a stale bookmark or a link in
+  # the group chat cannot reopen a board the book has closed.
   def sport
-    @sport ||= (params[:sport].to_s.presence_in(Game.sports.keys) || "nfl").to_sym
+    @sport ||= (params[:sport].to_s.presence_in(Sports.enabled) || Sports.default || "nfl").to_sym
   end
 
   def scope
