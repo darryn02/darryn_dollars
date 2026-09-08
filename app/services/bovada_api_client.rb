@@ -75,14 +75,19 @@ class BovadaApiClient
   def parse_and_assert_lines(json)
     return [] if (json = Array.wrap(json).first).blank?
 
-    json["events"].flat_map { |event|
-      home_team, away_team = event["competitors"].partition { |c| c["home"] }.
-        map { |c| c.first["name"].gsub(/\(.*?\)/, "").squish }
+    unresolved = []
 
-      home = Competitor.find_by_string!(home_team, sport: sport)
-      away = Competitor.find_by_string!(away_team, sport: sport)
+    lines = Array.wrap(json["events"]).flat_map { |event|
+      names = team_names(event)
+      competitors = names && resolve_competitors(names)
+
+      if competitors.nil?
+        unresolved << (names ? names.join(" vs. ") : "event #{event["id"]}")
+        next []
+      end
+
+      home, away = competitors
       start_time = Time.at(event["startTime"] / 1000.0)
-      live = event["live"]
 
       game = find_or_create_game!(start_time, [home.id, away.id])
       away_contestant = game.contestants.find_or_create_by!(competitor: away, priority: 0)
@@ -90,6 +95,44 @@ class BovadaApiClient
 
       extract_lines_from_markets(event, game, away_contestant, home_contestant)
     }.compact
+
+    report_unresolved(unresolved)
+
+    lines
+  end
+
+  # [home, away] as the book writes them, or nil if the event is not shaped
+  # like a two-sided contest.
+  def team_names(event)
+    home, away = Array.wrap(event["competitors"]).partition { |competitor| competitor["home"] }
+    return nil unless home.one? && away.one?
+
+    [home, away].map { |side| side.first["name"].to_s.gsub(/\(.*?\)/, "").squish }
+  end
+
+  # nil when either side is a name we do not carry, or one ambiguous enough to
+  # match more than one of our competitors.
+  def resolve_competitors(names)
+    home, away = names.map { |name| Competitor.find_by_string(name, sport: sport) }
+    return nil if home.nil? || away.nil?
+
+    [home, away]
+  rescue ActiveRecord::SoleRecordExceeded
+    nil
+  end
+
+  # An unrecognised team used to raise straight out of the parse, which took
+  # down every other game in the response and aborted the run before any
+  # ScrapeRun row was written - so a book adding a team looked, from the
+  # outside, exactly like nothing happening at all. Skip that event and say so.
+  def report_unresolved(unresolved)
+    return if unresolved.empty?
+
+    message = "Skipped #{unresolved.size} #{sport} event(s) with unrecognised competitors: " \
+              "#{unresolved.join("; ")}"
+
+    Rails.logger.warn(message)
+    Honeybadger.notify(message, context: { sport: sport, events: unresolved }) if defined?(Honeybadger)
   end
 
   def find_or_create_game!(start_time, competitor_ids = [])
