@@ -1,7 +1,7 @@
 -# Sport and scope live in one scrollable strip so both stay reachable with a
 -# thumb. The links and their params are unchanged.
 %nav.dd-scope-nav{ "aria-label" => "Sport and period" }
-  - %w[nfl ncaaf].each do |sport|
+  - Sports.enabled.each do |sport|
     - active = @sport.to_s == sport
     - label = sport.upcase
     .dropdown
