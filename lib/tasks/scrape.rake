@@ -1,14 +1,14 @@
+# Every line comes from Bovada. A single response carries game, first half and
+# second half markets together, so the *_second_half_lines tasks now do exactly
+# the same work as their siblings; they are kept only so the Heroku Scheduler
+# entries pointing at them keep resolving, and can be dropped from the schedule.
 namespace :scrape do
   desc 'Fetch NFL lines, if the schedule says it is worth it'
   task nfl_lines: :environment do
     next unless ScrapeWindow.due?(sport: :nfl)
 
     ScrapeRun.track(sport: :nfl, scope: :game) do
-      if ENV["USE_BOVADA_API"] == "1"
-        BovadaApiClient.update_lines(sport: :nfl)
-      elsif ENV["USE_ODDS_API"] == "1"
-        LinesApiClient.update_lines(sport: :nfl, scope: :first_half)
-      end
+      BovadaApiClient.update_lines(sport: :nfl) if ENV["USE_BOVADA_API"] == "1"
     end
   end
 
@@ -16,11 +16,7 @@ namespace :scrape do
     next unless ScrapeWindow.due?(sport: :nfl)
 
     ScrapeRun.track(sport: :nfl, scope: :second_half) do
-      if ENV["USE_BOVADA_API"] == "1"
-        BovadaApiClient.update_lines(sport: :nfl)
-      elsif ENV["USE_ODDS_API"] == "1"
-        LinesApiClient.update_lines(sport: :nfl, scope: :second_half)
-      end
+      BovadaApiClient.update_lines(sport: :nfl) if ENV["USE_BOVADA_API"] == "1"
     end
   end
 
@@ -28,7 +24,7 @@ namespace :scrape do
     next unless ScrapeWindow.due?(sport: :ncaaf)
 
     ScrapeRun.track(sport: :ncaaf, scope: :game) do
-      LinesApiClient.update_lines(sport: :ncaaf, scope: :first_half)
+      BovadaApiClient.update_lines(sport: :ncaaf) if ENV["USE_BOVADA_API"] == "1"
     end
   end
 
@@ -36,7 +32,7 @@ namespace :scrape do
     next unless ScrapeWindow.due?(sport: :ncaaf)
 
     ScrapeRun.track(sport: :ncaaf, scope: :second_half) do
-      LinesApiClient.update_lines(sport: :ncaaf, scope: :second_half)
+      BovadaApiClient.update_lines(sport: :ncaaf) if ENV["USE_BOVADA_API"] == "1"
     end
   end
 

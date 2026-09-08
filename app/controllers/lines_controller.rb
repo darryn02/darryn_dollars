@@ -28,10 +28,8 @@ class LinesController < ApplicationController
   def ensure_second_half_lines_are_recent!
     return unless scope == :second_half
 
-    if ENV["USE_BOVADA_API"] == "1"
-      BovadaApiClient.ensure_second_half_lines_are_recent!(sport: sport)
-    elsif ENV["USE_ODDS_API"] == "1"
-      LinesApiClient.ensure_second_half_lines_are_recent!(sport: sport)
-    end
+    return unless ENV["USE_BOVADA_API"] == "1"
+
+    BovadaApiClient.ensure_second_half_lines_are_recent!(sport: sport)
   end
 end
