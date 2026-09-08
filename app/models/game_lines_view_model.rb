@@ -88,9 +88,14 @@ class GameLinesViewModel
     line.chump_wagers.sum(&:amount)
   end
 
+  # A spread belongs to a side, and the side is the contestant. `lines` has
+  # `on_delete: :nullify` against contestants, so a spread can outlive the
+  # contestant that gave it meaning - and one of those is unattributable: we
+  # cannot say whose spread it is, let alone which row to hang it on. Drop it
+  # and let the side render as having no spread, rather than sorting on nil.
   def spread_lines
     @spread_lines ||= lines.
-      select(&:point_spread?).
+      select { |line| line.point_spread? && line.contestant.present? }.
       sort_by(&:created_at).
       take(2).
       sort_by { |line| line.contestant.priority }
