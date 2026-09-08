@@ -49,6 +49,21 @@ class GameLinesViewModel
     starts_at.strftime("%a %-l:%M %p")
   end
 
+  # Betting opens Wager::WINDOW before kickoff and shuts once the game is
+  # underway, so "not wagerable" means two opposite things. Labelling both of
+  # them "Closed" reads as "you have missed it" to someone looking at a game
+  # that is still two days away.
+  def status_label
+    return nil if wagerable?
+    return "Opens #{betting_opens_at.strftime("%a %-l:%M %p")}" if betting_opens_at.future?
+
+    "Closed"
+  end
+
+  def betting_opens_at
+    starts_at - Wager::WINDOW
+  end
+
   # Every line on this card that gets a bet button. The offcanvas forms are
   # rendered from here, outside the row grid, so they cannot become stray
   # grid items.

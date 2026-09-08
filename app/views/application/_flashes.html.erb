@@ -2,7 +2,11 @@
   <% user_facing_flashes.each do |key, value| %>
     <div class="dd-flash dd-flash--<%= key %> fade-in-down-out" role="alert">
       <%= icon(%w[alert error].include?(key) ? "exclamation-triangle-fill" : "check-circle-fill") %>
-      <div><%= value %></div>
+      <%# confirm_pending joins per-wager errors with <br>. Flash values lose
+          html_safe on the round trip through the JSON session cookie, so the
+          markup arrived escaped and players saw a literal "<br>". Allow the
+          line break and nothing else. %>
+      <div><%= sanitize(value, tags: %w[br]) %></div>
     </div>
   <% end %>
 

@@ -1,8 +1,8 @@
 .dd-game
   .dd-game__header
     %span.dd-game__kickoff= game_lines.starts_at.strftime("%a %-l:%M %p")
-    - unless game_lines.wagerable?
-      %span.dd-game__status Closed
+    - if game_lines.status_label
+      %span.dd-game__status= game_lines.status_label
   - game_lines.rows.each do |row|
     .dd-game__row
       .dd-game__team

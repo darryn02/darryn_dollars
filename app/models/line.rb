@@ -41,11 +41,16 @@ class Line < ApplicationRecord
     end
   end
 
+  # "BUF +2.5 (-110)" for a game line, "BUF +2.5 (-110 1H)" for a half. The
+  # terms used to be interpolated as "(#{odds} #{scope_str(scope)})", which
+  # left "(-110 )" whenever scope_str returned nil - squish cannot reach a
+  # space that sits inside the parentheses.
   def to_s
-    "#{competitor.present? ? competitor.abbreviation : game.short_matchup} " \
-    "#{kind_string(kind)}" \
-    "#{value_string(kind)}" \
-    " #{"(#{odds} #{scope_str(scope)})"}".squish
+    [
+      competitor.present? ? competitor.abbreviation : game.short_matchup,
+      "#{kind_string(kind)}#{value_string(kind)}",
+      "(#{[odds, scope_str(scope)].compact.join(" ")})"
+    ].join(" ").squish
   end
 
   private
