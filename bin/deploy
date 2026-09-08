@@ -1,6 +1,10 @@
 #!/bin/sh
 
 # Run this script to deploy the app to Heroku.
+#
+# Migrations run in the release phase (see Procfile), which aborts the release
+# if they fail, leaving the previous version serving. Deploying also restarts
+# the dynos, so neither step belongs here any more.
 
 set -e
 
@@ -8,5 +12,3 @@ branch="$(git symbolic-ref HEAD --short)"
 target="${1:-staging}"
 
 git push "$target" "$branch:master"
-heroku run rake db:migrate --exit-code --remote "$target"
-heroku restart --remote "$target"
