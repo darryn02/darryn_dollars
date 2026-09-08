@@ -60,6 +60,35 @@ RSpec.describe GameLinesViewModel, type: :model do
       expect(rows.second.total).to be_under
     end
 
+    # `lines` has on_delete: :nullify against contestants, so a spread can
+    # outlive the side it belonged to. The board used to raise NoMethodError
+    # sorting these by contestant.priority, taking the whole page down.
+    it "drops a spread that has lost its contestant rather than raising" do
+      keeper = spread_for(away_contestant, 2.5)
+      orphan = spread_for(home_contestant, -2.5)
+      orphan.update_columns(contestant_id: nil)
+
+      rows = nil
+      expect { rows = view_model([keeper, orphan]).rows }.not_to raise_error
+
+      expect(rows.map(&:abbreviation)).to eq(%w[BUF MIA])
+      expect(rows.first.spread).to eq(keeper)
+      expect(rows.second.spread).to be_nil
+    end
+
+    it "survives a game whose contestants are gone entirely" do
+      lines = [total(:over, 47.5), total(:under, 47.5)]
+      Contestant.where(game_id: game.id).delete_all
+      game.reload
+
+      rows = nil
+      expect { rows = described_class.new(game: game, lines: lines, user: user).rows }.
+        not_to raise_error
+
+      expect(rows.map(&:abbreviation)).to eq([nil, nil])
+      expect(rows.map { |row| row.total.value }).to eq([47.5, 47.5])
+    end
+
     it "still shows the totals when neither side has a spread" do
       lines = [total(:over, 47.5), total(:under, 47.5)]
 
