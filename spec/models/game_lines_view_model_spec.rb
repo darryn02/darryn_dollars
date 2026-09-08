@@ -100,6 +100,31 @@ RSpec.describe GameLinesViewModel, type: :model do
     end
   end
 
+  describe "#status_label" do
+    def view_model_for(starts_at)
+      game.update!(starts_at: starts_at)
+      view_model([spread_for(away_contestant, 2.5)])
+    end
+
+    it "says nothing while betting is open" do
+      expect(view_model_for(2.hours.from_now).status_label).to be_nil
+    end
+
+    # "Closed" on a game two days out reads as "you missed it", when it means
+    # the opposite: betting has not started yet.
+    it "says when betting opens for a game outside the window" do
+      opens = 3.days.from_now
+      label = view_model_for(opens + Wager::WINDOW).status_label
+
+      expect(label).to start_with("Opens")
+      expect(label).to include(opens.strftime("%a"))
+    end
+
+    it "says closed once the game has been under way too long" do
+      expect(view_model_for(4.hours.ago).status_label).to eq("Closed")
+    end
+  end
+
   describe "#bet_lines" do
     it "lists each line that gets a button, once" do
       spread_away = spread_for(away_contestant, 2.5)
