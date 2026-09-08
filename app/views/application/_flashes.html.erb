@@ -1,10 +1,10 @@
-<div class="flashes">
-  <% if flash.any? %>
-    <% user_facing_flashes.each do |key, value| -%>
-      <div class="flash-<%= key %>"><%= value %></div>
-    <% end -%>
+<div class="dd-flashes" aria-live="polite">
+  <% user_facing_flashes.each do |key, value| %>
+    <div class="dd-flash dd-flash--<%= key %> fade-in-down-out" role="alert">
+      <%= icon(%w[alert error].include?(key) ? "exclamation-triangle-fill" : "check-circle-fill") %>
+      <div><%= value %></div>
+    </div>
   <% end %>
 
-  <div class="flash-from-js">
-  </div>
+  <div class="dd-flash flash-from-js" role="alert"></div>
 </div>

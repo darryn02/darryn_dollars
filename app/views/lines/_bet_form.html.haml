@@ -1,23 +1,37 @@
-.container
-  .offcanvas.offcanvas-bottom{ id: "betOffcanvas-#{line.id}", tabindex: "-1", "aria-labelledby" => "betOffcanvasLabel-#{line.id}" }
-    .offcanvas-header
-      %h4.offcanvas-title{ id: "betOffcanvasLabel-#{line.id}" }= line
-      %button.btn-close{ data: { bs_dismiss: "offcanvas" }, "aria-label" => "Close" }
-    .offcanvas-body
-      .bet-form.d-flex
-        = simple_form_for(Wager.new(line_id: line.id), remote: true) do |f|
-          = f.input :line_id, as: :hidden, value: line.id
+.offcanvas.offcanvas-bottom.dd-bet-sheet{ id: "betOffcanvas-#{line.id}", tabindex: "-1", "aria-labelledby" => "betOffcanvasLabel-#{line.id}" }
+  .offcanvas-header
+    .dd-bet-sheet__heading
+      %h2.offcanvas-title{ id: "betOffcanvasLabel-#{line.id}" }= line_headline(line)
+      %p.dd-bet-sheet__meta
+        = game_lines.matchup_label
+        %span.dd-bet-sheet__dot &middot;
+        = game_lines.kickoff_label
+        %span.dd-bet-sheet__dot &middot;
+        = line_terms(line)
+    %button.btn-close{ data: { bs_dismiss: "offcanvas" }, "aria-label" => "Close" }
+  .offcanvas-body
+    .bet-form
+      = simple_form_for(Wager.new(line_id: line.id), remote: true) do |f|
+        = f.input :line_id, as: :hidden, value: line.id
 
-          .row.mb-1
-            .col
-              - if user.accounts.many?
-                = f.input :account_id, collection: user.accounts, include_blank: false
-              - else
-                = f.hidden_field :account_id, value: user.accounts.first.id
-          .row.mb-1
-            .col
-              = f.input :amount, as: :string, input_html: { class: "js-wager-amount-bet", data: { type: "currency", odds: "#{line.odds}" } }
-            .col
-              = f.input :to_win, as: :string, input_html: { class: "js-wager-to-win", data: { type: "currency", odds: "#{line.odds}" } }
-            .col.d-flex.align-items-center
-              = f.submit "Add to Bet Slip", class: "btn btn-primary", style: "max-height: 50px"
+        - if user.accounts.many?
+          = f.input :account_id, collection: user.accounts, include_blank: false
+        - else
+          = f.hidden_field :account_id, value: user.accounts.first.id
+
+        .dd-quick-amounts{ role: "group", "aria-label" => "Quick amounts" }
+          - quick_wager_amounts.each do |amount|
+            %button.dd-quick-amount.js-quick-amount{ type: "button", data: { amount: amount } }
+              = number_to_currency(amount, precision: 0)
+
+        .dd-bet-fields
+          = f.input :amount, as: :string, label: "Amount",
+            input_html: { class: "js-wager-amount-bet", inputmode: "decimal",
+                          autocomplete: "off", placeholder: "$0.00",
+                          data: { type: "currency", odds: "#{line.odds}" } }
+          = f.input :to_win, as: :string, label: "To win",
+            input_html: { class: "js-wager-to-win", inputmode: "decimal",
+                          autocomplete: "off", placeholder: "$0.00",
+                          data: { type: "currency", odds: "#{line.odds}" } }
+
+        = f.submit "Add to Bet Slip", class: "btn btn-primary dd-bet-submit"

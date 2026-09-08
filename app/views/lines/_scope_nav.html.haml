@@ -1,0 +1,20 @@
+-# Sport and scope live in one scrollable strip so both stay reachable with a
+-# thumb. The links and their params are unchanged.
+%nav.dd-scope-nav{ "aria-label" => "Sport and period" }
+  - %w[nfl ncaaf].each do |sport|
+    - active = @sport.to_s == sport
+    - label = sport.upcase
+    .dropdown
+      %button.dd-scope-pill{ class: ("is-active" if active), type: "button",
+        data: { bs_toggle: "dropdown" }, "aria-expanded" => "false" }
+        %span= label
+        - if active
+          %span.dd-scope-pill__scope= @scope.to_s.titleize
+        = icon "chevron-down", css_class: "dd-scope-pill__caret"
+      %ul.dropdown-menu
+        - Line.scopes.keys.each do |scope|
+          %li
+            = link_to scope.titleize,
+              lines_path(sport: sport, scope: scope),
+              class: "dropdown-item #{'active' if active && @scope.to_s == scope} #{'js-slow-nav' if scope == 'second_half'}",
+              "aria-current" => ("true" if active && @scope.to_s == scope)

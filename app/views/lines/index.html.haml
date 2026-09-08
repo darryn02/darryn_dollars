@@ -1,87 +1,19 @@
-%h1.pt-3 Lines
+%h1.dd-page-title Lines
 
-%ul.nav.nav-tabs
-  %li.nav-item.dropdown
-    - if @sport == :nfl
-      = link_to "NFL (#{@scope.to_s.humanize})", "#", class: "nav-link dropdown-toggle active", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false", "aria-current" => "page"
-    - else
-      = link_to "NFL", "#", class: "nav-link dropdown-toggle", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false"
-    %ul.dropdown-menu
-      %li.dropdown-items
-        = link_to "Game", lines_path(sport: :nfl, scope: :game), class: "dropdown-item"
-      %li.dropdown-items
-        = link_to "First Half", lines_path(sport: :nfl, scope: :first_half), class: "dropdown-item"
-      %li.dropdown-items
-        = link_to "Second Half", lines_path(sport: :nfl, scope: :second_half), class: "dropdown-item"
-  %li.nav-item.dropdown
-    - if @sport == :ncaaf
-      = link_to "NCAAF (#{@scope.to_s.humanize})", "#", class: "nav-link dropdown-toggle active", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false", "aria-current" => "page"
-    - else
-      = link_to "NCAAF", "#", class: "nav-link dropdown-toggle", data: { bs_toggle: "dropdown" }, role: "button", "aria-expanded" => "false"
-    %ul.dropdown-menu
-      %li.dropdown-items
-        = link_to "Game", lines_path(sport: :ncaaf, scope: :game), class: "dropdown-item"
-      %li.dropdown-items
-        = link_to "First Half", lines_path(sport: :ncaaf, scope: :first_half), class: "dropdown-item"
-      %li.dropdown-items
-        = link_to "Second Half", lines_path(sport: :ncaaf, scope: :second_half), class: "dropdown-item"
+= render "scope_nav"
 
-- if @lines_by_game.count.zero?
-  .blank-state.blank-state-lg
-    %i.bi.bi-emoji-frown
-    %h2 No #{@scope.to_s.titleize} Lines Currently Available
-    %p Please check back later
+- if @games.empty?
+  .blank-state
+    = icon "emoji-frown"
+    %h2= "No #{@scope.to_s.titleize} Lines Right Now"
+    %p Check back a bit closer to kickoff.
 - else
-  %table{ id: "lines-table", class: "table table-responsive mt-0 p-0" }
-    %thead
-      %tr
-        %th
-        %th Team
-        %th Spread
-        %th Over/Under
-    %tbody
-      - @lines_by_game.each do |game, lines|
-        - over_line = lines.select(&:over?).first
-        - under_line = lines.select(&:under?).first
+  .dd-board
+    - @games.each do |game_lines|
+      = render "game", game_lines: game_lines
 
-        - lines.select(&:point_spread?).sort_by(&:created_at).take(2).sort_by { |l| l.contestant.priority }.each_cons(2) do |line1, line2|
-          %tr.border-0
-            %td.align-bottom.pb-1.border-bottom-0.lh-1= game.starts_at.strftime("%m/%-d/%Y")
-            %td.align-middle.pb-1.border-bottom-0.lh-1= line1.contestant.competitor.abbreviation
-            %td.border-bottom-0.lh-1.bet-trigger
-              - if game.wagerable?
-                - prefix = current_user.non_chump? && line1.chump_wagers.sum(&:amount) > line2.chump_wagers.sum(&:amount) ? "💰 " : ""
-                = link_to "#betOffcanvas-#{line1.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line1.id}" do
-                  = line1.value.positive? ? prefix + "+#{line1.value}" : prefix + line1.value.to_s
-                = render "bet_form", line: line1, user: current_user
-              - else
-                = line1.value.positive? ? "+#{line1.value}" : line1.value
-            %td.border-bottom-0.lh-1.bet-trigger
-              - if over_line.present?
-                - if game.wagerable?
-                  - prefix = current_user.non_chump? && over_line.chump_wagers.sum(&:amount) > under_line.chump_wagers.sum(&:amount) ? "💰 " : ""
-                  = render "bet_form", line: over_line, user: current_user
-                  = link_to "#betOffcanvas-#{over_line.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{over_line.id}" do
-                    = prefix + "O #{over_line.value}"
-                - else
-                  = "O #{over_line.value}"
-          %tr
-            %td.align-top.pt-1.lh-1.border-bottom-0= game.starts_at.strftime("%l:%M%P")
-            %td.align-middle.pt-1.lh-1.border-bottom-0= line2.contestant.competitor.abbreviation
-            %td.border-bottom-0.pt-0.lh-1.bet-trigger
-              - if game.wagerable?
-                - prefix = current_user.non_chump? && line2.chump_wagers.sum(&:amount) > line1.chump_wagers.sum(&:amount) ? "💰 " : ""
-                = render "bet_form", line: line2, user: current_user
-                = link_to "#betOffcanvas-#{line2.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{line2.id}" do
-                  = line2.value.positive? ? prefix + "+#{line2.value}" : prefix + line2.value.to_s
-              - else
-                = line2.value.positive? ? "+#{line2.value}" : line2.value
-            %td.border-bottom-0.pt-0.lh-1.bet-trigger
-              - if under_line.present?
-                - if game.wagerable?
-                  - prefix = current_user.non_chump? && under_line.chump_wagers.sum(&:amount) > over_line.chump_wagers.sum(&:amount) ? "💰 " : ""
-                  = render "bet_form", line: under_line, user: current_user
-                  = link_to "#betOffcanvas-#{under_line.id}", class: "btn btn-primary lh-1", data: { bs_toggle: "offcanvas" }, role: "button", "aria-controls" => "betOffcanvas-#{under_line.id}" do
-                    = prefix + "U #{under_line.value}"
-                - else
-                  = "U #{under_line.value}"
+  -# Bet forms sit outside the board so the offcanvas markup never lands
+  -# inside a row's grid.
+  - @games.each do |game_lines|
+    - game_lines.bet_lines.each do |line|
+      = render "bet_form", line: line, user: current_user, game_lines: game_lines

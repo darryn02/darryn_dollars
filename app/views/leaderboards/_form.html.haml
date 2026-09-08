@@ -1,0 +1,7 @@
+-# Last five settled bets, oldest to newest. Each pip carries a letter for
+-# screen readers so the run never reads as color alone.
+- if entry.form.any?
+  %ul.dd-form{ "aria-label" => "Last #{entry.form.size} results" }
+    - entry.form.each do |result|
+      %li.dd-form__pip{ class: "dd-form__pip--#{result}" }
+        %span.visually-hidden= result.to_s.capitalize

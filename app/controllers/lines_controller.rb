@@ -2,7 +2,7 @@ class LinesController < ApplicationController
   before_action :ensure_second_half_lines_are_recent!, only: [:index]
 
   def index
-    @lines_by_game = Line.
+    @games = Line.
       active.
       send(sport).
       send(scope).
@@ -11,7 +11,8 @@ class LinesController < ApplicationController
       references(:game).
       includes(:competitor, :game, :chump_wagers).
       order("games.starts_at").
-      group_by(&:game)
+      group_by(&:game).
+      map { |game, lines| GameLinesViewModel.new(game: game, lines: lines, user: current_user) }
   end
 
   private

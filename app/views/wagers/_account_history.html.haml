@@ -1,34 +1,43 @@
-.card.text-bg-primary{ style: "width: 100%;" }
-  .card-body
-    - utilization = [((-1 * account.balance + account.liabilities) / account.credit_limit * 100).round, 0].max
-    .card-title
-      %h4.mb-1
-        Balance:
-        %span{ class: (account.balance.negative? ? "text-danger" : "text-success") }= currency(account.balance)
-        - if wagers.any?(&:confirmed?)
-          %span.fw-lighter= "(#{currency(account.liabilities)} in play)"
-      %h6= "Credit Limit: #{currency(account.credit_limit)} (#{utilization}%)"
-    %p.card-text
-      .float-start
-        Starting Balance: #{currency(account.initial_balance)}
-        %br
-        Payments Made: #{currency(account.payment_sum)}
-      .float-end
-        Total Wins:
-        %span.text-success #{currency(account.win_sum)}
-        %br
-        Total Losses:
-        %span.text-danger #{currency(account.lose_sum)}
-  %ul.list-group.list-group-flush
-    - wagers.each_with_index do |wager, index|
-      %li.d-flex.list-group-item.align-items-center{ id: "wager-#{wager.id}", class: ( index % 2 == 0 ? "bg-theme-2" : "bg-theme-3") }
-        = (wager.placed_at || wager.created_at).strftime("%-m/%-d %l:%M%P")
-        .ms-5.flex-fill= wager
-        - if wager.win?
-          .text-success= "Win: #{currency(wager.net)}"
-        - elsif wager.loss?
-          .text-danger= "Loss: #{currency(wager.net)}"
-        - elsif wager.push?
-          .text-secondary= "Push"
-        - else
-          .text-secondary= "Pending"
+- utilization = [((-1 * account.balance + account.liabilities) / account.credit_limit * 100).round, 0].max
+
+.dd-account
+  .dd-account__summary
+    %p.dd-eyebrow Balance
+    %p.dd-account__balance{ class: (account.balance.negative? ? "is-down" : "is-up") }
+      = currency(account.balance)
+    - if wagers.any?(&:confirmed?)
+      %p.dd-account__inplay= "#{currency(account.liabilities)} still in play"
+
+    .dd-account__meter
+      .dd-account__meter-head
+        %span= "Credit used"
+        %span.dd-account__meter-value= "#{utilization}% of #{currency(account.credit_limit)}"
+      .progress{ role: "progressbar", "aria-label" => "Credit used",
+        "aria-valuenow" => utilization, "aria-valuemin" => 0, "aria-valuemax" => 100 }
+        .progress-bar{ class: ("bg-danger" if utilization >= 90), style: "width: #{[utilization, 100].min}%" }
+
+    %dl.dd-account__stats
+      %div
+        %dt Starting balance
+        %dd= currency(account.initial_balance)
+      %div
+        %dt Payments made
+        %dd= currency(account.payment_sum)
+      %div
+        %dt Total wins
+        %dd.is-up= currency(account.win_sum)
+      %div
+        %dt Total losses
+        %dd.is-down= currency(account.lose_sum)
+
+  %ul.dd-account__list
+    - wagers.each do |wager|
+      %li.dd-account__row{ id: "wager-#{wager.id}" }
+        .dd-account__when= (wager.placed_at || wager.created_at).strftime("%-m/%-d %-l:%M%P")
+        .dd-account__bet
+          %span.dd-account__bet-line= wager_line_label(wager.line)
+          %span.dd-account__bet-meta= "#{currency(wager.amount)} #{line_terms(wager.line)}"
+        .dd-account__outcome
+          = wager_result_badge(wager)
+          - if wager.win? || wager.loss?
+            %span.dd-account__net{ class: (wager.win? ? "is-up" : "is-down") }= currency(wager.net)

@@ -5,5 +5,7 @@ class LeaderboardsController < ApplicationController
       includes(:user, :wagers, :payments).
       sort_by(&:winnings).
       reverse
+
+    @entries = Leaderboard.build(@accounts)
   end
 end

@@ -1,0 +1,14 @@
+<nav class="navbar fixed-bottom dd-bottom-nav" aria-label="Primary">
+  <ul class="dd-bottom-nav__list">
+    <% bottom_nav_items.each do |item| %>
+      <li class="dd-bottom-nav__item">
+        <%= link_to item[:path],
+              class: "dd-bottom-nav__link #{'is-active' if item[:active]}",
+              "aria-current": ("page" if item[:active]) do %>
+          <%= icon item[:icon] %>
+          <span><%= item[:label] %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</nav>
