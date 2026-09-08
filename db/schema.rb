@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_28_165027) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_08_061500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -115,6 +115,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_28_165027) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_payments_on_account_id"
+  end
+
+  create_table "scrape_runs", force: :cascade do |t|
+    t.string "sport", null: false
+    t.string "scope"
+    t.datetime "ran_at", null: false
+    t.string "outcome", null: false
+    t.integer "lines_created", default: 0, null: false
+    t.integer "lines_activated", default: 0, null: false
+    t.integer "lines_deactivated", default: 0, null: false
+    t.integer "http_status"
+    t.string "content_type"
+    t.text "detail"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ran_at"], name: "index_scrape_runs_on_ran_at"
+    t.index ["sport", "ran_at"], name: "index_scrape_runs_on_sport_and_ran_at"
   end
 
   create_table "users", id: :serial, force: :cascade do |t|
