@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-ruby "3.2.1"
+ruby "3.2.9"
 
 gem "autoprefixer-rails"
 gem "bootstrap"
@@ -15,7 +15,6 @@ gem 'kaminari'
 gem 'nokogiri'
 gem "normalize-rails"
 gem "pg"
-gem "phony_rails"
 gem "puma"
 gem "rack-canonical-host"
 gem "rails", "~> 7.0.0"
@@ -26,10 +25,7 @@ gem "simple_form"
 gem "sprockets"
 gem 'execjs'
 gem "title"
-gem 'twilio-ruby'
 gem "uglifier"
-gem 'watir'
-gem 'webdrivers', '~> 5.0', require: false
 
 group :development do
   gem "listen"
