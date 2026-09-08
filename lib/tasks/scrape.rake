@@ -1,33 +1,43 @@
 namespace :scrape do
-  desc 'Scrape NFL lines and create games and contests'
+  desc 'Fetch NFL lines, if the schedule says it is worth it'
   task nfl_lines: :environment do
-    if ENV["USE_BOVADA_API"] == "1"
-       BovadaApiClient.update_lines(sport: :nfl)
-    elsif ENV["USE_ODDS_API"] == "1"
-      exit unless nfl_wagerable?
-      LinesApiClient.update_lines(sport: :nfl, scope: :first_half)
-    else
-      LineScraper.run
-      LineScraper.run("first_half")
+    next unless ScrapeWindow.due?(sport: :nfl)
+
+    ScrapeRun.track(sport: :nfl, scope: :game) do
+      if ENV["USE_BOVADA_API"] == "1"
+        BovadaApiClient.update_lines(sport: :nfl)
+      elsif ENV["USE_ODDS_API"] == "1"
+        LinesApiClient.update_lines(sport: :nfl, scope: :first_half)
+      end
     end
   end
 
   task nfl_second_half_lines: :environment do
-    if ENV["USE_BOVADA_API"] == "1"
-      BovadaApiClient.update_lines(sport: :nfl)
-    elsif ENV["USE_ODDS_API"] == "1"
-      LinesApiClient.update_lines(sport: :nfl, scope: :second_half)
-    else
-      LineScraper.new.run("second_half")
+    next unless ScrapeWindow.due?(sport: :nfl)
+
+    ScrapeRun.track(sport: :nfl, scope: :second_half) do
+      if ENV["USE_BOVADA_API"] == "1"
+        BovadaApiClient.update_lines(sport: :nfl)
+      elsif ENV["USE_ODDS_API"] == "1"
+        LinesApiClient.update_lines(sport: :nfl, scope: :second_half)
+      end
     end
   end
 
   task ncaa_lines: :environment do
-    LinesApiClient.update_lines(sport: :ncaaf, scope: :first_half)
+    next unless ScrapeWindow.due?(sport: :ncaaf)
+
+    ScrapeRun.track(sport: :ncaaf, scope: :game) do
+      LinesApiClient.update_lines(sport: :ncaaf, scope: :first_half)
+    end
   end
 
   task ncaa_second_half_lines: :environment do
-    LinesApiClient.update_lines(sport: :ncaaf, scope: :second_half)
+    next unless ScrapeWindow.due?(sport: :ncaaf)
+
+    ScrapeRun.track(sport: :ncaaf, scope: :second_half) do
+      LinesApiClient.update_lines(sport: :ncaaf, scope: :second_half)
+    end
   end
 
   task nfl_results: :environment do
@@ -40,14 +50,5 @@ namespace :scrape do
     exit unless Game.ncaaf.joins(:wagers).where(wagers: { status: :confirmed }).exists?
 
     ScoreScraper.run(:ncaaf)
-  end
-
-  def nfl_wagerable?
-    now = DateTime.current.in_time_zone("America/New_York").to_time
-
-    return true if (now.thursday? || now.monday?) && now.hour.between?(17, 20)
-    return true if now.sunday? && now.hour.between?(7, 20)
-    # Thanksgiving or bust
-    now.thursday? && now.month == 11 && ((now.day - 1) / 7 == 3)
   end
 end

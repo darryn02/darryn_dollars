@@ -25,16 +25,6 @@ class Line < ApplicationRecord
     joins(:game).merge(Game.ncaaf)
   end
 
-  def self.parse_scope(modifier)
-    if modifier.match?(/(first_half|first half|1st half|1 half|1h)/).present?
-      :first_half
-    elsif modifier.match?(/(second_half|second half|2nd half|2 half|2h|halftime|half time)/).present?
-      :second_half
-    else
-      :game
-    end
-  end
-
   def active?
     !hidden
   end

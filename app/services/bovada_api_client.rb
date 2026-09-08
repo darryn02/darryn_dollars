@@ -1,5 +1,3 @@
-require 'open-uri'
-
 class BovadaApiClient
   URL_BASE = "https://www.bovada.lv/services/sports/event/v2/events/A/description"
 
@@ -28,26 +26,51 @@ class BovadaApiClient
 
   def update_lines
     deactivate_ids = Line.active.send(sport).pluck(:id)
+    created_before = Line.count
 
-    url = File.join(URL_BASE, API_SPORT_MAP[sport])
-    json = JSON.parse(URI.open(url, "Cookie" => ENV["BOVADA_COOKIE"]).read)
-
-    lines = parse_and_assert_lines(json)
+    session = BovadaSession.new.warm!
+    lines = parse_and_assert_lines(session.get_json(url_for(sport)))
     if lines.empty? && sport == :nfl
-      url = File.join(URL_BASE, API_SPORT_MAP[:super_bowl])
-      json = JSON.parse(URI.open(url, "Cookie" => ENV["BOVADA_COOKIE"]).read)
-      lines = parse_and_assert_lines(json)
+      lines = parse_and_assert_lines(session.get_json(url_for(:super_bowl)))
     end
 
+    # A book that returns nothing while we hold active lines is telling us
+    # something is wrong with the request, not that every game was cancelled.
+    # Deactivating here would empty the board on a single bad response.
+    return no_data(deactivate_ids) if lines.empty? && deactivate_ids.any?
+
     activate_ids = lines.map(&:id)
-    deactivated_count = Line.where(id: deactivate_ids - activate_ids).update_all(updated_at: Time.now, hidden: true)
-    activated_count = Line.where(id: activate_ids - deactivate_ids).update_all(updated_at: Time.now, hidden: false)
-    "#{deactivated_count} lines deactivated. #{activated_count} lines activated."
+    deactivated = Line.where(id: deactivate_ids - activate_ids).update_all(updated_at: Time.now, hidden: true)
+
+    # Every active line, not just the newly activated ones. Otherwise a run
+    # that changes nothing leaves updated_at untouched, and the callers that
+    # ask "were these refreshed recently?" conclude they never were - which
+    # made the one minute guard on the second half page a no-op and put a
+    # live fetch behind every single page view.
+    activated = Line.where(id: activate_ids).update_all(updated_at: Time.now, hidden: false)
+
+    ScrapeResult.new(
+      outcome: ScrapeRun::SUCCESS,
+      message: "#{deactivated} lines deactivated. #{activated} lines activated.",
+      created: Line.count - created_before,
+      activated: activated,
+      deactivated: deactivated
+    )
   end
 
   private
 
   attr_reader :sport
+
+  def url_for(key) = File.join(URL_BASE, API_SPORT_MAP[key])
+
+  def no_data(deactivate_ids)
+    message = "Bovada returned no lines while #{deactivate_ids.size} are active - left them alone."
+    Rails.logger.warn(message)
+    Honeybadger.notify(message, context: { sport: sport }) if defined?(Honeybadger)
+
+    ScrapeResult.new(outcome: ScrapeRun::NO_DATA, message: message)
+  end
 
   def parse_and_assert_lines(json)
     return [] if (json = Array.wrap(json).first).blank?

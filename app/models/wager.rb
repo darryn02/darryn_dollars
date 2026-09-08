@@ -1,7 +1,6 @@
 class Wager < ApplicationRecord
   DEFAULT_MIN_WAGER = ENV.fetch('MIN_WAGER', 50).to_i
   WINDOW = ENV.fetch("WAGER_WINDOW_HOURS", 24).to_i.hours
-  GRACE_PERIOD = ENV.fetch("WAGER_GRACE_PERIOD_MINUTES", 2).to_i.minutes
 
   belongs_to :account
   belongs_to :bet_slip
@@ -18,6 +17,7 @@ class Wager < ApplicationRecord
   validates :account, presence: true, on: :create
   validates :placed_at, presence: true, if: :confirming?
   validate :game_has_not_started
+  validate :second_half_has_not_started
   validate :line_must_be_active
   validate :account_has_sufficient_credit
 
@@ -73,6 +73,27 @@ class Wager < ApplicationRecord
     if line.active? && (line.game? || line.first_half?) && line.game.starts_at.past?
       errors.add(:line, "has expired, past game start time")
     end
+  end
+
+  # A second half line has no scheduled start of its own, so the only thing
+  # that retires it is Bovada dropping the market - a signal that reaches us
+  # through a CDN caching for ten minutes. Long enough for a player watching
+  # the game to get a bet down on a half already underway, so the display is
+  # allowed to lag but the confirmation is not: ask ESPN at the moment the
+  # money is committed.
+  def second_half_has_not_started
+    return unless confirming?
+    return unless line.second_half? && line.active?
+
+    if line.game.second_half_started?
+      errors.add(:line, "is no longer wagerable, the second half has started")
+    end
+  rescue EspnScoreboard::Unavailable => e
+    # Fail closed. A rejected wager is an annoyance; an accepted wager on a
+    # half in progress is a player betting with information we do not have.
+    Rails.logger.warn("Could not verify second half status for line #{line.id}: #{e.message}")
+    Honeybadger.notify(e, context: { line_id: line.id }) if defined?(Honeybadger)
+    errors.add(:line, "could not be verified right now, please try again")
   end
 
   def line_must_be_active
