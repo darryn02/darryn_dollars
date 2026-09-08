@@ -9,6 +9,12 @@ require "action_view/railtie"
 require "action_cable/engine"
 require "sprockets/railtie"
 Bundler.require(*Rails.groups)
+
+# Every outgoing address, in one place. The display name is what recipients
+# actually see; the address has to stay on darryndollars.com, which is the
+# domain SendGrid signs for - anything else fails DMARC alignment.
+MAILER_SENDER = ENV.fetch("MAILER_SENDER", "Darryn Dollars <no-reply@darryndollars.com>")
+
 module DarrynDollars
   class Application < Rails::Application
     config.assets.quiet = true
