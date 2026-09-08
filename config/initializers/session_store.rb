@@ -7,6 +7,14 @@
 #
 # Rails omits the domain entirely for single-label hosts, so localhost in
 # development and test is unaffected.
+#
+# expire_after gives the cookie a life of its own. Without it this is a browser
+# session cookie, so it dies whenever the browser decides the tab session is
+# over - which on a phone means backgrounding the app or memory pressure. That
+# is the whole usage pattern here, and it is why sign_in_count had reached four
+# figures for some players. Devise's :timeoutable still caps the session at
+# config.timeout_in on top of this.
 Rails.application.config.session_store :cookie_store,
                                        key: '_darryn_dollars_session',
-                                       domain: :all
+                                       domain: :all,
+                                       expire_after: 2.weeks

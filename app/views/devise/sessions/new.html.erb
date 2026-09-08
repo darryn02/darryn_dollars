@@ -10,7 +10,10 @@
       <%= f.input :password,
                   required: false,
                   input_html: { autocomplete: "current-password" } %>
-      <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>
+      <%# Checked by default. Everyone's remember token had expired back in 2024
+          and nobody re-ticked the box, so the persistent cookie that should
+          outlive the session cookie was never being issued. %>
+      <%= f.input :remember_me, as: :boolean, input_html: { checked: true } if devise_mapping.rememberable? %>
 
       <%= f.button :submit, "Log in", class: "btn btn-primary w-100 dd-auth__submit" %>
     <% end %>
