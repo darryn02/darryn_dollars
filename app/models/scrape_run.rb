@@ -24,7 +24,13 @@ class ScrapeRun < ApplicationRecord
   # #scrape_outcome, which is how a challenge is distinguished from a bug.
   def self.track(sport:, scope: nil)
     yield.tap do |result|
-      record!(sport: sport, scope: scope, outcome: SUCCESS, detail: result.to_s.first(500))
+      attrs = if result.respond_to?(:to_scrape_run_attributes)
+                result.to_scrape_run_attributes
+              else
+                { outcome: SUCCESS, detail: result.to_s.first(500) }
+              end
+
+      record!(sport: sport, scope: scope, **attrs)
     end
   rescue StandardError => e
     outcome = e.respond_to?(:scrape_outcome) ? e.scrape_outcome : ERROR
