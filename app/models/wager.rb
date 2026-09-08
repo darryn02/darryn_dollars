@@ -1,7 +1,6 @@
 class Wager < ApplicationRecord
   DEFAULT_MIN_WAGER = ENV.fetch('MIN_WAGER', 50).to_i
   WINDOW = ENV.fetch("WAGER_WINDOW_HOURS", 24).to_i.hours
-  GRACE_PERIOD = ENV.fetch("WAGER_GRACE_PERIOD_MINUTES", 2).to_i.minutes
 
   belongs_to :account
   belongs_to :bet_slip

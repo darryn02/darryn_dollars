@@ -1,6 +1,5 @@
 Rails.application.routes.draw do
   devise_for :users
-  post 'twilio/sms'
   resources :lines, only: [:index]
   resources :wagers, only: [:create, :update, :destroy] do
     collection do
