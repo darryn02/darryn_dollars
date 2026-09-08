@@ -81,4 +81,89 @@ RSpec.describe BovadaApiClient, type: :service do
       expect(a_request(:get, api).with(headers: { "Cookie" => "TS0189=abc123" })).to have_been_made.at_least_once
     end
   end
+
+  describe "an event it cannot resolve to two of our competitors" do
+    let(:client) { described_class.new(:ncaaf) }
+
+    let!(:georgia) do
+      Competitor.create!(sport: :ncaaf, region: "Georgia", name: "Bulldogs", abbreviation: "Georgia")
+    end
+    let!(:alabama) do
+      Competitor.create!(sport: :ncaaf, region: "Alabama", name: "Crimson Tide", abbreviation: "Alabama")
+    end
+
+    def event(home_team, away_team, spread: -3.5)
+      {
+        "id" => SecureRandom.hex(4),
+        "startTime" => (Time.current + 3.hours).to_i * 1000,
+        "competitors" => [
+          { "home" => true,  "name" => home_team },
+          { "home" => false, "name" => away_team }
+        ],
+        "displayGroups" => [{
+          "description" => "Game Lines",
+          "markets" => [{
+            "description" => "Point Spread",
+            "period" => { "live" => false, "abbreviation" => "G" },
+            "outcomes" => [
+              { "type" => "H", "price" => { "handicap" => spread, "american" => "-110" } },
+              { "type" => "A", "price" => { "handicap" => -spread, "american" => "-110" } }
+            ]
+          }]
+        }]
+      }
+    end
+
+    def parse(events)
+      client.send(:parse_and_assert_lines, [{ "events" => events }])
+    end
+
+    it "builds lines for an event whose teams it recognises" do
+      expect(parse([event("Georgia", "Alabama")]).map(&:kind).uniq).to eq(["point_spread"])
+    end
+
+    # The real failure: Bovada listed a Delaware game, Delaware was missing
+    # from the competitors table, and the RecordNotFound aborted the whole
+    # parse - taking every other game with it and 404ing the lines board.
+    it "keeps the rest of the response when one team is unrecognised" do
+      lines = nil
+      expect { lines = parse([event("Georgia", "Alabama"), event("Delaware", "Alabama")]) }.
+        not_to raise_error
+
+      expect(lines).to be_present
+      expect(lines.flat_map { |line| line.game.competitors.map(&:region) }.uniq).
+        to match_array(%w[Georgia Alabama])
+    end
+
+    it "reports what it skipped rather than failing silently" do
+      expect(Rails.logger).to receive(:warn).with(/unrecognised competitors.*Delaware/)
+
+      parse([event("Delaware", "Alabama")])
+    end
+
+    it "skips a name that matches more than one competitor" do
+      Competitor.create!(sport: :ncaaf, region: "Miami", name: "Hurricanes", abbreviation: "Ambiguous")
+      Competitor.create!(sport: :ncaaf, region: "Ambiguous", name: "RedHawks", abbreviation: "Miami OH")
+
+      lines = nil
+      expect { lines = parse([event("Ambiguous", "Alabama")]) }.not_to raise_error
+      expect(lines).to be_empty
+    end
+
+    it "skips an event that is not a two-sided contest" do
+      malformed = event("Georgia", "Alabama").merge(
+        "competitors" => [{ "home" => true, "name" => "Georgia" }]
+      )
+
+      lines = nil
+      expect { lines = parse([malformed]) }.not_to raise_error
+      expect(lines).to be_empty
+    end
+
+    it "stays quiet when every event resolves" do
+      expect(Rails.logger).not_to receive(:warn)
+
+      parse([event("Georgia", "Alabama")])
+    end
+  end
 end
