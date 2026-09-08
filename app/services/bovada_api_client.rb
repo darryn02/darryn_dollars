@@ -79,10 +79,14 @@ class BovadaApiClient
 
     lines = Array.wrap(json["events"]).flat_map { |event|
       names = team_names(event)
-      competitors = names && resolve_competitors(names)
+      if names.nil?
+        unresolved << "event #{event["id"]} (not a two-sided contest)"
+        next []
+      end
 
+      competitors, unnameable = resolve_competitors(names)
       if competitors.nil?
-        unresolved << (names ? names.join(" vs. ") : "event #{event["id"]}")
+        unresolved << "#{names.join(" vs. ")} (#{unnameable.join(", ")})"
         next []
       end
 
@@ -110,13 +114,22 @@ class BovadaApiClient
     [home, away].map { |side| side.first["name"].to_s.gsub(/\(.*?\)/, "").squish }
   end
 
-  # nil when either side is a name we do not carry, or one ambiguous enough to
-  # match more than one of our competitors.
+  # [[home, away], []] when both sides resolve, or [nil, names_that_did_not].
+  # Naming the side that failed is the difference between a report you can act
+  # on and one you have to go and query the database to understand.
   def resolve_competitors(names)
-    home, away = names.map { |name| Competitor.find_by_string(name, sport: sport) }
-    return nil if home.nil? || away.nil?
+    found = names.map { |name| [name, competitor_for(name)] }
+    unnameable = found.select { |_, competitor| competitor.nil? }.map(&:first)
 
-    [home, away]
+    return [nil, unnameable] if unnameable.any?
+
+    [found.map(&:last), []]
+  end
+
+  # A name we do not carry and a name matching several of our competitors are
+  # equally unusable here, so both come back as nil.
+  def competitor_for(name)
+    Competitor.find_by_string(name, sport: sport)
   rescue ActiveRecord::SoleRecordExceeded
     nil
   end
