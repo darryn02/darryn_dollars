@@ -1,21 +1,32 @@
-%h1.pt-3 Leaderboard
+%h1.dd-page-title Leaderboard
+
 - if current_user.accounts.where(leaderboard_visible: true).any? || current_user.admin?
-  %table.table.table-striped
-    %thead.table-light
-      %tr
-        %td #
-        %td Name
-    %tbody.table-group-divider
-      - @accounts.each_with_index do |account, index|
-        %tr
-          - if index == 0
-            %td.bi.bi-trophy
-          - else
-            %td= index + 1
-          %td= account.qualified_name
+  %p.dd-leaderboard__note= "Week of #{LeaderboardEntry.week_start.strftime('%b %-d')}"
+
+  %ol.dd-leaderboard
+    - @entries.each do |entry|
+      - mine = current_user.account_ids.include?(entry.account.id)
+      %li.dd-leaderboard__row{ class: [("is-podium" if entry.podium?), ("is-mine" if mine)].compact }
+        .dd-leaderboard__rank
+          - if entry.rank == 1
+            = icon "trophy-fill", css_class: "dd-leaderboard__trophy", label: "First place"
+          %span.dd-leaderboard__number= entry.rank
+        .dd-leaderboard__body
+          .dd-leaderboard__name
+            = entry.name
+            - if mine
+              %span.dd-leaderboard__you You
+          .dd-leaderboard__week= entry.week_summary
+          - if entry.badges.any?
+            .dd-leaderboard__badges
+              - entry.badges.each do |badge|
+                %span.dd-badge
+                  = icon badge.icon
+                  = badge.label
+        = render "form", entry: entry
 - else
-  .blank-state.blank-state-lg
-    %i.bi.bi-emoji-frown
+  .blank-state
+    = icon "trophy"
     %h2 Pay to Play!
     %p If you want to see the leaderboard, you need to agree to be included in it. Don't worry, no amounts will be shown. :-)
     = link_to "Include My Accounts and Show Me the Leaders!",

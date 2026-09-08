@@ -1,0 +1,14 @@
+.dd-game
+  .dd-game__header
+    %span.dd-game__kickoff= game_lines.starts_at.strftime("%a %-l:%M %p")
+    - unless game_lines.wagerable?
+      %span.dd-game__status Closed
+  - game_lines.rows.each do |row|
+    .dd-game__row
+      .dd-game__team
+        %span.dd-game__abbr= row.abbreviation
+        %span.dd-game__name= row.name
+      = render "bet_cell", line: row.spread, flagged: row.spread_flagged,
+        label: spread_label(row.spread), wagerable: game_lines.wagerable?
+      = render "bet_cell", line: row.total, flagged: row.total_flagged,
+        label: total_label(row.total), wagerable: game_lines.wagerable?

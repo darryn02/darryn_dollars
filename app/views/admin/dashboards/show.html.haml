@@ -1,84 +1,58 @@
-%h1.pt-3 Admin
+%h1.dd-page-title Admin
 
-.actions.mt-3
-  .mb-1.btn.btn-warning
-    = link_to "Fetch NFL Lines",
-      fetch_lines_admin_dashboard_path(sport: :nfl, scope: :game),
-      remote: true
-  .mb-1.btn.btn-warning
-    = link_to "Fetch NFL 1st Half Lines",
-      fetch_lines_admin_dashboard_path(sport: :nfl, scope: :first_half),
-      remote: true
-  .mb-1.btn.btn-warning
-    = link_to "Fetch NFL 2nd Half Lines",
-      fetch_lines_admin_dashboard_path(sport: :nfl, scope: :second_half),
-      remote: true
-  %br
-  .mb-1.btn.btn-warning
-    = link_to "Fetch NCAAF Lines",
-      fetch_lines_admin_dashboard_path(sport: :ncaaf, scope: :game),
-      remote: true
-  .mb-1.btn.btn-warning
-    = link_to "Fetch NCAAF 1st Half Lines",
-      fetch_lines_admin_dashboard_path(sport: :ncaaf, scope: :first_half),
-      remote: true
-  .mb-1.btn.btn-warning
-    = link_to "Fetch NCAAF 2nd Half Lines",
-      fetch_lines_admin_dashboard_path(sport: :ncaaf, scope: :second_half),
-      remote: true
-  %br
-  .mb-1.btn.btn-success
-    = link_to "Fetch NFL Scores",
-      fetch_scores_admin_dashboard_path(sport: :nfl),
-      remote: true
-  .mb-1.btn.btn-success
-    = link_to "Fetch NCAAF Scores",
-      fetch_scores_admin_dashboard_path(sport: :ncaaf),
-      remote: true
-  .mb-1.btn.btn-success
-    = link_to "Score Lines",
-      score_lines_admin_dashboard_path,
-      remote: true
-  .mb-1.btn.btn-success
-    = link_to "Score Wagers",
-      score_wagers_admin_dashboard_path,
-      remote: true
-.card.text-bg-primary.mt-3{ style: "width: 100%;" }
-  .card-body
-    .card-title
-      %h4.mb-1
-        Account Summary
+.dd-admin-section
+  %h2.dd-eyebrow Fetch lines
+  .dd-admin-actions
+    - [["NFL", :nfl], ["NCAAF", :ncaaf]].each do |label, sport|
+      - [["Game", :game], ["1st Half", :first_half], ["2nd Half", :second_half]].each do |scope_label, scope|
+        = link_to "#{label} #{scope_label}",
+          fetch_lines_admin_dashboard_path(sport: sport, scope: scope),
+          remote: true,
+          class: "dd-admin-btn dd-admin-btn--fetch"
 
-    %table.table.table-dark.table-striped
+.dd-admin-section
+  %h2.dd-eyebrow Scores and scoring
+  .dd-admin-actions
+    = link_to "NFL Scores", fetch_scores_admin_dashboard_path(sport: :nfl),
+      remote: true, class: "dd-admin-btn dd-admin-btn--score"
+    = link_to "NCAAF Scores", fetch_scores_admin_dashboard_path(sport: :ncaaf),
+      remote: true, class: "dd-admin-btn dd-admin-btn--score"
+    = link_to "Score Lines", score_lines_admin_dashboard_path,
+      remote: true, class: "dd-admin-btn dd-admin-btn--score"
+    = link_to "Score Wagers", score_wagers_admin_dashboard_path,
+      remote: true, class: "dd-admin-btn dd-admin-btn--score"
+
+.dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title Account Summary
+  .dd-table-scroll
+    %table.table.table-sm.align-middle.mb-0
       %thead
         %tr
           %th Account
-          %th.text-nowrap Winnings
-          %th.text-nowrap Payments
-          %th.text-nowrap Balance
+          %th.text-end.text-nowrap Winnings
+          %th.text-end.text-nowrap Payments
+          %th.text-end.text-nowrap Balance
       %tbody
-        - @accounts.each_with_index do |account, index|
+        - @accounts.each do |account|
           %tr
             %td= account.qualified_name
-            %td.text-nowrap{ style: "width: 50px" }= currency(account.winnings)
-            %td.text-nowrap{ style: "width: 50px" }= currency(account.payment_sum)
-            %td.text-nowrap{ style: "width: 50px" }= currency(account.balance)
-        %tr
-          %td Totals
-          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:winnings) < 0 ? "table-info" : "table-danger") }= currency(-1 * @accounts.sum(&:winnings))
-          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:payment_sum) > 0 ? "table-warning" : "") }= currency(-1 * @accounts.sum(&:payment_sum))
-          %td.text-nowrap{ style: "width: 50px", class: (@accounts.sum(&:balance) < 0 ? "table-success" : "table-danger") }= currency(-1 * @accounts.sum(&:balance))
+            %td.text-end.text-nowrap= currency(account.winnings)
+            %td.text-end.text-nowrap= currency(account.payment_sum)
+            %td.text-end.text-nowrap= currency(account.balance)
+      %tfoot
+        %tr.dd-table-total
+          %th Totals
+          %td.text-end.text-nowrap{ class: (@accounts.sum(&:winnings) < 0 ? "is-up" : "is-down") }= currency(-1 * @accounts.sum(&:winnings))
+          %td.text-end.text-nowrap= currency(-1 * @accounts.sum(&:payment_sum))
+          %td.text-end.text-nowrap{ class: (@accounts.sum(&:balance) < 0 ? "is-up" : "is-down") }= currency(-1 * @accounts.sum(&:balance))
 
-.card.text-bg-primary.mt-3{ style: "width: 100%;" }
-  .card-body
-    .card-title
-      %h4.mb-1
-        Enter Payment
-
+.dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title Enter Payment
+  .dd-panel__body
     .payment-form
       = simple_form_for([:admin, Payment.new]) do |f|
-        .mb-3
-          = f.input :account_id, collection: Account.all, label_method: :qualified_name, value_method: :id
-        .mb-3
-          = f.input :amount, as: :string, class: "form-control", input_html: { data: { type: "currency" } }
-        = f.submit "Submit", class: "btn btn-primary"
+        = f.input :account_id, collection: Account.all, label_method: :qualified_name, value_method: :id
+        = f.input :amount, as: :string, input_html: { inputmode: "decimal", data: { type: "currency" } }
+        = f.submit "Submit", class: "btn btn-primary w-100 mt-2"

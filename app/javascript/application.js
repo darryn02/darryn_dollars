@@ -4,44 +4,53 @@ import "jquery_ujs"
 import "popper"
 import "bootstrap"
 
-$(function() {
-  $(".bet-form .js-wager-amount-bet").on("input", function() {
+$(document).on("input", ".bet-form .js-wager-amount-bet", function() {
     const $this = $(this);
     const odds = 100.0 / parseFloat($this.data("odds"));
     const amountBet = parseFloat($this.val().replace("$", ""));
     if(!isNaN(amountBet)) {
       var toWin = odds < 0 ? amountBet * (-1) * odds : amountBet / odds;
-      var otherInput = $this.closest(".row").find("input.js-wager-to-win").first();
+      var otherInput = $this.closest(".bet-form").find("input.js-wager-to-win").first();
       otherInput.val(roundToTwo(toWin));
       formatCurrency(otherInput, "blur");
     }
-  });
+});
 
-  $(".bet-form .js-wager-to-win").on("input", function() {
+$(document).on("input", ".bet-form .js-wager-to-win", function() {
     const $this = $(this);
     const odds = 100.0 / parseFloat($this.data("odds"));
     const toWin = parseFloat($this.val().replace("$", ""));
 
     if(!isNaN(toWin)) {
       var amountBet = odds < 0 ? (-1) * toWin / odds : toWin * odds;
-      var otherInput = $this.closest(".row").find("input.js-wager-amount-bet").first();
+      var otherInput = $this.closest(".bet-form").find("input.js-wager-amount-bet").first();
       otherInput.val(roundToTwo(amountBet));
       formatCurrency(otherInput, "blur");
     }
-  });
 });
 
 function roundToTwo(num) {
   return +(Math.round(num + "e+2")  + "e-2");
 }
 
-$("input[data-type='currency']").on({
-  keyup: function() {
-    formatCurrency($(this));
-  },
-  blur: function() {
-    formatCurrency($(this), "blur");
-  }
+$(document).on("keyup", "input[data-type='currency']", function() {
+  formatCurrency($(this));
+});
+
+$(document).on("blur", "input[data-type='currency']", function() {
+  formatCurrency($(this), "blur");
+});
+
+//
+// Quick amount chips in the bet form
+//
+
+$(document).on("click", ".js-quick-amount", function(event) {
+  event.preventDefault();
+  const $chip = $(this);
+  const $input = $chip.closest(".bet-form").find("input.js-wager-amount-bet").first();
+  $input.val($chip.data("amount")).trigger("input");
+  formatCurrency($input, "blur");
 });
 
 
@@ -128,26 +137,46 @@ function formatCurrency(input, blur) {
 // Flash stuff
 //
 
-function showSuccessFlash(message) {
-  $(".flash-from-js").addClass("fade-in-down-out flash-success").text(message);
+const FLASH_ICONS = {
+  success: "check-circle-fill",
+  error: "exclamation-triangle-fill"
+};
+
+function renderFlash(kind, message, asHtml) {
+  const $flash = $(".flash-from-js")
+    .removeClass("dd-flash--success dd-flash--error")
+    .addClass("fade-in-down-out dd-flash--" + kind)
+    .empty();
+
+  const $icon = $(
+    '<svg class="dd-icon" aria-hidden="true" focusable="false">' +
+    '<use href="#i-' + FLASH_ICONS[kind] + '"></use></svg>'
+  );
+  const $body = $("<div></div>");
+
+  if (asHtml) {
+    $body.html(message);
+  } else {
+    $body.text(message);
+  }
+
+  $flash.append($icon).append($body);
   setTimeout(cleanUp, 5000);
+}
+
+function showSuccessFlash(message) {
+  renderFlash("success", message, false);
 }
 
 function showErrorFlash(pMessage, pOptions) {
   const options = pOptions || { html: false };
-  const $flashSelector = $(".flash-from-js").addClass("fade-in-down-out flash-error");
-
-  if (options.html) {
-    $flashSelector.html(pMessage);
-  } else {
-    $flashSelector.text(pMessage);
-  }
-
-  setTimeout(cleanUp, 5000);
+  renderFlash("error", pMessage, options.html);
 }
 
 function cleanUp() {
-  $(".flash-from-js").removeClass("fade-in-down-out flash-success flash-error").text("");
+  $(".flash-from-js")
+    .removeClass("fade-in-down-out dd-flash--success dd-flash--error")
+    .empty();
 }
 
 window.showSuccessFlash = showSuccessFlash;
@@ -158,7 +187,8 @@ window.showErrorFlash = showErrorFlash;
 //
 
 
-$("a.second-half-lines").on("click", function() {
-  $("div.spanner").addClass("show");
-  $("div.overlay").addClass("show");
+// Second half lines are re-scraped on demand, so this navigation can block for
+// several seconds. The overlay used to be bound to a selector no view rendered.
+$(document).on("click", "a.js-slow-nav", function() {
+  $(".dd-loading").addClass("is-visible");
 });

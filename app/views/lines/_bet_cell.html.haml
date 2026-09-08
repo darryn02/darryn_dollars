@@ -1,0 +1,13 @@
+- if line.nil?
+  %span.dd-bet-cell.dd-bet-cell--empty{ "aria-hidden" => "true" } &mdash;
+- elsif wagerable
+  = link_to "#betOffcanvas-#{line.id}", class: "dd-bet-btn",
+    data: { bs_toggle: "offcanvas" }, role: "button",
+    "aria-controls" => "betOffcanvas-#{line.id}",
+    "aria-label" => "Bet #{line}" do
+    %span.dd-bet-btn__value= label
+    - if flagged
+      %span.dd-bet-btn__money{ "aria-hidden" => "true" } 💰
+      %span.visually-hidden most money on this side
+- else
+  %span.dd-bet-cell.dd-bet-cell--closed= label

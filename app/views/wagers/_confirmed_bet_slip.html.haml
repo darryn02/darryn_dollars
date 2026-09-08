@@ -1,20 +1,25 @@
-.card.text-bg-success.mb-3.w-100
-  .card-body
-    .float-start
-      %h5.card-title= bet_slip.title
-    .float-end
-      .pb-1.d-table.w-100
-        %span In play:
-        %span.d-table-cell.text-end.ps-1.fw-bold= "#{currency(bet_slip.wagers.sum(&:amount))}"
-      .pb-1.d-table.w-100
-        %span Max Profit:
-        %span.d-table-cell.text-end.ps-1.fw-bold= "#{currency(bet_slip.wagers.sum(&:potential_profit))}"
-  %ul.list-group.list-group-flush
-    - bet_slip.wagers.each_with_index do |wager, index|
-      %li.d-flex.list-group-item.align-items-center{ id: "confirmed-wager-#{wager.id}", class: (index % 2 == 0 ? "bg-secondary" : "bg-secondary") }
-        .flex-fill= wager
-        = "To Win: #{currency(wager.potential_profit)}"
+.dd-slip.dd-slip--confirmed
+  .dd-slip__header
+    %h2.dd-slip__title= bet_slip.title
+    %p.dd-slip__summary
+      %span= "#{currency(bet_slip.wagers.sum(&:amount))} in play"
+      %span.dd-slip__dot &middot;
+      %span= "#{currency(bet_slip.wagers.sum(&:potential_profit))} max profit"
+
+  %ul.dd-slip__list
+    - bet_slip.wagers.each do |wager|
+      %li.dd-slip__row{ id: "confirmed-wager-#{wager.id}", class: ("dd-slip__row--scored" if current_user.admin?) }
+        .dd-slip__bet
+          %span.dd-slip__bet-line= wager_line_label(wager.line)
+          %span.dd-slip__bet-meta= line_terms(wager.line)
+        .dd-slip__figures
+          %span.dd-slip__stake= currency(wager.amount)
+          %span.dd-slip__towin= "to win #{currency(wager.potential_profit)}"
         - if current_user.admin?
-          = link_to "W", mark_as_win_wagers_path(id: wager.id), class: "btn btn-success m-1"
-          = link_to "L", mark_as_loss_wagers_path(id: wager.id), class: "btn btn-danger m-1"
-          = link_to "P", mark_as_push_wagers_path(id: wager.id), class: "btn btn-info m-1"
+          .dd-score
+            = link_to "W", mark_as_win_wagers_path(id: wager.id),
+              class: "dd-score__btn dd-score__btn--win", "aria-label" => "Mark as win"
+            = link_to "L", mark_as_loss_wagers_path(id: wager.id),
+              class: "dd-score__btn dd-score__btn--loss", "aria-label" => "Mark as loss"
+            = link_to "P", mark_as_push_wagers_path(id: wager.id),
+              class: "dd-score__btn dd-score__btn--push", "aria-label" => "Mark as push"

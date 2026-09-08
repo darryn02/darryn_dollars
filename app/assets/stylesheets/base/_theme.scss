@@ -1,0 +1,1389 @@
+// App-level styling on top of Bootstrap. Tokens live in _variables.scss.
+
+// ---------------------------------------------------------------------------
+// Shell
+// ---------------------------------------------------------------------------
+
+:root {
+  color-scheme: dark;
+  --dd-bottom-nav-height: 4.5rem;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba($brand-hover, .2);
+  background-image: radial-gradient(120% 60% at 50% 0%, rgba($dark-blue, .55) 0%, rgba($dark-blue, 0) 70%);
+  background-attachment: fixed;
+}
+
+img {
+  max-width: 100%;
+}
+
+// Money, spreads and totals must not jitter as digits change.
+.dd-nums,
+.dd-line-value,
+.dd-money,
+table,
+.list-group {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+// Every page title. Bootstrap's h1 is oversized for a phone.
+.dd-page-title {
+  margin: 0;
+  padding: 1.25rem 0 .875rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: $text-1;
+}
+
+.dd-eyebrow {
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: $text-3;
+}
+
+// The bottom nav is fixed, so every page needs room to scroll clear of it.
+// Kept in sync with --dd-bottom-nav-height above.
+body .container.main {
+  padding-bottom: calc(var(--dd-bottom-nav-height) + 1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+// ---------------------------------------------------------------------------
+// Top bar
+// ---------------------------------------------------------------------------
+
+.dd-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  padding: 0;
+  background-color: rgba($dark-blue, .92);
+  backdrop-filter: saturate(140%) blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+
+.dd-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: $white;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    color: $white;
+  }
+}
+
+// Fixed box with the logo's own aspect ratio (175x212), so the mark can never
+// stretch and the wordmark beside it never depends on the image loading.
+//
+// The artwork is the brand navy, which is now also the bar behind it, so it is
+// knocked out to white. Replacing logo.png with a light-on-transparent version
+// and dropping the filter would be the tidier long-term fix.
+.dd-brand__mark {
+  flex: 0 0 auto;
+  width: 1.65rem;
+  height: 2rem;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.dd-user-menu .dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 2.75rem;
+  padding: .35rem .5rem;
+  font-weight: 600;
+  color: $text-1;
+  border: 0;
+  background: none;
+
+  &:hover,
+  &:focus {
+    color: $white;
+  }
+}
+
+.dd-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: .75rem;
+  font-weight: 700;
+  color: $white;
+  background-color: rgba(255, 255, 255, .16);
+  border-radius: 50%;
+}
+
+// ---------------------------------------------------------------------------
+// Bottom nav
+// ---------------------------------------------------------------------------
+
+.dd-bottom-nav {
+  z-index: 1030;
+  padding: 0;
+  background-color: rgba($surface-1, .96);
+  backdrop-filter: saturate(140%) blur(12px);
+  border-top: 1px solid $line;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.dd-bottom-nav__list {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-bottom-nav__item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.dd-bottom-nav__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  height: var(--dd-bottom-nav-height);
+  padding: .25rem .125rem;
+  font-size: .6875rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+  color: $text-3;
+  border-top: 2px solid transparent;
+
+  .dd-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  &:hover {
+    color: $text-1;
+  }
+
+  &.is-active {
+    color: $brand-soft;
+    border-top-color: $brand-soft;
+    background-image: linear-gradient(to bottom, rgba($brand-hover, .14), rgba($brand-hover, 0) 60%);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------------
+
+.dd-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -.125em;
+  fill: currentColor;
+  flex: 0 0 auto;
+}
+
+.dd-icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+// ---------------------------------------------------------------------------
+// Flashes
+// ---------------------------------------------------------------------------
+
+.dd-flashes {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1080;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .625rem .75rem 0;
+  pointer-events: none;
+}
+
+.dd-flash {
+  display: flex;
+  align-items: flex-start;
+  gap: .5rem;
+  margin: 0;
+  padding: .75rem .875rem;
+  font-size: .9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: $text-1;
+  background-color: $surface-2;
+  border: 1px solid $line;
+  border-left: 3px solid $text-3;
+  border-radius: $border-radius;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .45);
+  pointer-events: auto;
+
+  &:empty {
+    display: none;
+  }
+
+  .dd-icon {
+    margin-top: .1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}
+
+.dd-flash--notice,
+.dd-flash--success {
+  border-left-color: $win;
+  .dd-icon { color: $win; }
+}
+
+.dd-flash--alert,
+.dd-flash--error {
+  border-left-color: $loss;
+  .dd-icon { color: $loss; }
+}
+
+.fade-in-down-out {
+  animation:
+    dd-fade-in-down .28s ease,
+    dd-fade-out .5s linear 4.5s forwards;
+}
+
+@keyframes dd-fade-in-down {
+  from { opacity: 0; transform: translateY(-.5rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes dd-fade-out {
+  to { opacity: 0; visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-down-out { animation: none; }
+}
+
+// ---------------------------------------------------------------------------
+// Empty states
+// ---------------------------------------------------------------------------
+
+.blank-state {
+  margin: 1.5rem 0;
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+  color: $text-2;
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+
+  .dd-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-bottom: .75rem;
+    color: $text-3;
+  }
+
+  h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $text-1;
+  }
+
+  p {
+    margin: 0;
+    font-size: .9375rem;
+  }
+
+  .btn {
+    margin-top: 1.25rem;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Loading overlay
+// ---------------------------------------------------------------------------
+
+.dd-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: $text-1;
+  background-color: rgba($surface-0, .82);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+
+  &.is-visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  p {
+    max-width: 18rem;
+    margin: 0;
+    font-size: .9375rem;
+    color: $text-2;
+  }
+}
+
+.dd-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(255, 255, 255, .18);
+  border-top-color: $brand-hover;
+  border-radius: 50%;
+  animation: dd-spin .8s linear infinite;
+}
+
+@keyframes dd-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-spinner { animation-duration: 2.4s; }
+}
+
+// ---------------------------------------------------------------------------
+// Sport / scope nav
+// ---------------------------------------------------------------------------
+
+.dd-scope-nav {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.dd-scope-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: 2.75rem;
+  padding: .5rem .875rem;
+  font-size: .9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: $text-2;
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-pill;
+
+  &:hover {
+    color: $text-1;
+    background-color: $surface-2;
+  }
+
+  &.is-active {
+    color: $white;
+    background-color: $brand;
+    border-color: $brand;
+  }
+}
+
+.dd-scope-pill__scope {
+  font-weight: 500;
+  opacity: .85;
+}
+
+.dd-scope-pill__caret {
+  width: .7rem;
+  height: .7rem;
+  opacity: .8;
+}
+
+// ---------------------------------------------------------------------------
+// Lines board
+// ---------------------------------------------------------------------------
+
+.dd-board {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.dd-game {
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+.dd-game__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  background-color: $surface-2;
+  border-bottom: 1px solid $line;
+}
+
+.dd-game__kickoff {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: $text-2;
+}
+
+.dd-game__status {
+  padding: .1rem .45rem;
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: $text-3;
+  border: 1px solid $line;
+  border-radius: $border-radius-pill;
+}
+
+// Team block takes what is left; the two bet columns are a fixed width so the
+// buttons line up down the whole board and never squeeze the value.
+.dd-game__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.25rem 5.25rem;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+
+  & + & {
+    border-top: 1px solid rgba(255, 255, 255, .06);
+  }
+}
+
+.dd-game__team {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.dd-game__abbr {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.dd-game__name {
+  overflow: hidden;
+  font-size: .75rem;
+  color: $text-3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-bet-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: .5rem .25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  color: $white;
+  background-color: $brand;
+  border: 1px solid transparent;
+  border-radius: $border-radius;
+  transition: background-color .12s ease, transform .06s ease;
+
+  &:hover,
+  &:focus {
+    color: $white;
+    background-color: $brand-hover;
+  }
+
+  &:active {
+    background-color: $brand-active;
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $brand-hover;
+    outline-offset: 2px;
+  }
+}
+
+// The money bag floats over the corner rather than sitting in the text flow,
+// so flagging a side can never change a button's height.
+.dd-bet-btn__money {
+  position: absolute;
+  top: .15rem;
+  right: .2rem;
+  font-size: .8rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6));
+}
+
+.dd-bet-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  font-size: .9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: $text-3;
+  border: 1px dashed $line;
+  border-radius: $border-radius;
+}
+
+.dd-bet-cell--closed {
+  color: $text-2;
+  border-style: solid;
+}
+
+// ---------------------------------------------------------------------------
+// Bet sheet (offcanvas)
+// ---------------------------------------------------------------------------
+
+.dd-bet-sheet {
+  // Bootstrap sizes a bottom offcanvas at 30vh, which clipped the form. The
+  // sheet should be exactly as tall as the bet it is asking about.
+  --bs-offcanvas-height: auto;
+  height: auto;
+  border-top: 1px solid $line;
+  border-radius: $border-radius-xl $border-radius-xl 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  .offcanvas-header {
+    align-items: flex-start;
+    padding: 1rem 1rem .5rem;
+  }
+
+  .offcanvas-body {
+    padding: .5rem 1rem 1.25rem;
+  }
+
+  // Grab handle, so the sheet reads as something you can dismiss.
+  &::before {
+    content: "";
+    display: block;
+    width: 2.25rem;
+    height: .25rem;
+    margin: .5rem auto -.25rem;
+    background-color: $surface-4;
+    border-radius: $border-radius-pill;
+  }
+}
+
+.dd-bet-sheet__heading {
+  min-width: 0;
+}
+
+// Bootstrap's close button is a 24px square; the sheet is dismissed one-handed,
+// so give it a full-size target without making the glyph bigger.
+.dd-bet-sheet .btn-close {
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -.4rem -.5rem 0 .5rem;
+  background-size: .85rem;
+  border-radius: $border-radius;
+}
+
+.dd-bet-sheet .offcanvas-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dd-bet-sheet__meta {
+  margin: .2rem 0 0;
+  font-size: .8125rem;
+  color: $text-3;
+}
+
+.dd-bet-sheet__dot {
+  padding: 0 .1rem;
+  opacity: .6;
+}
+
+.dd-quick-amounts {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: .875rem;
+}
+
+.dd-quick-amount {
+  flex: 1 1 0;
+  min-height: 2.75rem;
+  padding: .5rem .25rem;
+  font-size: .9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: $text-1;
+  background-color: $surface-2;
+  border: 1px solid $line;
+  border-radius: $border-radius;
+
+  &:hover {
+    background-color: $surface-3;
+  }
+
+  &:active {
+    background-color: $surface-4;
+  }
+}
+
+.dd-bet-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+
+  .mb-3 {
+    margin-bottom: 0 !important;
+  }
+
+  // 16px minimum keeps iOS from zooming the page when the field takes focus.
+  .form-control {
+    min-height: 3rem;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.dd-bet-submit {
+  width: 100%;
+  margin-top: 1rem;
+  min-height: 3.25rem;
+  font-size: 1.0625rem;
+}
+
+// ---------------------------------------------------------------------------
+// Bet slips
+// ---------------------------------------------------------------------------
+
+.dd-slips {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dd-slip {
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-left: 3px solid $line;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+// Status is spelled out in the slip title; the accent only reinforces it.
+.dd-slip--pending   { border-left-color: $pending; }
+.dd-slip--confirmed { border-left-color: $brand-hover; }
+
+.dd-slip__header {
+  padding: .875rem 1rem;
+  border-bottom: 1px solid $line;
+}
+
+.dd-slip__title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.dd-slip__summary {
+  margin: .2rem 0 0;
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+  color: $text-2;
+}
+
+.dd-slip__dot {
+  padding: 0 .15rem;
+  opacity: .5;
+}
+
+.dd-slip__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-slip__row {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .625rem 1rem;
+
+  & + & {
+    border-top: 1px solid rgba(255, 255, 255, .06);
+  }
+}
+
+.dd-slip__bet {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.dd-slip__bet-line {
+  font-size: .9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: $text-1;
+}
+
+.dd-slip__bet-meta {
+  font-size: .75rem;
+  color: $text-3;
+}
+
+.dd-slip__figures {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.dd-slip__stake {
+  font-size: .9375rem;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.dd-slip__towin {
+  font-size: .75rem;
+  color: $win;
+}
+
+// The destructive control was the smallest target on the screen. It is now a
+// proper 44px button, and still visually quieter than Confirm.
+.dd-slip__remove {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: -.5rem;
+  color: $text-3;
+  border-radius: $border-radius;
+
+  .dd-icon {
+    width: .9rem;
+    height: .9rem;
+  }
+
+  &:hover,
+  &:focus {
+    color: $loss;
+    background-color: rgba($loss, .12);
+  }
+}
+
+.dd-slip__actions {
+  display: flex;
+  gap: .625rem;
+  padding: .875rem 1rem;
+  border-top: 1px solid $line;
+}
+
+.dd-slip__confirm {
+  flex: 1 1 auto;
+  min-height: 3rem;
+  font-size: 1rem;
+}
+
+.dd-slip__cancel {
+  flex: 0 0 auto;
+  min-height: 3rem;
+  padding-inline: 1rem;
+  font-weight: 600;
+  color: $text-2;
+  background-color: transparent;
+  border: 1px solid $line;
+
+  &:hover {
+    color: $text-1;
+    background-color: $surface-2;
+  }
+}
+
+// With the admin scoring buttons present there is not enough width on a phone
+// for everything on one line, so they take their own row.
+.dd-slip__row--scored {
+  flex-wrap: wrap;
+}
+
+.dd-slip__row--scored .dd-score {
+  flex: 1 0 100%;
+  justify-content: flex-end;
+  margin-top: .4rem;
+}
+
+// Admin scoring
+.dd-score {
+  display: flex;
+  flex: 0 0 auto;
+  gap: .3rem;
+}
+
+.dd-score__btn {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: .8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: $border-radius-sm;
+}
+
+.dd-score__btn--win  { color: $win;  background-color: rgba($win, .14);  border-color: rgba($win, .35); }
+.dd-score__btn--loss { color: $loss; background-color: rgba($loss, .14); border-color: rgba($loss, .35); }
+.dd-score__btn--push { color: $push; background-color: rgba($push, .14); border-color: rgba($push, .35); }
+
+// ---------------------------------------------------------------------------
+// Result badges
+// ---------------------------------------------------------------------------
+
+.dd-result {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .15rem .5rem .15rem .3rem;
+  font-size: .75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  border-radius: $border-radius-pill;
+  white-space: nowrap;
+}
+
+// A ring around the letter, so win/loss/push differ by shape as well as hue.
+.dd-result__letter {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: .6875rem;
+  line-height: 1;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.dd-result--win     { color: $win;     background-color: rgba($win, .12);     border-color: rgba($win, .3); }
+.dd-result--loss    { color: $loss;    background-color: rgba($loss, .12);    border-color: rgba($loss, .3); }
+.dd-result--push    { color: $push;    background-color: rgba($push, .12);    border-color: rgba($push, .3); }
+.dd-result--pending { color: $text-3;  background-color: rgba($text-3, .12);  border-color: rgba($text-3, .3); }
+
+// ---------------------------------------------------------------------------
+// History
+// ---------------------------------------------------------------------------
+
+.is-up   { color: $win; }
+.is-down { color: $loss; }
+
+// Accounts scroll sideways instead of wrapping into three ragged rows, which
+// on the admin view used to eat most of the first screen.
+.dd-account-tabs {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.dd-account-tab {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: .5rem .875rem;
+  font-size: .875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: $text-2;
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-pill;
+
+  &:hover { color: $text-1; }
+
+  &.active {
+    color: $white;
+    background-color: $brand;
+    border-color: $brand;
+  }
+}
+
+.dd-account {
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+.dd-account__summary {
+  padding: 1rem;
+  border-bottom: 1px solid $line;
+}
+
+.dd-account__balance {
+  margin: .1rem 0 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.dd-account__inplay {
+  margin: .15rem 0 0;
+  font-size: .8125rem;
+  color: $text-3;
+}
+
+.dd-account__meter {
+  margin-top: 1rem;
+}
+
+.dd-account__meter-head {
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-bottom: .35rem;
+  font-size: .75rem;
+  color: $text-2;
+}
+
+.dd-account__meter-value {
+  font-variant-numeric: tabular-nums;
+  color: $text-3;
+}
+
+// Two even columns instead of the old floats, which never lined up.
+.dd-account__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .625rem 1rem;
+  margin: 1rem 0 0;
+
+  dt {
+    font-size: .6875rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: $text-3;
+  }
+
+  dd {
+    margin: .1rem 0 0;
+    font-size: .9375rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: $text-1;
+  }
+}
+
+.dd-account__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-account__row {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .625rem 1rem;
+
+  & + & {
+    border-top: 1px solid rgba(255, 255, 255, .06);
+  }
+}
+
+.dd-account__when {
+  flex: 0 0 3.6rem;
+  font-size: .6875rem;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  color: $text-3;
+}
+
+.dd-account__bet {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.dd-account__bet-line {
+  font-size: .875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: $text-1;
+}
+
+.dd-account__bet-meta {
+  font-size: .75rem;
+  color: $text-3;
+}
+
+.dd-account__outcome {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: .15rem;
+}
+
+.dd-account__net {
+  font-size: .75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard
+// ---------------------------------------------------------------------------
+
+.dd-leaderboard__note {
+  margin: -.25rem 0 .75rem;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: $text-3;
+}
+
+.dd-leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.dd-leaderboard__row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem .875rem;
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+}
+
+.dd-leaderboard__row.is-podium {
+  background-image: linear-gradient(to right, rgba($brand, .16), rgba($brand, 0) 55%);
+}
+
+.dd-leaderboard__row.is-mine {
+  border-color: $brand-hover;
+  box-shadow: inset 3px 0 0 $brand-hover;
+}
+
+.dd-leaderboard__rank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 2rem;
+  gap: .1rem;
+}
+
+// The trophy sits above the number rather than replacing it, so first place
+// keeps its rank.
+.dd-leaderboard__trophy {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #f5c451;
+}
+
+.dd-leaderboard__number {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: $text-2;
+}
+
+.dd-leaderboard__row.is-podium .dd-leaderboard__number {
+  color: $text-1;
+}
+
+.dd-leaderboard__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dd-leaderboard__name {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .9375rem;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.dd-leaderboard__you {
+  padding: .05rem .35rem;
+  font-size: .625rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: $brand-soft;
+  border: 1px solid rgba($brand-soft, .5);
+  border-radius: $border-radius-pill;
+}
+
+.dd-leaderboard__week {
+  margin-top: .1rem;
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+  color: $text-3;
+}
+
+.dd-leaderboard__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  margin-top: .35rem;
+}
+
+.dd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .15rem .45rem;
+  font-size: .6875rem;
+  font-weight: 700;
+  color: $pending;
+  background-color: rgba($pending, .12);
+  border: 1px solid rgba($pending, .3);
+  border-radius: $border-radius-pill;
+
+  .dd-icon {
+    width: .7rem;
+    height: .7rem;
+  }
+}
+
+// Form pips
+.dd-form {
+  display: flex;
+  flex: 0 0 auto;
+  gap: .2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-form__pip {
+  width: .5rem;
+  height: 1.15rem;
+  border-radius: $border-radius-pill;
+}
+
+.dd-form__pip--win  { background-color: $win; }
+.dd-form__pip--loss { background-color: rgba($loss, .6); }
+.dd-form__pip--push { background-color: $push; }
+
+// ---------------------------------------------------------------------------
+// Panels (admin, settings)
+// ---------------------------------------------------------------------------
+
+.dd-panel {
+  margin-bottom: 1rem;
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+.dd-panel__header {
+  padding: .75rem 1rem;
+  background-color: $surface-2;
+  border-bottom: 1px solid $line;
+}
+
+.dd-panel__title {
+  margin: 0;
+  font-size: .9375rem;
+  font-weight: 700;
+  color: $text-1;
+}
+
+.dd-panel__body {
+  padding: 1rem;
+}
+
+// Wide tables scroll inside their own box rather than pushing the page sideways.
+.dd-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dd-table-total th,
+.dd-table-total td {
+  font-weight: 700;
+  border-top: 2px solid $line;
+}
+
+.dd-admin-section {
+  margin-bottom: 1.25rem;
+}
+
+.dd-admin-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+
+// The old markup put an <a> inside a div.btn, so every action rendered as
+// underlined link text on a colored block.
+.dd-admin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: .5rem .75rem;
+  font-size: .875rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: $border-radius;
+}
+
+.dd-admin-btn--fetch {
+  color: $pending;
+  background-color: rgba($pending, .12);
+  border-color: rgba($pending, .35);
+
+  &:hover { color: $pending; background-color: rgba($pending, .2); }
+}
+
+.dd-admin-btn--score {
+  color: $win;
+  background-color: rgba($win, .12);
+  border-color: rgba($win, .35);
+
+  &:hover { color: $win; background-color: rgba($win, .2); }
+}
+
+// ---------------------------------------------------------------------------
+// Devise / auth
+// ---------------------------------------------------------------------------
+
+.dd-auth {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.dd-auth__card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 1.5rem;
+  background-color: $surface-1;
+  border: 1px solid $line;
+  border-radius: $border-radius-lg;
+}
+
+.dd-auth__title {
+  margin: 0 0 .25rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.dd-auth__lead {
+  margin: 0 0 1.25rem;
+  font-size: .875rem;
+  color: $text-2;
+}
+
+.dd-auth__submit {
+  min-height: 3rem;
+  margin-top: .5rem;
+  font-size: 1rem;
+}
+
+.dd-auth__links {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  font-size: .875rem;
+  border-top: 1px solid $line;
+
+  a {
+    display: block;
+    padding: .25rem 0;
+  }
+
+  br { display: none; }
+}
+
+#error_explanation {
+  margin-bottom: 1rem;
+  padding: .75rem .875rem;
+  font-size: .875rem;
+  color: $text-1;
+  background-color: rgba($loss, .12);
+  border: 1px solid rgba($loss, .35);
+  border-radius: $border-radius;
+
+  h2 {
+    margin: 0 0 .35rem;
+    font-size: .9375rem;
+    font-weight: 700;
+    color: $loss;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+}

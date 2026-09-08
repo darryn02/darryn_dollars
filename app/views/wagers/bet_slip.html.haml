@@ -1,5 +1,13 @@
-%h1.mt-3 Bet Slips
+%h1.dd-page-title Bet Slips
 
-- @bet_slips.each do |bet_slip|
-  = render "pending_bet_slip", bet_slip: bet_slip if bet_slip.pending?
-  = render "confirmed_bet_slip", bet_slip: bet_slip if bet_slip.confirmed?
+- if @bet_slips.empty?
+  .blank-state
+    = icon "receipt"
+    %h2 No open bets
+    %p Anything you add from the lines board shows up here.
+    = link_to "Go to the lines", lines_path, class: "btn btn-primary"
+- else
+  .dd-slips
+    - @bet_slips.each do |bet_slip|
+      = render "pending_bet_slip", bet_slip: bet_slip if bet_slip.pending?
+      = render "confirmed_bet_slip", bet_slip: bet_slip if bet_slip.confirmed?

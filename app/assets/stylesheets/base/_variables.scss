@@ -1,221 +1,240 @@
-// Typography
-//$base-font-family: $font-stack-system;
-//$heading-font-family: $base-font-family;
-
-// Line height
-$base-line-height: 1.5;
-$heading-line-height: 1.2;
-
-// Other Sizes
-$base-border-radius: 3px;
-$base-spacing: 1.5em;
-$small-spacing: $base-spacing / 2;
-$base-z-index: 0;
-
-// Colors
-$blue: #1565c0;
-$dark-gray: #333;
-$medium-gray: #999;
-$light-gray: #ddd;
-
-// Font Colors
-$base-font-color: $dark-gray;
-$action-color: $blue;
-
-// Border
-$base-border-color: $light-gray;
-$base-border: 1px solid $base-border-color;
-
-// Background Colors
-$base-background-color: #fff;
-$secondary-background-color: tint($base-border-color, 75%);
-
-// Focus
-$focus-outline-color: transparentize($action-color, 0.4);
-$focus-outline-width: 3px;
-$focus-outline: $focus-outline-width solid $focus-outline-color;
-$focus-outline-offset: 2px;
-
-// Animations
-$base-duration: 150ms;
-$base-timing: ease;
-
-// Slate 5.3.2
-// Bootswatch
-
-$theme: "slate" !default;
-
+// Design tokens for Darryn Dollars.
 //
-// Color system
+// One system: a navy-tinted dark surface ramp anchored on the brand blue,
+// feeding Bootstrap's own variables so components inherit it for free.
+// Anything Bootstrap already derives correctly is left alone.
+
+// ---------------------------------------------------------------------------
+// Brand
+// ---------------------------------------------------------------------------
+
+$dark-blue:    #061a5c; // the brand. Deep enough to be a surface, not an accent.
+$brand-navy:   #0b2170;
+
+// Interactive blue, lifted out of the brand so it clears 3:1 against the page
+// and carries white text at 4.5:1. The brand itself is too dark to do this job.
+$brand:        #2b5be0;
+$brand-hover:  #3d6ff5;
+$brand-active: #1f47b8;
+
+// The blue used for accent *text* on a dark surface. #3d6ff5 only reaches
+// about 4:1 against the page, which is short of 4.5:1 for body-sized type.
+$brand-soft:   #8ab0ff;
+
+// ---------------------------------------------------------------------------
+// Surfaces
+// ---------------------------------------------------------------------------
+
+$surface-0: #0a0f1f; // page
+$surface-1: #121a2e; // cards, offcanvas, bottom nav
+$surface-2: #1a2540; // raised rows, table headers, inputs
+$surface-3: #24325a; // hover, stripes
+$surface-4: #2f3f6d; // pressed
+
+$line:      #2a3654; // hairlines
+$line-soft: rgba(255, 255, 255, 0.08);
+
+// ---------------------------------------------------------------------------
+// Text
+// ---------------------------------------------------------------------------
+
+$text-1: #eaeef7; // primary
+$text-2: #aeb9d2; // secondary, still >= 4.5:1 on surface-0..2
+$text-3: #8593b0; // muted, non-essential only
+
+// ---------------------------------------------------------------------------
+// Outcome semantics
 //
+// Deliberately distinct from the pending/confirmed workflow colors below, so
+// green never has to mean both "confirmed" and "won" on the same screen.
+// Every use is paired with a letter or icon; color never carries meaning alone.
+// ---------------------------------------------------------------------------
 
-$white:    #fff !default;
-$gray-100: #f8f9fa !default;
-$gray-200: #e9ecef !default;
-$gray-300: #dee2e6 !default;
-$gray-400: #ced4da !default;
-$gray-500: #999 !default;
-$gray-600: #7a8288 !default;
-$gray-700: #52575c !default;
-$gray-800: #3a3f44 !default;
-$gray-900: #272b30 !default;
-$black:    #000 !default;
+$win:     #3fd07a;
+$loss:    #ff6b6b;
+$push:    #9aa6bf;
+$pending: #e0a93b;
 
-$blue:    #007bff !default;
-$dark-blue: #061A5C;
-$theme-primary-1: $dark-blue;
-$theme-primary-2: #1f3476;
-$theme-primary-3: #435590;
-$indigo:  #6610f2 !default;
-$purple:  #6f42c1 !default;
-$pink:    #e83e8c !default;
-$red:     #ee5f5b !default;
-$orange:  #fd7e14 !default;
-$yellow:  #f89406 !default;
-$green:   #62c462 !default;
-$teal:    #20c997 !default;
-$cyan:    #5bc0de !default;
+// ---------------------------------------------------------------------------
+// Bootstrap overrides
+// ---------------------------------------------------------------------------
 
-$primary:       $gray-800 !default;
-$secondary:     $gray-600 !default;
-$success:       $green !default;
-$info:          $cyan !default;
-$warning:       $yellow !default;
-$danger:        $red !default;
-$light:         $gray-200 !default;
-$dark:          $gray-900 !default;
+$white: #fff;
+$black: #000;
 
-$min-contrast-ratio:   1.95 !default;
+$gray-100: #f4f6fb;
+$gray-200: #e3e8f2;
+$gray-300: #c6cee0;
+$gray-400: #9aa6bf;
+$gray-500: #7e8ca8;
+$gray-600: #5d6a86;
+$gray-700: #3d4964;
+$gray-800: #232e4c;
+$gray-900: #131b30;
 
-// Body
+$primary:   $brand;
+$secondary: $gray-700;
+$success:   $win;
+$danger:    $loss;
+$warning:   $pending;
+$info:      #4cc4e0;
+$light:     $gray-200;
+$dark:      $surface-1;
 
-$body-bg:                   $gray-900 !default;
-$body-color:                #aaa !default;
+// Bootstrap picks button/badge foregrounds by contrast. Slate had dropped this
+// to 1.95, which is what let gray-on-gray buttons pass. Put it back.
+$min-contrast-ratio: 4.5;
 
-// Links
+$body-bg:              $surface-0;
+$body-color:           $text-1;
+$body-secondary-color: $text-2;
+$body-secondary-bg:    $surface-1;
+$body-tertiary-color:  $text-3;
+$body-tertiary-bg:     $surface-2;
 
-$link-color:                $white !default;
+$border-color:           $line;
+$border-color-translucent: $line-soft;
 
-// Fonts
+$link-color:            $brand-soft;
+$link-hover-color:      #a9c4ff;
+$link-decoration:       none;
+$link-hover-decoration: underline;
 
-// Tables
+// Type. The system stack is already Bootstrap's default and needs no webfont;
+// character comes from weight and tracking instead.
+$font-size-base:   1rem;
+$line-height-base: 1.5;
+$headings-font-weight: 700;
+$headings-line-height: 1.15;
+$headings-color:   $text-1;
 
-$table-color:                 $white !default;
-$table-accent-bg:             rgba($white, .05) !default;
-$table-hover-bg:              rgba($white, .075) !default;
-$table-border-color:          rgba($black, .6) !default;
-$table-dark-border-color:     $table-border-color !default;
-$table-dark-color:            $white !default;
+$border-radius:    .625rem;
+$border-radius-sm: .5rem;
+$border-radius-lg: .875rem;
+$border-radius-xl: 1.25rem;
+$border-radius-pill: 50rem;
 
-$table-bg-scale:              0% !default;
+// Tap targets. 48px minimum on the controls a thumb has to hit mid-game.
+$input-btn-padding-y:    .8rem;
+$input-btn-padding-x:    1.1rem;
+$input-btn-padding-y-sm: .55rem;
+$input-btn-padding-x-sm: .75rem;
+$input-btn-font-size:    1rem;
+$input-btn-focus-width:  .2rem;
+$input-btn-focus-color-opacity: .4;
 
-// Buttons
-
-$input-btn-padding-y:         .75rem !default;
-$input-btn-padding-x:         1rem !default;
+$btn-font-weight:    600;
+$btn-focus-width:    .2rem;
 
 // Forms
+$input-bg:                  $surface-2;
+$input-disabled-bg:         $surface-1;
+$input-color:               $text-1;
+$input-border-color:        $line;
+$input-focus-bg:            $surface-2;
+$input-focus-border-color:  $brand-hover;
+$input-focus-color:         $text-1;
+$input-placeholder-color:   $text-3;
+$input-group-addon-bg:      $surface-3;
+$input-group-addon-color:   $text-2;
 
-$input-bg:                          $white !default;
-$input-color:                       $gray-900 !default;
-$input-border-color:                rgba($black, .6) !default;
-$input-group-addon-color:           $gray-500 !default;
-$input-group-addon-bg:              $gray-700 !default;
-$input-disabled-color:              $gray-600 !default;
-$input-disabled-bg:                 #ccc !default;
-
-$form-check-input-bg:                     $white !default;
-
-$form-select-disabled-bg:           $input-disabled-bg !default;
-$form-select-disabled-color:        $input-disabled-color !default;
-
-$form-file-button-color:          $input-group-addon-color !default;
-$form-file-button-bg:             $input-group-addon-bg !default;
-$form-file-button-hover-bg:       darken($form-file-button-bg, 5%) !default;
-
-// Dropdowns
-
-$dropdown-bg:                       $gray-800 !default;
-$dropdown-border-color:             rgba($black, .6) !default;
-$dropdown-divider-bg:               rgba($black, .15) !default;
-$dropdown-link-color:               $body-color !default;
-$dropdown-link-hover-color:         $white !default;
-$dropdown-link-hover-bg:            $body-bg !default;
-$dropdown-link-active-color:        $dropdown-link-hover-color !default;
-$dropdown-link-active-bg:           $dropdown-link-hover-bg !default;
-
-// Navs
-
-$nav-tabs-border-color:             rgba($black, .6) !default;
-$nav-tabs-link-hover-border-color:  $nav-tabs-border-color !default;
-$nav-tabs-link-active-color:        $white !default;
-$nav-tabs-link-active-border-color: $nav-tabs-border-color !default;
-
-// Navbar
-
-$navbar-padding-y:                  0 !default;
-
-// Pagination
-
-$pagination-color:                  $white !default;
-$pagination-bg:                     transparent !default;
-$pagination-border-color:           rgba($black, .6) !default;
-$pagination-hover-color:            $white !default;
-$pagination-hover-bg:               transparent !default;
-$pagination-hover-border-color:     rgba($black, .6) !default;
-$pagination-active-bg:              transparent !default;
-$pagination-active-border-color:    rgba($black, .6) !default;
-$pagination-disabled-bg:            transparent !default;
-$pagination-disabled-border-color:  rgba($black, .6) !default;
+$form-label-color:          $text-2;
+$form-label-font-weight:    600;
+$form-label-margin-bottom:  .35rem;
+$form-select-indicator-color: $text-2;
+$form-check-input-bg:       $surface-2;
+$form-check-input-border:   1px solid $line;
 
 // Cards
+$card-bg:            $surface-1;
+$card-color:         $text-1;
+$card-border-color:  $line;
+$card-border-radius: $border-radius-lg;
+$card-cap-bg:        $surface-2;
+$card-cap-color:     $text-1;
+$card-spacer-y:      1rem;
+$card-spacer-x:      1rem;
 
-$card-border-color:                 rgba($black, .6) !default;
-$card-cap-bg:                       lighten($gray-800, 10%) !default;
-$card-bg:                           lighten($body-bg, 5%) !default;
+// Tables
+$table-color:        $text-1;
+$table-bg:           transparent;
+$table-border-color: $line;
+$table-striped-bg:   rgba(255, 255, 255, .035);
+$table-hover-bg:     rgba(255, 255, 255, .06);
+$table-cell-padding-y: .6rem;
+$table-cell-padding-x: .6rem;
+$table-bg-scale:     0%;
 
-// Popovers
+// List groups
+$list-group-bg:              $surface-1;
+$list-group-color:           $text-1;
+$list-group-border-color:    $line;
+$list-group-hover-bg:        $surface-2;
+$list-group-action-color:    $text-1;
+$list-group-active-bg:       $surface-3;
+$list-group-active-border-color: $line;
+$list-group-item-bg-scale:   0%;
 
-$popover-bg:                        lighten($body-bg, 5%) !default;
+// Navbar / nav
+$navbar-padding-y:            .5rem;
+$navbar-dark-color:           $text-2;
+$navbar-dark-hover-color:     $text-1;
+$navbar-dark-active-color:    $white;
+$navbar-dark-brand-color:     $white;
+$navbar-dark-brand-hover-color: $white;
 
-// Toasts
+$nav-tabs-border-color:             $line;
+$nav-tabs-link-active-color:        $text-1;
+$nav-tabs-link-active-bg:           $surface-2;
+$nav-tabs-link-active-border-color: $line $line $surface-2;
+$nav-tabs-link-hover-border-color:  $line;
+$nav-link-color:                    $text-2;
+$nav-link-hover-color:              $text-1;
 
-$toast-background-color:            lighten($body-bg, 5%) !default;
-$toast-border-color:                rgba(0, 0, 0, .2) !default;
-$toast-header-color:                $body-color !default;
-$toast-header-background-color:     $toast-background-color !default;
-$toast-header-border-color:         $toast-border-color !default;
+// Dropdowns
+$dropdown-bg:                $surface-2;
+$dropdown-color:             $text-1;
+$dropdown-border-color:      $line;
+$dropdown-divider-bg:        $line;
+$dropdown-link-color:        $text-1;
+$dropdown-link-hover-color:  $white;
+$dropdown-link-hover-bg:     $surface-3;
+$dropdown-link-active-color: $white;
+$dropdown-link-active-bg:    $brand;
+$dropdown-item-padding-y:    .65rem;
 
-// Modals
+// Offcanvas / modal / popover / toast
+$offcanvas-bg-color:      $surface-1;
+$offcanvas-color:         $text-1;
+$offcanvas-border-color:  $line;
+$offcanvas-horizontal-width: 320px;
+$modal-content-bg:        $surface-1;
+$modal-content-border-color: $line;
+$popover-bg:              $surface-2;
+$toast-background-color:  $surface-2;
+$toast-border-color:      $line;
+$toast-header-background-color: $surface-2;
+$toast-header-color:      $text-1;
 
-$modal-content-bg:                  lighten($body-bg, 5%) !default;
-$modal-header-border-color:         rgba(0, 0, 0, .2) !default;
+// Alerts. Bootstrap tints these from the theme colors by default, which on a
+// dark ground produces near-white blocks; alerts are restyled in _theme.scss.
+$alert-border-radius: $border-radius;
+$alert-padding-y:     .75rem;
+$alert-padding-x:     1rem;
 
-// Progress bars
+// Progress (credit utilisation meter)
+$progress-bg:        $surface-3;
+$progress-height:    .5rem;
+$progress-border-radius: $border-radius-pill;
 
-$progress-bg:                       darken($gray-900, 5%) !default;
-$progress-bar-color:                $gray-600 !default;
+// Close button (offcanvas dismiss) needs to be visible on dark.
+$btn-close-color:       $text-1;
+$btn-close-opacity:     .7;
+$btn-close-hover-opacity: 1;
+$btn-close-white-filter: none;
 
-// List group
+$badge-font-weight: 700;
+$badge-padding-y:   .35em;
+$badge-padding-x:   .6em;
 
-$list-group-color:                  $white !default;
-$list-group-bg:                     lighten($body-bg, 5%) !default;
-$list-group-border-color:           rgba($black, .6) !default;
-$list-group-item-bg-scale:          0% !default;
-$list-group-hover-bg:               lighten($body-bg, 10%) !default;
-$list-group-active-color:           $white !default;
-$list-group-active-bg:              $list-group-hover-bg !default;
-$list-group-active-border-color:    $list-group-border-color !default;
-$list-group-disabled-color:         $gray-700 !default;
-$list-group-action-color:           $white !default;
-
-// Breadcrumbs
-
-$breadcrumb-padding-y:              .375rem !default;
-$breadcrumb-padding-x:              .75rem !default;
-$breadcrumb-active-color:           $gray-500 !default;
-$breadcrumb-border-radius:          .25rem !default;
-
-// Code
-
-$pre-color:                         inherit !default;
+$spacer: 1rem;

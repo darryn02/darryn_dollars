@@ -1,1 +1,7 @@
-%h1.pt-3 My Accounts
+%h1.dd-page-title My Accounts
+
+.blank-state
+  = icon "receipt"
+  %h2 Nothing here yet
+  %p Your balances live on the History screen.
+  = link_to "Go to History", history_wagers_path, class: "btn btn-primary"
