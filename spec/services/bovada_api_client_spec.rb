@@ -141,9 +141,19 @@ RSpec.describe BovadaApiClient, type: :service do
       parse([event("Delaware", "Alabama")])
     end
 
+    it "names the side that could not be resolved, not just the fixture" do
+      expect(Rails.logger).to receive(:warn).with(/Delaware vs\. Alabama \(Delaware\)/)
+
+      parse([event("Delaware", "Alabama")])
+    end
+
+    # Exactly how a duplicate competitor row breaks things: the name stops
+    # being unique, and every game for that team is quietly skipped.
     it "skips a name that matches more than one competitor" do
       Competitor.create!(sport: :ncaaf, region: "Miami", name: "Hurricanes", abbreviation: "Ambiguous")
       Competitor.create!(sport: :ncaaf, region: "Ambiguous", name: "RedHawks", abbreviation: "Miami OH")
+
+      expect(Rails.logger).to receive(:warn).with(/\(Ambiguous\)/)
 
       lines = nil
       expect { lines = parse([event("Ambiguous", "Alabama")]) }.not_to raise_error
