@@ -6,9 +6,6 @@ namespace :scrape do
     elsif ENV["USE_ODDS_API"] == "1"
       exit unless nfl_wagerable?
       LinesApiClient.update_lines(sport: :nfl, scope: :first_half)
-    else
-      LineScraper.run
-      LineScraper.run("first_half")
     end
   end
 
@@ -17,8 +14,6 @@ namespace :scrape do
       BovadaApiClient.update_lines(sport: :nfl)
     elsif ENV["USE_ODDS_API"] == "1"
       LinesApiClient.update_lines(sport: :nfl, scope: :second_half)
-    else
-      LineScraper.new.run("second_half")
     end
   end
 
