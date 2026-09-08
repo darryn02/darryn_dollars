@@ -2,13 +2,13 @@
 
 .dd-admin-section
   %h2.dd-eyebrow Fetch lines
+  %p.dd-admin-note One fetch brings back game, first half and second half together.
   .dd-admin-actions
     - [["NFL", :nfl], ["NCAAF", :ncaaf]].each do |label, sport|
-      - [["Game", :game], ["1st Half", :first_half], ["2nd Half", :second_half]].each do |scope_label, scope|
-        = link_to "#{label} #{scope_label}",
-          fetch_lines_admin_dashboard_path(sport: sport, scope: scope),
-          remote: true,
-          class: "dd-admin-btn dd-admin-btn--fetch"
+      = link_to "#{label} Lines",
+        fetch_lines_admin_dashboard_path(sport: sport),
+        remote: true,
+        class: "dd-admin-btn dd-admin-btn--fetch"
 
 .dd-admin-section
   %h2.dd-eyebrow Scores and scoring

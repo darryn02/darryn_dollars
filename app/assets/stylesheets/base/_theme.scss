@@ -1274,6 +1274,12 @@ body .container.main {
   margin-bottom: 1.25rem;
 }
 
+.dd-admin-note {
+  margin: .25rem 0 0;
+  font-size: .8125rem;
+  color: $text-3;
+}
+
 .dd-admin-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -4,20 +4,13 @@ module Admin
       @accounts = Account.all
     end
 
+    # One Bovada response carries every scope - game, first half and second
+    # half - so there is nothing left for :scope to select between. The param
+    # is still accepted so existing links keep working.
     def fetch_lines
-      if params[:scope].to_s == "second_half"
-        if ENV["USE_BOVADA_API"] == "1"
-          @notice = BovadaApiClient.update_lines(sport: params[:sport])
-        elsif ENV["USE_ODDS_API"] == "1"
-          @notice = LinesApiClient.update_lines(sport: params[:sport], scope: :second_half)
-        end
-      else
-        if ENV["USE_BOVADA_API"] == "1"
-          @notice = BovadaApiClient.update_lines(sport: params[:sport])
-        elsif ENV["USE_ODDS_API"] == "1"
-          @notice = LinesApiClient.update_lines(sport: params[:sport], scope: :first_half)
-        end
-      end
+      return unless ENV["USE_BOVADA_API"] == "1"
+
+      @notice = BovadaApiClient.update_lines(sport: params[:sport])
     end
 
     def fetch_scores
