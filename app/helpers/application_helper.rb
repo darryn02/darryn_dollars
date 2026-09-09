@@ -28,4 +28,12 @@ module ApplicationHelper
 
     action.nil? || action_name == action
   end
+
+  # "Last seen 2 hours ago" - admin-only context on how recently a player was
+  # actually in the app, as opposed to when they last typed a password.
+  def last_seen_label(user)
+    return "Never visited" if user.last_seen_at.nil?
+
+    "Last seen #{time_ago_in_words(user.last_seen_at)} ago"
+  end
 end

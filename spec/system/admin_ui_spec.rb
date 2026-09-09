@@ -79,5 +79,24 @@ RSpec.describe "Admin-only surfaces", type: :system do
       expect(page).to have_content("Account Summary")
       expect(page).to have_content("Enter Payment")
     end
+
+    # Devise's own last_sign_in_at only moves at login and sessions here last
+    # months, so it stops meaning "was here recently" almost immediately - the
+    # subtext under each name is this site's own record instead.
+    it "shows when each player last actually visited, not when they last logged in" do
+      player.update_column(:last_seen_at, 2.hours.ago)
+
+      login_as(admin, scope: :user)
+      visit admin_dashboard_path
+
+      expect(page).to have_css(".dd-table-subtext", text: /last seen.*2 hours? ago/i)
+    end
+
+    it "says so plainly for a player who has never opened the app" do
+      login_as(admin, scope: :user)
+      visit admin_dashboard_path
+
+      expect(page).to have_css(".dd-table-subtext", text: /never visited/i)
+    end
   end
 end
