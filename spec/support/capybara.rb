@@ -47,6 +47,22 @@ module WaitForApplicationJs
       sleep 0.02
     end
   end
+
+  # Polls a block on Capybara's clock. For the handful of waits that are about
+  # browser state rather than the presence of a node, which is all the
+  # have_css family can express.
+  def wait_until(seconds = Capybara.default_max_wait_time)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
+
+    loop do
+      return true if yield
+      break if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+      sleep 0.05
+    end
+
+    false
+  end
 end
 
 RSpec.configure do |config|

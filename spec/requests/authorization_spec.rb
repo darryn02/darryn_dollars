@@ -128,4 +128,76 @@ RSpec.describe "Authorization", type: :request do
       expect(victim.reload.name).to eq("Victim")
     end
   end
+
+  # The guards above are only half the story: each one has a path it must not
+  # have closed. Without these, an over-tight check would look exactly like a
+  # passing suite.
+  describe "what the owner is still allowed to do" do
+    let!(:wager) { create_wager(account: player_account, line: card[:away_spread], amount: 100) }
+
+    it "cancels their own pending wager" do
+      sign_in player
+
+      delete wager_path(wager), headers: { "Accept" => "text/javascript" }
+
+      expect(Wager.exists?(wager.id)).to be(false)
+    end
+
+    it "confirms their own bet slip" do
+      sign_in player
+
+      patch bet_slip_path(wager.bet_slip)
+
+      expect(wager.bet_slip.reload).to be_confirmed
+      expect(wager.reload).to be_confirmed
+    end
+
+    it "empties their own bet slip" do
+      sign_in player
+
+      delete bet_slip_path(wager.bet_slip)
+
+      expect(Wager.exists?(wager.id)).to be(false)
+    end
+
+    it "changes their own name" do
+      sign_in player
+
+      patch user_path(player), params: { user: { name: "Renamed Myself" } }
+
+      expect(player.reload.name).to eq("Renamed Myself")
+    end
+
+    it "changes their own password" do
+      sign_in player
+
+      patch user_path(player), params: {
+        user: { password: "brand-new-password", password_confirmation: "brand-new-password" }
+      }
+
+      expect(player.reload.valid_password?("brand-new-password")).to be(true)
+    end
+  end
+
+  describe "what an admin is still allowed to do" do
+    let(:other) { create_user(name: "Someone Else") }
+    let!(:other_account) { create_account(user: other) }
+    let!(:their_wager) { create_wager(account: other_account, line: card[:away_spread], amount: 100) }
+
+    it "cancels a player's wager on their behalf" do
+      sign_in admin
+
+      delete wager_path(their_wager), headers: { "Accept" => "text/javascript" }
+
+      expect(Wager.exists?(their_wager.id)).to be(false)
+    end
+
+    it "changes a player's name" do
+      sign_in admin
+
+      patch user_path(other), params: { user: { name: "Corrected Name" } }
+
+      expect(other.reload.name).to eq("Corrected Name")
+    end
+  end
 end

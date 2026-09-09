@@ -8,12 +8,32 @@ RSpec.describe "Placing a wager", type: :system do
 
   before { login_as(user, scope: :user) }
 
+  # Bootstrap moves focus onto the sheet when its opening transition ends.
+  # Typing before that happens races it, and the keystrokes are swallowed - the
+  # field comes back empty and the failure reads as a validation problem rather
+  # than a timing one. Waiting for focus to land is waiting for Bootstrap to
+  # have finished with the element.
+  def open_bet_sheet(line, labelled:)
+    find(".dd-bet-btn", text: labelled).click
+
+    sheet = "#betOffcanvas-#{line.id}"
+    expect(page).to have_css("#{sheet}.show")
+
+    settled = wait_until do
+      page.evaluate_script(
+        "(function () { var s = document.querySelector(#{sheet.to_json}); " \
+        "return !!s && s.contains(document.activeElement); })()"
+      )
+    end
+    expect(settled).to be(true), "the bet sheet never took focus"
+  end
+
   it "goes from the board to a confirmed slip" do
     visit lines_path
 
     expect(page).to have_css(".dd-game__abbr", text: "BUF")
 
-    find(".dd-bet-btn", text: "+2.5").click
+    open_bet_sheet(card[:away_spread], labelled: "+2.5")
 
     within("#betOffcanvas-#{card[:away_spread].id}") do
       expect(page).to have_content("BUF +2.5")
@@ -35,7 +55,7 @@ RSpec.describe "Placing a wager", type: :system do
   it "fills the stake from a quick-amount chip and works out the return" do
     visit lines_path
 
-    find(".dd-bet-btn", text: "+2.5").click
+    open_bet_sheet(card[:away_spread], labelled: "+2.5")
 
     within("#betOffcanvas-#{card[:away_spread].id}") do
       click_button "$100"
@@ -49,7 +69,7 @@ RSpec.describe "Placing a wager", type: :system do
   it "refuses a stake under the minimum and adds nothing to the slip" do
     visit lines_path
 
-    find(".dd-bet-btn", text: "+2.5").click
+    open_bet_sheet(card[:away_spread], labelled: "+2.5")
 
     # Addressed by class rather than by label: every bet sheet on the card
     # renders its own copy of this form, and simple_form gives each one the
