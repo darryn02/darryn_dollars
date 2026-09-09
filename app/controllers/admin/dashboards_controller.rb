@@ -3,7 +3,7 @@ module Admin
     before_action :require_admin!
 
     def show
-      @accounts = Account.all
+      @accounts = Account.includes(:user).all
     end
 
     # One Bovada response carries every scope - game, first half and second

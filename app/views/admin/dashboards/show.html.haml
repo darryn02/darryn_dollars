@@ -36,7 +36,9 @@
       %tbody
         - @accounts.each do |account|
           %tr
-            %td= account.qualified_name
+            %td
+              .dd-table-name= account.qualified_name
+              .dd-table-subtext= last_seen_label(account.user)
             %td.text-end.text-nowrap= currency(account.winnings)
             %td.text-end.text-nowrap= currency(account.payment_sum)
             %td.text-end.text-nowrap= currency(account.balance)

@@ -1270,6 +1270,15 @@ body .container.main {
   border-top: 2px solid $line;
 }
 
+.dd-table-name {
+  color: $text-1;
+}
+
+.dd-table-subtext {
+  font-size: .75rem;
+  color: $text-3;
+}
+
 .dd-admin-section {
   margin-bottom: 1.25rem;
 }
