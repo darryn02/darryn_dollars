@@ -4,7 +4,11 @@
 
 <% if Rails.env.test? %>
   <%= javascript_tag do %>
-    $.fx.off = true;
-    $.ajaxSetup({ async: false });
+    window.addEventListener("load", function () {
+      if (window.jQuery) {
+        window.jQuery.fx.off = true;
+        window.jQuery.ajaxSetup({ async: false });
+      }
+    });
   <% end %>
 <% end %>
