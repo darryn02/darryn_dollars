@@ -1,0 +1,21 @@
+.dd-auth
+  .dd-auth__card
+    %h1.dd-auth__title Join Darryn Dollars
+    %p.dd-auth__lead You've been invited. Set up your name and password to get started.
+
+    = simple_form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put }) do |f|
+      = f.hidden_field :invitation_token, readonly: true
+      = f.input :name, required: true, autofocus: true
+      = f.input :password, as: :string, input_html: { type: "password", autocomplete: "new-password" },
+        hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
+        required: true
+      = f.input :password_confirmation, as: :string, input_html: { type: "password", autocomplete: "new-password" },
+        required: true
+
+      %hr.my-3
+      %p.dd-auth__lead Leaderboard
+      = f.input :account_nickname, as: :string, label: "Nickname",
+        hint: "Shown on the leaderboard instead of your name."
+      = f.input :account_leaderboard_visible, as: :boolean, label: "Show me on the leaderboard"
+
+      = f.button :submit, "Join", class: "btn btn-primary w-100 dd-auth__submit"

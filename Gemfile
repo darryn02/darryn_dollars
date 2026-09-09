@@ -6,6 +6,7 @@ gem "autoprefixer-rails"
 gem "bootstrap"
 gem "delayed_job_active_record"
 gem "devise"
+gem "devise_invitable"
 gem "flutie"
 gem 'haml-rails'
 gem "honeybadger"

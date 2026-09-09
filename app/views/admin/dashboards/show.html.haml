@@ -1,6 +1,12 @@
 %h1.dd-page-title Admin
 
 .dd-admin-section
+  %h2.dd-eyebrow Players
+  %p.dd-admin-note The site is invitation only - this is the only way in.
+  .dd-admin-actions
+    = link_to "Invite a Player", new_user_invitation_path, class: "dd-admin-btn dd-admin-btn--fetch"
+
+.dd-admin-section
   %h2.dd-eyebrow Fetch lines
   %p.dd-admin-note One fetch brings back game, first half and second half together.
   .dd-admin-actions

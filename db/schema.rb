@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_09_162100) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_09_192916) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -136,9 +136,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_09_162100) do
 
   create_table "users", id: :serial, force: :cascade do |t|
     t.boolean "admin"
-    t.string "name", null: false
+    t.string "name"
     t.string "email", null: false
-    t.string "mobile", null: false
+    t.string "mobile"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.string "encrypted_password", default: "", null: false
@@ -151,7 +151,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_09_162100) do
     t.string "current_sign_in_ip"
     t.string "last_sign_in_ip"
     t.datetime "last_seen_at"
+    t.string "invitation_token"
+    t.datetime "invitation_created_at"
+    t.datetime "invitation_sent_at"
+    t.datetime "invitation_accepted_at"
+    t.integer "invitation_limit"
+    t.string "invited_by_type"
+    t.bigint "invited_by_id"
+    t.integer "invitations_count", default: 0
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["invitation_token"], name: "index_users_on_invitation_token", unique: true
+    t.index ["invited_by_id"], name: "index_users_on_invited_by_id"
+    t.index ["invited_by_type", "invited_by_id"], name: "index_users_on_invited_by"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 

@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: { invitations: "users/invitations" }
   resources :lines, only: [:index]
   resources :wagers, only: [:create, :update, :destroy] do
     collection do

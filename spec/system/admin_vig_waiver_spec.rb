@@ -20,7 +20,10 @@ RSpec.describe "Waiving the vig from the admin screen", type: :system do
     click_link "Waive the Vig"
 
     within(".dd-panel", text: "One line") do
-      select "#{game} — #{line}", from: "Line"
+      # Game#to_s uses %l (space-padded hour), which browsers collapse when
+      # rendering option text - squish so the expected string matches what is
+      # actually visible, regardless of the hour it happens to be run at.
+      select "#{game} — #{line}".squish, from: "Line"
       click_button "Preview"
     end
 
@@ -54,7 +57,7 @@ RSpec.describe "Waiving the vig from the admin screen", type: :system do
 
     visit new_admin_vig_waiver_path
     within(".dd-panel", text: "One game") do
-      select game.to_s, from: "Game"
+      select game.to_s.squish, from: "Game"
       select "All markets", from: "Market"
       click_button "Preview"
     end

@@ -1,6 +1,13 @@
 class Account < ApplicationRecord
   CHAD = ENV.fetch("CHAD_ACCOUNT_ID", 7).to_i
 
+  # Starting credit for a player who joins through an invitation. Every
+  # account before this one was set up by hand at whatever number seemed
+  # right for that person; this is only a starting point for a new player,
+  # not a policy - nothing stops it being adjusted afterward the same way
+  # every other account's limit already is, by hand.
+  DEFAULT_CREDIT_LIMIT = ENV.fetch("DEFAULT_CREDIT_LIMIT", 1_000).to_i
+
   belongs_to :user
   has_many :bet_slips
   has_many :wagers, through: :bet_slips

@@ -1,0 +1,9 @@
+%h1.dd-page-title Invite a Player
+
+.dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title New invitation
+  .dd-panel__body
+    = simple_form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :post }) do |f|
+      = f.input :email, required: true, autofocus: true, input_html: { autocomplete: "email", inputmode: "email" }
+      = f.submit "Invite", class: "btn btn-primary w-100"
