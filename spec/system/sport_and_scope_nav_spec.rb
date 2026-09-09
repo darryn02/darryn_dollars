@@ -29,9 +29,15 @@ RSpec.describe "The sport and scope nav", type: :system do
 
   before { login_as(user, scope: :user) }
 
+  # The `show` class goes on before Popper has positioned anything, so for a
+  # frame or two the menu is open but still parked at the top-left corner.
+  # Asserting on it then measures the wrong box, and clicking an item then
+  # sends the click to wherever that item used to be. Popper stamps the
+  # placement onto the menu once it has really placed it, so that is the
+  # signal worth waiting for.
   def open_sport_menu(label)
     find(".dd-scope-pill", text: label).click
-    expect(page).to have_css(".dd-scope-nav .dropdown-menu.show")
+    expect(page).to have_css(".dd-scope-nav .dropdown-menu.show[data-popper-placement]")
   end
 
   # Walks up from the open menu looking for an ancestor that both establishes a
