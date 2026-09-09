@@ -67,7 +67,7 @@ class Account < ApplicationRecord
 
   def lose_sum
     if wagers.loaded?
-      wagers.select(&loss?).sum(&:net)
+      wagers.select(&:loss?).sum(&:net)
     else
       wagers.loss.sum(:net)
     end
