@@ -15,7 +15,8 @@ class Line < ApplicationRecord
   KIND_GROUPS = {
     "spread" => %w[point_spread],
     "total" => %w[over under],
-    "moneyline" => %w[moneyline]
+    "moneyline" => %w[moneyline],
+    "all" => %w[point_spread moneyline over under]
   }.freeze
 
   def self.latest

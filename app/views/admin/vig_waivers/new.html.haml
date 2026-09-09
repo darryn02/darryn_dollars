@@ -30,7 +30,7 @@
       .mb-3
         = label_tag :kind_group, "Market"
         = select_tag :kind_group,
-          options_for_select([%w[Spread spread], %w[Total total], %w[Moneyline moneyline]]),
+          options_for_select([["All markets", "all"], ["Spread", "spread"], ["Total", "total"], ["Moneyline", "moneyline"]]),
           class: "form-select"
       = submit_tag "Preview", class: "btn btn-primary"
 
@@ -46,6 +46,6 @@
       .mb-3
         = label_tag :kind_group, "Market"
         = select_tag :kind_group,
-          options_for_select([%w[Spread spread], %w[Total total], %w[Moneyline moneyline]]),
+          options_for_select([["All markets", "all"], ["Spread", "spread"], ["Total", "total"], ["Moneyline", "moneyline"]]),
           class: "form-select"
       = submit_tag "Preview", class: "btn btn-primary"

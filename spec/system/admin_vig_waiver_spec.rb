@@ -47,6 +47,29 @@ RSpec.describe "Waiving the vig from the admin screen", type: :system do
     expect(page).to have_no_content("-$110.00")
   end
 
+  it "reaches every market at once with All markets, for a whole game" do
+    total_line = create_total(game: game, kind: :over, value: 47.5, odds: -110)
+    spread_wager = create_wager(account: player_account, line: line, amount: 110, status: :loss)
+    total_wager = create_wager(account: player_account, line: total_line, amount: 110, status: :loss)
+
+    visit new_admin_vig_waiver_path
+    within(".dd-panel", text: "One game") do
+      select game.to_s, from: "Game"
+      select "All markets", from: "Market"
+      click_button "Preview"
+    end
+
+    expect(page).to have_content("Loss becomes -$100.00, was -$110.00", count: 2)
+
+    check "wager_#{spread_wager.id}"
+    check "wager_#{total_wager.id}"
+    click_button "Waive the vig on checked wagers"
+    expect(page).to have_content("Waived the vig on 2 wager(s).")
+
+    expect(spread_wager.reload).to be_vig_waived
+    expect(total_wager.reload).to be_vig_waived
+  end
+
   it "clears a waiver from the preview screen" do
     wager = create_wager(account: player_account, line: line, amount: 110, status: :loss)
     wager.update!(vig_waived: true)
