@@ -1,5 +1,6 @@
 module Admin
   class PaymentsController < ApplicationController
+    before_action :require_admin!
     before_action :sanitize_params
 
     def create

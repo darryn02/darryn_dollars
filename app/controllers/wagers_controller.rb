@@ -1,4 +1,9 @@
 class WagersController < ApplicationController
+  # Scoring settles money, so it belongs to the book alone. The view has always
+  # hidden these controls from players; that hid the buttons, not the routes.
+  before_action :require_admin!, only: [:mark_as_win, :mark_as_loss, :mark_as_push]
+  before_action :load_reachable_wager, only: [:destroy]
+
   def bet_slip
     @bet_slips = wagers([:pending, :confirmed]).
       group_by { |wager| [wager.status, wager.account] }.
@@ -21,7 +26,6 @@ class WagersController < ApplicationController
   end
 
   def destroy
-    @wager = Wager.find(params[:id])
     if @wager.pending?
       @wager.destroy
       @notice = "Wager #{@wager.id} has been cancelled."
@@ -88,6 +92,14 @@ class WagersController < ApplicationController
   end
 
   private
+
+  # Wager.find would happily hand over anybody's wager to anybody who could
+  # name its id.
+  def load_reachable_wager
+    @wager = Wager.find_by(id: params[:id])
+
+    deny!("That wager is not yours to cancel.") unless @wager && reachable_account?(@wager.account_id)
+  end
 
   def wagers(statuses)
     scope = Wager.
