@@ -40,4 +40,18 @@ RSpec.describe Line, type: :model do
       expect(line.to_s).to eq("BUF PICK (-110)")
     end
   end
+
+  describe "#payout" do
+    it "pays the stake times the odds over 100 for positive (underdog) odds" do
+      line = game.lines.create!(kind: :point_spread, scope: :game, value: 3.0, odds: 150, contestant: contestant)
+
+      expect(line.payout(100)).to eq(150.0)
+    end
+
+    it "pays the stake over the odds magnitude for negative (favorite) odds" do
+      line = game.lines.create!(kind: :point_spread, scope: :game, value: -3.0, odds: -110, contestant: contestant)
+
+      expect(line.payout(110)).to eq(100.0)
+    end
+  end
 end

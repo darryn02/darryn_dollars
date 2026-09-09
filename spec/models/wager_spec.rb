@@ -56,4 +56,42 @@ RSpec.describe Wager, type: :model do
       expect(Wager.create!(account: account, bet_slip: bet_slip, line: line, amount: 100)).to be_pending
     end
   end
+
+  describe "confirming other kinds of wager" do
+    let(:user) { create_user }
+    let(:account) { create_account(user: user, credit_limit: 200) }
+    let(:game) { create_game(starts_at: 2.hours.from_now) }
+    let(:card) { create_full_card(game: game) }
+
+    before { allow_any_instance_of(Game).to receive(:second_half_started?).and_return(false) }
+
+    it "rejects confirming a wager once the game has started" do
+      wager = create_wager(account: account, line: card[:away_spread], amount: 100)
+
+      Timecop.travel(game.starts_at + 1.minute) do
+        expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /past game start time/)
+      end
+    end
+
+    it "rejects confirming a wager on a line that has since been hidden" do
+      wager = create_wager(account: account, line: card[:away_spread], amount: 100)
+      card[:away_spread].update!(hidden: true)
+
+      expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /no longer active/)
+    end
+
+    # credit_limit(200) + balance(0) - liabilities(0) has to clear the stake.
+    it "rejects confirming a wager the account has no credit for" do
+      wager = create_wager(account: account, line: card[:away_spread], amount: 250)
+
+      expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /insufficient credit/)
+    end
+
+    it "confirms a wager comfortably inside the account's credit" do
+      wager = create_wager(account: account, line: card[:away_spread], amount: 100)
+
+      expect { wager.confirmed! }.not_to raise_error
+      expect(wager.reload).to be_confirmed
+    end
+  end
 end
