@@ -57,4 +57,33 @@ RSpec.describe "The leaderboard", type: :system do
     expect(page).to have_css(".dd-badge", text: "3 straight")
     expect(page).to have_css(".dd-form__pip--win", minimum: 3)
   end
+
+  # Opting in makes an account eligible, but a name with nothing settled yet
+  # is not really playing - it would just be padding.
+  it "leaves out an opted-in account that has never had a bet settle" do
+    playing = create_account(user: user, nickname: "Playing", leaderboard_visible: true)
+    create_wager(account: playing, line: card[:away_spread], amount: 100, status: :win)
+
+    bystander_user = create_user(name: "Bystander")
+    bystander = create_account(user: bystander_user, nickname: "Bystander", leaderboard_visible: true)
+
+    visit leaderboard_path
+
+    expect(page).to have_css(".dd-leaderboard__row", count: 1)
+    expect(page).to have_content("Playing")
+    expect(page).to have_no_content("Bystander")
+  end
+
+  it "drops an account off the board again once its only bet is cancelled back to pending" do
+    account = create_account(user: user, name: "Main", leaderboard_visible: true)
+    wager = create_wager(account: account, line: card[:away_spread], amount: 100, status: :win)
+
+    visit leaderboard_path
+    expect(page).to have_css(".dd-leaderboard__row", count: 1)
+
+    wager.update!(status: :pending)
+
+    visit leaderboard_path
+    expect(page).to have_css(".dd-leaderboard__row", count: 0)
+  end
 end
