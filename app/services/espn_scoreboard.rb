@@ -10,7 +10,11 @@ require "net/http"
 class EspnScoreboard
   class Unavailable < StandardError; end
 
-  URL_BASE = "https://site.api.espn.com/apis/site/v2/sports".freeze
+  # Deliberately site.web.api, not site.api - Akamai started blocking Heroku's
+  # network from site.api.espn.com outright (403, no matter the headers sent).
+  # site.web.api.espn.com serves the identical endpoint shape and is not
+  # blocked; confirmed directly against Heroku's own network before switching.
+  URL_BASE = "https://site.web.api.espn.com/apis/site/v2/sports".freeze
 
   SPORT_PATHS = {
     nfl: "football/nfl",

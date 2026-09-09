@@ -2,7 +2,11 @@ require "rails_helper"
 
 RSpec.describe EspnScoreboard, type: :service do
   let(:date) { Date.new(2026, 9, 13) }
-  let(:url) { %r{site\.api\.espn\.com.*football/nfl/scoreboard} }
+  # Pinned to site.web.api, not site.api - Akamai blocks the latter from
+  # Heroku's network outright. A regression back to it should fail this
+  # stub match loudly (WebMock raises on an unmatched request) rather than
+  # silently hitting a blocked host.
+  let(:url) { %r{site\.web\.api\.espn\.com.*football/nfl/scoreboard} }
 
   let!(:bills) { Competitor.create!(sport: :nfl, region: "Buffalo", name: "Bills", abbreviation: "BUF") }
   let!(:jets) { Competitor.create!(sport: :nfl, region: "New York", name: "Jets", abbreviation: "NYJ") }

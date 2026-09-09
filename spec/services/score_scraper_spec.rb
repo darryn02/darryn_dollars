@@ -12,7 +12,10 @@ RSpec.describe ScoreScraper, type: :service do
     end
   end
 
-  let(:espn) { %r{site\.api\.espn\.com/apis/site/v2/sports/football/nfl/scoreboard} }
+  # Pinned to site.web.api, not site.api - see the comment on
+  # EspnScoreboard::URL_BASE. A regression back to the blocked host fails
+  # this stub match loudly rather than silently hitting it.
+  let(:espn) { %r{site\.web\.api\.espn\.com/apis/site/v2/sports/football/nfl/scoreboard} }
 
   def linescore(*values)
     values.map { |v| { "value" => v } }
