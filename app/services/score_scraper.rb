@@ -20,7 +20,8 @@ class ScoreScraper
 
     start_date = regular_season_start_date + (week - 1).weeks
     end_date = start_date + 6.days
-    url = File.join("https://site.api.espn.com/apis/site/v2/sports/", api_sport, "scoreboard?dates=#{start_date.strftime("%Y%m%d")}-#{end_date.strftime("%Y%m%d")}&limit=1000")
+    # site.web.api, not site.api - see the comment on EspnScoreboard::URL_BASE.
+    url = File.join("https://site.web.api.espn.com/apis/site/v2/sports/", api_sport, "scoreboard?dates=#{start_date.strftime("%Y%m%d")}-#{end_date.strftime("%Y%m%d")}&limit=1000")
 
     json = JSON.parse(URI.open(url).read)
 
