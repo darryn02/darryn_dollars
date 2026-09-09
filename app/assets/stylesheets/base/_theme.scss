@@ -914,6 +914,23 @@ body .container.main {
 .dd-result--push    { color: $push;    background-color: rgba($push, .12);    border-color: rgba($push, .3); }
 .dd-result--pending { color: $text-3;  background-color: rgba($text-3, .12);  border-color: rgba($text-3, .3); }
 
+// A bet the book cut a break on - a capped loss, or one that will be if it
+// loses. Same shape as .dd-result, brand-colored rather than outcome-colored
+// since it is not one of the four settlement states.
+.dd-vig-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .15rem .5rem;
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: $brand-soft;
+  background-color: rgba($brand-hover, .14);
+  border: 1px solid rgba($brand-hover, .35);
+  border-radius: $border-radius-pill;
+  white-space: nowrap;
+}
+
 // ---------------------------------------------------------------------------
 // History
 // ---------------------------------------------------------------------------

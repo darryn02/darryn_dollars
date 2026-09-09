@@ -9,6 +9,15 @@ class Line < ApplicationRecord
   enum scope: { game: 0, first_half: 1, second_half: 2 }
   enum result: { pending: 0, win: 1, loss: 2, push: 3 }
 
+  # "Total" is not a kind of its own - a total is one over line and one
+  # under line, priced together. Anywhere a person picks a market type
+  # rather than a database column, these are the choices.
+  KIND_GROUPS = {
+    "spread" => %w[point_spread],
+    "total" => %w[over under],
+    "moneyline" => %w[moneyline]
+  }.freeze
+
   def self.latest
     order(updated_at: :desc).take
   end

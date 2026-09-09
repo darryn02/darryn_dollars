@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     end
 
     resource :payments, only: [:create]
+    resources :vig_waivers, only: [:new, :index, :create, :destroy]
   end
 
   root to: 'lines#index'

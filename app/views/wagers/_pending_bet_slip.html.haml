@@ -14,6 +14,7 @@
         .dd-slip__bet
           %span.dd-slip__bet-line= wager_line_label(wager.line)
           %span.dd-slip__bet-meta= line_terms(wager.line)
+          = vig_waived_badge(wager)
         .dd-slip__figures
           %span.dd-slip__stake= currency(wager.amount)
           %span.dd-slip__towin= "to win #{currency(wager.potential_profit)}"

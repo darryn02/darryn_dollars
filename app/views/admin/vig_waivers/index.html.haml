@@ -1,0 +1,59 @@
+%h1.dd-page-title Waive the Vig
+= link_to "← Start over", new_admin_vig_waiver_path, class: "dd-admin-note"
+
+- if @wagers.empty?
+  .blank-state
+    = icon "emoji-frown"
+    %h2 No matching wagers
+    %p Nothing pending, confirmed, won, lost or pushed matches that scope.
+- else
+  = form_tag(admin_vig_waivers_path) do
+    - @scope_params.each do |key, value|
+      = hidden_field_tag "#{key}", value
+
+    - @wagers.group_by(&:account).each do |account, wagers|
+      .dd-panel
+        .dd-panel__header
+          %h2.dd-panel__title= account.qualified_name
+        .dd-table-scroll
+          %table.table.table-sm.align-middle.mb-0
+            %thead
+              %tr
+                %th
+                %th Bet
+                %th Status
+                %th.text-end.text-nowrap Stake
+                %th What waiving changes
+            %tbody
+              - wagers.each do |wager|
+                %tr
+                  %td
+                    - if wager.vig_waived?
+                      %span.dd-badge Waived
+                      = link_to "Clear", admin_vig_waiver_path(wager), method: :delete,
+                        data: { confirm: "Clear the vig waiver on wager #{wager.id}?" },
+                        class: "dd-admin-note d-block"
+                    - else
+                      = check_box_tag "wager_ids[]", wager.id, false, id: "wager_#{wager.id}"
+                  %td
+                    %label{ for: "wager_#{wager.id}" }= wager_line_label(wager.line)
+                    %div.dd-admin-note= line_terms(wager.line)
+                  %td= wager.status.capitalize
+                  %td.text-end.text-nowrap= currency(wager.amount)
+                  %td
+                    - capped = [wager.potential_profit, wager.amount].min
+                    - if wager.loss?
+                      - if capped < wager.amount
+                        %span= "Loss becomes #{currency(-capped)}, was #{currency(-wager.amount)}"
+                      - else
+                        %span.dd-admin-note No vig to waive on this line
+                    - elsif wager.win? || wager.push?
+                      %span.dd-admin-note= "No effect on a #{wager.status}"
+                    - else
+                      - if capped < wager.amount
+                        %span.dd-admin-note= "If it loses: capped at #{currency(capped)} instead of #{currency(wager.amount)}"
+                      - else
+                        %span.dd-admin-note No vig to waive on this line
+
+    .mt-3
+      = submit_tag "Waive the vig on checked wagers", class: "btn btn-primary"

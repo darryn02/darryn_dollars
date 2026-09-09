@@ -1,0 +1,51 @@
+%h1.dd-page-title Waive the Vig
+%p.dd-admin-note
+  Caps a loss at what a win would have paid instead of the full stake -
+  works on a bet that already settled too, and recalculates immediately.
+
+.dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title One line
+  .dd-panel__body
+    = form_tag(admin_vig_waivers_path, method: :get) do
+      = hidden_field_tag :scope_type, "line"
+      .mb-3
+        = label_tag :line_id, "Line"
+        = select_tag :line_id,
+          options_from_collection_for_select(@lines, :id, ->(line) { "#{line.game} — #{line}" }),
+          include_blank: "Choose a line", class: "form-select"
+      = submit_tag "Preview", class: "btn btn-primary"
+
+.dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title One game
+  .dd-panel__body
+    = form_tag(admin_vig_waivers_path, method: :get) do
+      = hidden_field_tag :scope_type, "game"
+      .mb-3
+        = label_tag :game_id, "Game"
+        = select_tag :game_id,
+          options_from_collection_for_select(@games, :id, :to_s),
+          include_blank: "Choose a game", class: "form-select"
+      .mb-3
+        = label_tag :kind_group, "Market"
+        = select_tag :kind_group,
+          options_for_select([%w[Spread spread], %w[Total total], %w[Moneyline moneyline]]),
+          class: "form-select"
+      = submit_tag "Preview", class: "btn btn-primary"
+
+.dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title One day
+  .dd-panel__body
+    = form_tag(admin_vig_waivers_path, method: :get) do
+      = hidden_field_tag :scope_type, "day"
+      .mb-3
+        = label_tag :date, "Date"
+        = date_field_tag :date, Date.current, class: "form-control"
+      .mb-3
+        = label_tag :kind_group, "Market"
+        = select_tag :kind_group,
+          options_for_select([%w[Spread spread], %w[Total total], %w[Moneyline moneyline]]),
+          class: "form-select"
+      = submit_tag "Preview", class: "btn btn-primary"
