@@ -35,8 +35,6 @@ module LinesHelper
   end
 
   def quick_wager_amounts
-    minimum = Wager.min_wager
-
-    [minimum, minimum * 2, minimum * 5, minimum * 10]
+    [50, 75, 100, 200]
   end
 end
