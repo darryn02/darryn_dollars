@@ -21,6 +21,13 @@ RSpec.describe "The settings page", type: :system do
   it "saves the nickname and takes effect on the leaderboard" do
     account = create_account(user: user, nickname: "Dana", leaderboard_visible: true)
 
+    # The leaderboard only shows an account once it has a scored bet - an
+    # opted-in account with nothing settled yet does not appear at all,
+    # regardless of nickname.
+    game = create_game(starts_at: 2.hours.ago)
+    line = create_spread(game: game, contestant: game.contestants.order(:priority).first, value: -3.0)
+    create_wager(account: account, line: line, amount: 100, status: :win)
+
     visit edit_user_path(user)
     fill_in "Leaderboard nickname", with: "The Commissioner"
     click_button "Save changes"

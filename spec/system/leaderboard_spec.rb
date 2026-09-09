@@ -61,16 +61,16 @@ RSpec.describe "The leaderboard", type: :system do
   # Opting in makes an account eligible, but a name with nothing settled yet
   # is not really playing - it would just be padding.
   it "leaves out an opted-in account that has never had a bet settle" do
-    playing = create_account(user: user, name: "Playing", leaderboard_visible: true)
+    playing = create_account(user: user, nickname: "Playing", leaderboard_visible: true)
     create_wager(account: playing, line: card[:away_spread], amount: 100, status: :win)
 
     bystander_user = create_user(name: "Bystander")
-    bystander = create_account(user: bystander_user, leaderboard_visible: true)
+    bystander = create_account(user: bystander_user, nickname: "Bystander", leaderboard_visible: true)
 
     visit leaderboard_path
 
     expect(page).to have_css(".dd-leaderboard__row", count: 1)
-    expect(page).to have_content("Dana Player")
+    expect(page).to have_content("Playing")
     expect(page).to have_no_content("Bystander")
   end
 
