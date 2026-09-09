@@ -33,10 +33,10 @@ RSpec.describe "The leaderboard", type: :system do
   end
 
   it "ranks the accounts, marks your own row and awards a hot streak" do
-    mine = create_account(user: user, name: "Main", leaderboard_visible: true)
+    mine = create_account(user: user, name: "Main", nickname: "Dana", leaderboard_visible: true)
 
     rival_user = create_user(name: "Sam Rival")
-    rival = create_account(user: rival_user, leaderboard_visible: true)
+    rival = create_account(user: rival_user, nickname: "Sam", leaderboard_visible: true)
 
     # Three straight winners is the badge threshold, and puts this account top.
     3.times { create_wager(account: mine, line: card[:away_spread], amount: 100, status: :win) }
@@ -46,10 +46,13 @@ RSpec.describe "The leaderboard", type: :system do
 
     expect(page).to have_css(".dd-leaderboard__row", count: 2)
 
+    # The leaderboard shows the account's nickname, never the full name -
+    # "Dana", not "Dana Player".
     rows = all(".dd-leaderboard__row")
-    expect(rows.first).to have_content("Dana Player")
+    expect(rows.first).to have_content("Dana")
+    expect(rows.first).to have_no_content("Player")
     expect(rows.first).to have_css(".dd-leaderboard__you", text: /you/i)
-    expect(rows.last).to have_content("Sam Rival")
+    expect(rows.last).to have_content("Sam")
 
     expect(page).to have_css(".dd-badge", text: "3 straight")
     expect(page).to have_css(".dd-form__pip--win", minimum: 3)
