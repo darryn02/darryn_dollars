@@ -23,4 +23,13 @@ module WagersHelper
       concat tag.span(label, class: "dd-result__label")
     end
   end
+
+  # The one visible sign a wager got a break: a loss capped below the full
+  # stake, or a still-open bet that will be if it loses. Silent on a win or a
+  # push, since neither one's amount ever moves.
+  def vig_waived_badge(wager)
+    return unless wager.vig_waived?
+
+    tag.span("Vig waived", class: "dd-vig-badge")
+  end
 end

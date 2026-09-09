@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_09_125727) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_09_162100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -166,6 +166,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_09_125727) do
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.bigint "bet_slip_id", null: false
+    t.boolean "vig_waived", default: false, null: false
     t.index ["account_id"], name: "index_wagers_on_account_id"
     t.index ["bet_slip_id"], name: "index_wagers_on_bet_slip_id"
     t.index ["line_id"], name: "index_wagers_on_line_id"

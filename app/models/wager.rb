@@ -25,6 +25,31 @@ class Wager < ApplicationRecord
     where(status: [:win, :loss, :push])
   end
 
+  # The three ways the admin vig-waiver widget can select wagers: one exact
+  # line, one kind group across a whole game, or one kind group across every
+  # game on a calendar day (the book's own day - America/New_York - same as
+  # Game.today). A canceled wager was never going to pay out anything, so it
+  # is never a candidate.
+  def self.matching_scope(scope_type:, line_id: nil, game_id: nil, kind_group: nil, date: nil)
+    kinds = Line::KIND_GROUPS.fetch(kind_group.to_s, [])
+
+    scope =
+      case scope_type.to_s
+      when "line"
+        where(line_id: line_id)
+      when "game"
+        joins(:line).where(lines: { game_id: game_id, kind: kinds })
+      when "day"
+        day = date.is_a?(Date) ? date : Date.parse(date.to_s)
+        range = day.in_time_zone("America/New_York").all_day
+        joins(line: :game).where(games: { starts_at: range }, lines: { kind: kinds })
+      else
+        none
+      end
+
+    scope.where.not(status: :canceled)
+  end
+
   def self.min_wager
     @min_wager || DEFAULT_MIN_WAGER
   end
@@ -52,6 +77,22 @@ class Wager < ApplicationRecord
     line.payout(amount)
   end
 
+  # What losing actually costs when the vig is waived: whatever a win would
+  # have paid, never more than the stake itself. At standard -110 pricing a
+  # win already nets exactly what pick'em odds would - $100 on a $110 bet -
+  # so the vig was only ever showing up on the loss side, at the full stake.
+  # Capping there, rather than raising the win, is what "waiving the vig"
+  # actually is: risk 110, but never lose (or win) more than 100.
+  #
+  # The min matters on a positive-odds underdog line, where potential_profit
+  # is larger than the stake (a $100 bet at +150 nets $150) - without it,
+  # waiving the vig there would make a loss cost more than what was risked.
+  # It just quietly does nothing on a line with no vig to waive in the
+  # first place.
+  def loss_amount
+    vig_waived? ? [potential_profit, amount].min : amount
+  end
+
   def to_win
   end
 
@@ -59,7 +100,7 @@ class Wager < ApplicationRecord
 
   def update_net
     return self.net = potential_profit if win?
-    return self.net = -amount if loss?
+    return self.net = -loss_amount if loss?
     self.net = 0
   end
 

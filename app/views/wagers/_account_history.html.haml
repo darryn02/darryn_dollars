@@ -37,6 +37,7 @@
         .dd-account__bet
           %span.dd-account__bet-line= wager_line_label(wager.line)
           %span.dd-account__bet-meta= "#{currency(wager.amount)} #{line_terms(wager.line)}"
+          = vig_waived_badge(wager)
         .dd-account__outcome
           = wager_result_badge(wager)
           - if wager.win? || wager.loss?

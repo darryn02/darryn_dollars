@@ -22,6 +22,12 @@
     = link_to "Score Wagers", score_wagers_admin_dashboard_path,
       remote: true, class: "dd-admin-btn dd-admin-btn--score"
 
+.dd-admin-section
+  %h2.dd-eyebrow Waive the vig
+  %p.dd-admin-note Caps a loss at what a win would have paid - works on a bet that already settled too.
+  .dd-admin-actions
+    = link_to "Waive the Vig", new_admin_vig_waiver_path, class: "dd-admin-btn dd-admin-btn--score"
+
 .dd-panel
   .dd-panel__header
     %h2.dd-panel__title Account Summary
