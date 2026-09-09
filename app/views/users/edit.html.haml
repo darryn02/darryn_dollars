@@ -1,9 +1,31 @@
 %h1.dd-page-title User Settings
 
 .dd-panel
+  .dd-panel__header
+    %h2.dd-panel__title Profile
   .dd-panel__body
     = simple_form_for(@user) do |f|
       = f.input :name
       = f.input :password, hint: "Leave blank to keep your current password"
       = f.input :password_confirmation
+
+      - if @user.accounts.one?
+        - account = @user.accounts.first
+        = f.simple_fields_for :accounts_attributes, [account], index: account.id do |af|
+          = af.input :id, as: :hidden
+          = af.input :nickname, label: "Leaderboard nickname",
+            hint: "Shown on the leaderboard instead of your name."
+          = af.input :leaderboard_visible, as: :boolean, label: "Show me on the leaderboard"
+      - elsif @user.accounts.any?
+        %p.dd-eyebrow Leaderboard, per account
+        - @user.accounts.each do |account|
+          .dd-panel
+            .dd-panel__header
+              %h3.dd-panel__title= account.name.presence || "Account ##{account.id}"
+            .dd-panel__body
+              = f.simple_fields_for :accounts_attributes, [account], index: account.id do |af|
+                = af.input :id, as: :hidden
+                = af.input :nickname, label: "Leaderboard nickname"
+                = af.input :leaderboard_visible, as: :boolean, label: "Show me on the leaderboard"
+
       = f.submit "Save changes", class: "btn btn-primary w-100 mt-2"

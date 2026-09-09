@@ -17,8 +17,12 @@ class LeaderboardEntry
     @badges = badges
   end
 
+  # Deliberately account.to_s, not qualified_name - qualified_name exists to
+  # tell an admin whose account they're looking at and always includes the
+  # player's full name for that reason. The leaderboard is public within the
+  # group, so it shows only what the player chose to be called here.
   def name
-    account.qualified_name
+    account.to_s
   end
 
   def podium?
