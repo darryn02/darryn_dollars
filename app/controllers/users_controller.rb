@@ -8,7 +8,9 @@ class UsersController < ApplicationController
   end
 
   def update
-    @user = User.find(params[:id])
+    @user = User.find_by(id: params[:id])
+    return deny!("You can only change your own settings.") unless editable_user?(@user)
+
     error = nil
     if user_params[:password].present?
       error = "Unable to update settings" if !@user.update(user_params)
@@ -25,6 +27,13 @@ class UsersController < ApplicationController
   end
 
   private
+
+  # Anyone could name anybody's id here, and the password branch below sets a
+  # new password without asking for the old one - so this was a way to take
+  # over another player's account.
+  def editable_user?(user)
+    user.present? && (user == current_user || current_user.admin?)
+  end
 
   def user_params
     params.require(:user).permit(:name, :password, :password_confirmation)
