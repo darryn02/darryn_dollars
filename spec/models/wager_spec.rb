@@ -226,5 +226,28 @@ RSpec.describe Wager, type: :model do
 
       expect(matched).to be_empty
     end
+
+    it "matches every market at once with the all kind group, for a whole game" do
+      spread_wager = create_wager(account: account, line: card[:away_spread])
+      total_wager = create_wager(account: account, line: card[:over])
+      other_card = create_full_card(game: other_game)
+      create_wager(account: account, line: other_card[:away_spread])
+
+      matched = Wager.matching_scope(scope_type: "game", game_id: game.id, kind_group: "all")
+
+      expect(matched).to match_array([spread_wager, total_wager])
+    end
+
+    it "matches every market at once with the all kind group, for a whole day" do
+      spread_wager = create_wager(account: account, line: card[:away_spread])
+      other_card = create_full_card(game: other_game)
+      other_total_wager = create_wager(account: account, line: other_card[:over])
+
+      matched = Wager.matching_scope(
+        scope_type: "day", date: game.starts_at.in_time_zone("America/New_York").to_date, kind_group: "all"
+      )
+
+      expect(matched).to match_array([spread_wager, other_total_wager])
+    end
   end
 end
