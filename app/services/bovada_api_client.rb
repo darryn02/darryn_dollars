@@ -1,5 +1,6 @@
 class BovadaApiClient
   URL_BASE = "https://www.bovada.lv/services/sports/event/v2/events/A/description"
+  QUERY = "lang=en".freeze
 
   API_SPORT_MAP = {
     nfl: "football/nfl",
@@ -62,7 +63,11 @@ class BovadaApiClient
 
   attr_reader :sport
 
-  def url_for(key) = File.join(URL_BASE, API_SPORT_MAP[key])
+  # ?lang=en is not cosmetic. Without it the nfl and college-football paths
+  # answer 200 with an empty array while nba and super-bowl still return a
+  # full board - so the site quietly showed a stale board for hours and the
+  # only symptom was a NO_DATA run. Pinned in the spec for that reason.
+  def url_for(key) = "#{File.join(URL_BASE, API_SPORT_MAP[key])}?#{QUERY}"
 
   def no_data(deactivate_ids)
     message = "Bovada returned no lines while #{deactivate_ids.size} are active - left them alone."

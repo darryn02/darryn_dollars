@@ -82,6 +82,27 @@ RSpec.describe BovadaApiClient, type: :service do
     end
   end
 
+  # Pinned because dropping the query string is invisible from our side: the
+  # book answers 200 with an empty array rather than an error, which lands as
+  # a NO_DATA run and a board that quietly stops moving.
+  describe "the url it asks for" do
+    it "sends lang=en on the league request" do
+      stub_api(body: [{ events: [] }].to_json)
+
+      described_class.update_lines(sport: :nfl) rescue nil
+
+      expect(a_request(:get, %r{/description/football/nfl\?lang=en})).to have_been_made.at_least_once
+    end
+
+    it "sends lang=en on the super bowl fallback too" do
+      stub_api(body: [{ events: [] }].to_json)
+
+      described_class.update_lines(sport: :nfl) rescue nil
+
+      expect(a_request(:get, %r{/description/football/super-bowl\?lang=en})).to have_been_made.at_least_once
+    end
+  end
+
   describe "an event it cannot resolve to two of our competitors" do
     let(:client) { described_class.new(:ncaaf) }
 
