@@ -17,8 +17,21 @@ class ScrapeRun < ApplicationRecord
   # bought us nothing except ten identical alerts an hour.
   BACKOFF_OUTCOMES = [CHALLENGED, ERROR, NO_DATA].freeze
 
+  # The scope a score fetch is recorded under. Score fetches belong in this
+  # table - same sport, same "did we ask, and what happened" question - but
+  # they are a different conversation with a different site. Counting one as a
+  # line scrape would stretch the line cadence and make an ESPN outage look
+  # like Bovada pushing back, so the two are kept apart here rather than at
+  # every call site.
+  SCORES = "scores".freeze
+
   scope :for_sport, ->(sport) { where(sport: sport.to_s) }
   scope :recent_first, -> { order(ran_at: :desc) }
+
+  # IS DISTINCT FROM rather than !=, because scope is null on every line
+  # scrape written before scopes existed and != drops nulls on the floor.
+  scope :for_lines, -> { where("scrape_runs.scope IS DISTINCT FROM ?", SCORES) }
+  scope :for_scores, -> { where(scope: SCORES) }
 
   def self.record!(sport:, outcome:, scope: nil, **attrs)
     create!(attrs.merge(sport: sport.to_s, scope: scope&.to_s, outcome: outcome, ran_at: Time.current))

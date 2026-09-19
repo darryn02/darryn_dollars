@@ -36,15 +36,23 @@ namespace :scrape do
     end
   end
 
+  # next, not exit. These two are prerequisites of score:lines, which is a
+  # prerequisite of score:wagers, and exit tears down the whole rake process -
+  # so a guard firing here took LineScorer and WagerScorer down with it and
+  # the scheduled run fetched scores and settled nothing. It exited 0 while
+  # doing it, so the scheduler called that a success every time.
+  #
+  # When the guard should fire now lives in ScoreWindow, which asks whether
+  # there is anything to score and whether it could be over yet.
   task nfl_results: :environment do
-    exit unless Game.nfl.joins(:wagers).where(wagers: { status: :confirmed }).exists?
+    next unless ScoreWindow.due?(sport: :nfl)
 
-    ScoreScraper.run(:nfl)
+    ScrapeRun.track(sport: :nfl, scope: ScrapeRun::SCORES) { ScoreScraper.run(:nfl) }
   end
 
   task ncaaf_results: :environment do
-    exit unless Game.ncaaf.joins(:wagers).where(wagers: { status: :confirmed }).exists?
+    next unless ScoreWindow.due?(sport: :ncaaf)
 
-    ScoreScraper.run(:ncaaf)
+    ScrapeRun.track(sport: :ncaaf, scope: ScrapeRun::SCORES) { ScoreScraper.run(:ncaaf) }
   end
 end

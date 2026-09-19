@@ -150,6 +150,38 @@ RSpec.describe ScrapeWindow, type: :service do
     end
   end
 
+  # Score fetches share the scrape_runs table. If they counted as line scrapes,
+  # a Sunday of settling wagers would quietly stretch the line cadence, and an
+  # ESPN outage would read as Bovada pushing back and trigger a backoff against
+  # a site that never complained.
+  describe "score fetches in the same table" do
+    before { game_at(now + 1.hour) } # would otherwise be a 10 minute cadence
+
+    it "does not count a score fetch as a line scrape" do
+      ScrapeRun.create!(sport: "nfl", scope: ScrapeRun::SCORES,
+                        ran_at: now - 1.minute, outcome: ScrapeRun::SUCCESS)
+
+      expect(window).to be_due
+    end
+
+    it "does not back off the line scraper when ESPN is the one erroring" do
+      3.times do |i|
+        ScrapeRun.create!(sport: "nfl", scope: ScrapeRun::SCORES,
+                          ran_at: now - (3 - i).minutes, outcome: ScrapeRun::ERROR)
+      end
+
+      expect(window.interval).to eq(10.minutes)
+    end
+
+    # The null scope on every line scrape written before scopes existed has to
+    # keep counting, which SQL != would silently drop.
+    it "still counts a line scrape recorded before scopes existed" do
+      run_at(now - 1.minute)
+
+      expect(window).not_to be_due
+    end
+  end
+
   it "only considers runs for its own sport" do
     game_at(now + 1.hour)
     ScrapeRun.create!(sport: "ncaaf", ran_at: now - 1.minute, outcome: ScrapeRun::SUCCESS)
