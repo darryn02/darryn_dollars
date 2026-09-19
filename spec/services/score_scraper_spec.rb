@@ -34,9 +34,42 @@ RSpec.describe ScoreScraper, type: :service do
     { "team" => { "displayName" => name }, "linescores" => linescore(*scores) }
   end
 
+  # ESPN no longer serves date ranges, so a run asks for each day of the week
+  # separately. Each event is served on the day it is actually played and the
+  # other six days come back empty - otherwise a single stub answers all seven
+  # requests and every count in here is multiplied by seven.
   def stub_scoreboard(events:)
-    stub_request(:get, espn).to_return(status: 200, body: { "events" => events }.to_json,
+    stub_request(:get, espn).to_return(status: 200, body: { "events" => [] }.to_json,
                                        headers: { "Content-Type" => "application/json" })
+
+    events.group_by { |event| Date.parse(event["competitions"].first["date"]) }.each do |date, on_date|
+      stub_request(:get, /#{Regexp.escape("dates=#{date.strftime("%Y%m%d")}")}/).
+        to_return(status: 200, body: { "events" => on_date }.to_json,
+                  headers: { "Content-Type" => "application/json" })
+    end
+  end
+
+  # ESPN began answering 400 {"code":400,"message":"Failed to get events
+  # endpoint."} to any dates=A-B range in September 2026, including ranges in
+  # seasons long past. Scoring silently stopped for two days. A regression
+  # back to a range fails these stub matches loudly rather than in production.
+  it "asks for one day at a time, never a date range" do
+    stub_scoreboard(events: [])
+
+    described_class.run(:nfl, 1)
+
+    expect(a_request(:get, /dates=\d{8}-\d{8}/)).not_to have_been_made
+    expect(a_request(:get, /dates=20230906(&|$)/)).to have_been_made
+  end
+
+  it "covers every day of the week it was asked for" do
+    stub_scoreboard(events: [])
+
+    described_class.run(:nfl, 1)
+
+    (Date.new(2023, 9, 6)..Date.new(2023, 9, 12)).each do |date|
+      expect(a_request(:get, /dates=#{date.strftime("%Y%m%d")}(&|$)/)).to have_been_made
+    end
   end
 
   it "updates a contestant's scores from a completed game" do

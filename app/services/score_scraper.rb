@@ -20,14 +20,12 @@ class ScoreScraper
 
     start_date = regular_season_start_date + (week - 1).weeks
     end_date = start_date + 6.days
-    # site.web.api, not site.api - see the comment on EspnScoreboard::URL_BASE.
-    url = File.join("https://site.web.api.espn.com/apis/site/v2/sports/", api_sport, "scoreboard?dates=#{start_date.strftime("%Y%m%d")}-#{end_date.strftime("%Y%m%d")}&limit=1000")
 
-    json = JSON.parse(URI.open(url).read)
+    events = (start_date.to_date..end_date.to_date).flat_map { |date| events_on(api_sport, date) }
 
     update_count = 0
     missing_competitor_count = 0
-    json["events"].map do |event|
+    events.map do |event|
       competition = event["competitions"].find { |c| ["STD", "Bowl Game", "Major Bowl"].include?(c["type"]["abbreviation"]) }
       next unless competition&.dig("status", "type", "completed")
 
@@ -55,6 +53,27 @@ class ScoreScraper
   end
 
   private
+
+  # ESPN stopped serving date *ranges* here in September 2026. A range now
+  # answers 400 {"code":400,"message":"Failed to get events endpoint."}, and
+  # does so for ranges in seasons long past as well - so the api changed under
+  # us rather than anything changing about our dates. Single days still work,
+  # so we ask for each day of the week we already compute.
+  #
+  # Deliberately not ?dates=<year>&seasontype=2&week=<n>, which would also
+  # work: it would make us derive a season year and a season week from a date,
+  # and decide for ourselves where the regular season stops and the playoffs
+  # and bowls begin. Asking by day leaves that calendar with ESPN, which is
+  # the only party that actually knows it.
+  #
+  # site.web.api, not site.api - see the comment on EspnScoreboard::URL_BASE.
+  URL_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/".freeze
+
+  def events_on(api_sport, date)
+    url = File.join(URL_BASE, api_sport, "scoreboard?dates=#{date.strftime("%Y%m%d")}&limit=1000")
+
+    Array.wrap(JSON.parse(URI.open(url).read)["events"])
+  end
 
   def result_message(update_count, missing_competitor_count)
     "#{update_count} contestant scores updated.".then do |str|
