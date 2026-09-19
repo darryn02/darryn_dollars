@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_09_192916) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_19_175614) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -87,6 +87,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_09_192916) do
     t.string "md5_digest", null: false
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+    t.datetime "completed_at"
     t.index ["md5_digest"], name: "index_games_on_md5_digest"
   end
 

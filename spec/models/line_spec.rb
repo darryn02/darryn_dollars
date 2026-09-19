@@ -54,4 +54,67 @@ RSpec.describe Line, type: :model do
       expect(line.payout(110)).to eq(100.0)
     end
   end
+  describe "#settleable?" do
+    let(:away) { game.contestants.order(:priority).first }
+    let(:home) { game.contestants.order(:priority).second }
+
+    def line_with(scope)
+      game.lines.create!(kind: :point_spread, scope: scope, value: -2.5, contestant: away)
+    end
+
+    def halftime!
+      away.update!(scores: [7, 3])
+      home.update!(scores: [0, 10])
+    end
+
+    def final!
+      away.update!(scores: [7, 3, 0, 10])
+      home.update!(scores: [0, 10, 7, 0])
+      game.update!(completed_at: 1.hour.ago)
+    end
+
+    it "settles a first half as soon as both periods are in" do
+      halftime!
+
+      expect(line_with(:first_half)).to be_settleable
+    end
+
+    # Overtime is still capable of adding to both of these, so neither can be
+    # trusted until the game itself is over - which is a different fact from
+    # having scores, now that half time writes some.
+    it "does not settle a second half at the half" do
+      halftime!
+
+      expect(line_with(:second_half)).not_to be_settleable
+    end
+
+    it "does not settle a full game at the half" do
+      halftime!
+
+      expect(line_with(:game)).not_to be_settleable
+    end
+
+    it "settles everything once the game is over" do
+      final!
+
+      expect(line_with(:game)).to be_settleable
+      expect(line_with(:second_half)).to be_settleable
+      expect(line_with(:first_half)).to be_settleable
+    end
+
+    it "does not settle a first half on one team's periods alone" do
+      away.update!(scores: [7, 3])
+
+      expect(line_with(:first_half)).not_to be_settleable
+    end
+  end
+
+  describe "#periods" do
+    it "refuses a scope it has no period range for" do
+      line = game.lines.create!(kind: :point_spread, scope: :game, value: -2.5, contestant: contestant)
+      allow(line).to receive(:scope).and_return("overtime_only")
+
+      expect { line.periods }.to raise_error(/invalid line scope/)
+    end
+  end
 end

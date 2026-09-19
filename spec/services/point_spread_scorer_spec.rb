@@ -64,21 +64,19 @@ RSpec.describe PointSpreadScorer, type: :service do
     expect(line.reload).to be_win
   end
 
-  # `scores` defaults to `[]`, not nil, and `[].sum` is 0 - which is not
-  # `blank?`. So the pending branch below is never reached through an
-  # unplayed contestant's real default; it would only fire if a score were
-  # literally nil, which the schema does not allow. LineScorer never hits
-  # this because it filters to games with at least one non-empty score
-  # array before it ever calls a scorer - but calling this class directly
-  # on two still-scoreless contestants resolves the line by the raw spread,
-  # as if the game had ended 0-0.
-  it "resolves by the spread alone when both contestants still show their default empty score" do
+  # This used to grade as a win on the raw spread, as if the game had ended
+  # 0-0: `scores` defaults to `[]`, `[].sum` is 0, and `0.blank?` is false, so
+  # the pending branch was unreachable through a real unplayed contestant.
+  # Harmless while scores were only ever written at the final whistle, and not
+  # harmless at all once a half time write leaves a second half sliced to [].
+  # An absent score now reads as nil, and nil leaves the line alone.
+  it "leaves the line pending when neither contestant has played a period yet" do
     line = spread_for(away, 2.5)
 
     results = described_class.run(line)
 
-    expect(line.reload).to be_win
-    expect(results).to eq(wins: 1, losses: 0, pushes: 0)
+    expect(line.reload).to be_pending
+    expect(results).to eq(wins: 0, losses: 0, pushes: 0)
   end
 
   # The orphan case at the service layer: `lines` has on_delete: :nullify

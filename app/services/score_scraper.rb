@@ -27,7 +27,11 @@ class ScoreScraper
     missing_competitor_count = 0
     events.map do |event|
       competition = event["competitions"].find { |c| ["STD", "Bowl Game", "Major Bowl"].include?(c["type"]["abbreviation"]) }
-      next unless competition&.dig("status", "type", "completed")
+      next if competition.nil?
+
+      final = competition.dig("status", "type", "completed").present?
+      settled = final ? nil : settled_periods(competition["status"]) # nil: keep every period it reports
+      next if settled && settled < 1
 
       date = DateTime.parse(competition["date"]).in_time_zone("UTC")
       competition["competitors"].each do |competitor|
@@ -39,12 +43,22 @@ class ScoreScraper
           next
         end
 
-        scores = competitor["linescores"].map { |s| s["value"] }
-        Contestant.joins(:game).where(competitor: db_competitor).where(games: { starts_at: date - 2.hours..date + 2.hours }).each do |c|
+        scores = Array.wrap(competitor["linescores"]).map { |s| s["value"] }
+        scores = scores.first(settled) if settled
+        next if scores.empty?
+
+        contestants = Contestant.includes(:game).joins(:game).where(competitor: db_competitor).
+          where(games: { starts_at: date - 2.hours..date + 2.hours })
+
+        contestants.each do |c|
           if c.scores != scores
             c.update!(scores: scores)
             update_count += 1
           end
+
+          # What the scores array alone can no longer tell a scorer, now that
+          # it gets written before the game is over.
+          c.game.update!(completed_at: Time.current) if final && c.game.completed_at.nil?
         end
       end
     end
@@ -68,6 +82,26 @@ class ScoreScraper
   #
   # site.web.api, not site.api - see the comment on EspnScoreboard::URL_BASE.
   URL_BASE = "https://site.web.api.espn.com/apis/site/v2/sports/".freeze
+
+  # How many leading periods of this competition can no longer change.
+  #
+  # ESPN keeps a running total in the linescore of the period being played - a
+  # game one second from half time already reports a second quarter figure,
+  # and that figure can still move. So the period in progress never counts,
+  # except at a break, where ESPN says so by name, and at the end, where
+  # everything counts.
+  #
+  # A period count rather than an "is it half time" flag, so college quarters
+  # or hockey periods need nothing here beyond the status name they arrive
+  # with.
+  BREAK_STATUSES = ["STATUS_HALFTIME", "STATUS_END_PERIOD", "STATUS_END_OF_PERIOD"].freeze
+
+  def settled_periods(status)
+    status = status.to_h
+    period = status["period"].to_i
+
+    BREAK_STATUSES.include?(status.dig("type", "name")) ? period : period - 1
+  end
 
   def events_on(api_sport, date)
     url = File.join(URL_BASE, api_sport, "scoreboard?dates=#{date.strftime("%Y%m%d")}&limit=1000")

@@ -31,9 +31,12 @@ module DomainBuilders
 
   # An NFL game with two contestants, away (priority 0) then home (priority 1),
   # scheduled inside the wagering window unless told otherwise.
+  # completed_at is a separate fact from having scores, now that scores are
+  # written at half time too. Anything asserting on a full game or second half
+  # result has to say the game is over.
   def create_game(sport: :nfl, starts_at: 2.hours.from_now,
-                  away: nil, home: nil)
-    game = Game.create!(sport: sport, starts_at: starts_at)
+                  away: nil, home: nil, completed_at: nil)
+    game = Game.create!(sport: sport, starts_at: starts_at, completed_at: completed_at)
     away ||= create_competitor(region: "Buffalo", name: "Bills", abbreviation: "BUF", sport: sport)
     home ||= create_competitor(region: "Miami", name: "Dolphins", abbreviation: "MIA", sport: sport)
 

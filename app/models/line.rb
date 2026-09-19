@@ -9,6 +9,22 @@ class Line < ApplicationRecord
   enum scope: { game: 0, first_half: 1, second_half: 2 }
   enum result: { pending: 0, win: 1, loss: 2, push: 3 }
 
+  # Which linescore periods each scope settles from.
+  #
+  # The open-ended ranges are the point. A scope that runs to the final
+  # whistle cannot settle early, because overtime keeps adding to it; a
+  # bounded one settles the moment its own periods are in, which is what lets
+  # a first half pay out at the half rather than three hours later.
+  #
+  # A new scope - college quarters, hockey periods - is a row here and
+  # nothing else. The scorers and the fetch cadence both read this rather
+  # than knowing the names of scopes themselves.
+  PERIODS = {
+    "game" => (0..),
+    "first_half" => (0..1),
+    "second_half" => (2..)
+  }.freeze
+
   # "Total" is not a kind of its own - a total is one over line and one
   # under line, priced together. Anywhere a person picks a market type
   # rather than a database column, these are the choices.
@@ -18,6 +34,17 @@ class Line < ApplicationRecord
     "moneyline" => %w[moneyline],
     "all" => %w[point_spread moneyline over under]
   }.freeze
+
+  def periods = PERIODS.fetch(scope) { raise "invalid line scope #{scope.inspect}" }
+
+  # Whether the result this line is waiting on can still change. Bounded
+  # scopes need their own periods final and nothing more; open-ended ones
+  # need the game itself to be over.
+  def settleable?
+    return game.completed_at.present? if periods.end.nil?
+
+    game.contestants.all? { |contestant| contestant.scores.length > periods.end }
+  end
 
   def self.latest
     order(updated_at: :desc).take
