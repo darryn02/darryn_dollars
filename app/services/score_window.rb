@@ -10,10 +10,12 @@
 # "is this game over" authoritatively, but it answers by calling ESPN, which
 # is the thing we are deciding whether to do.
 class ScoreWindow
-  # Nothing is final before this. NFL games run a shade over three hours;
-  # college games run longer and stop the clock more.
-  SETTLES_AFTER = { nfl: 3.hours, ncaaf: 3.5.hours }.freeze
-  DEFAULT_SETTLES_AFTER = 3.hours
+  # Measured from kickoff, and deliberately the same for every sport: a rule
+  # that differs by league is a rule that goes out of date quietly, and being
+  # half an hour early costs one wasted request where being wrong costs a
+  # wrongly graded wager.
+  HALFTIME_AFTER = 1.5.hours
+  FINAL_AFTER = 3.hours
 
   # Cadence once a game could be over. Games in a slate finish minutes apart,
   # so this settles a board inside a commercial break without being the ten
@@ -37,7 +39,7 @@ class ScoreWindow
   end
 
   def due?
-    return false if candidates.empty?
+    return false if ripe.empty?
 
     last_run_at.nil? || (Time.current - last_run_at) >= interval
   end
@@ -49,21 +51,29 @@ class ScoreWindow
 
   attr_reader :sport
 
-  # Games this sport still owes a result on: a confirmed wager, and a kickoff
-  # old enough that a final score could exist but recent enough to be worth
-  # asking after.
-  def candidates
-    @candidates ||= Game.public_send(sport).
-      joins(:wagers).
-      where(wagers: { status: :confirmed }).
-      where(starts_at: ABANDON_AFTER.ago..settles_after.ago).
-      distinct.
-      pluck(:starts_at)
+  # Every unsettled wager this sport is carrying, as kickoff and the scope it
+  # is waiting on - the scope being what decides how long that wait is.
+  def waiting
+    @waiting ||= Wager.confirmed.
+      joins(line: :game).
+      merge(Game.public_send(sport)).
+      where(games: { starts_at: ABANDON_AFTER.ago..HALFTIME_AFTER.ago }).
+      pluck("games.starts_at", "lines.scope")
   end
 
-  def settling? = candidates.any? { |starts_at| starts_at > STALE_AFTER.ago }
+  # The ones whose result could actually exist by now.
+  def ripe
+    @ripe ||= waiting.select { |starts_at, scope| starts_at <= earliest_for(scope).ago }
+  end
 
-  def settles_after = SETTLES_AFTER.fetch(sport, DEFAULT_SETTLES_AFTER)
+  # A scope whose periods stop before the final whistle can settle at a break;
+  # everything else waits for the game, because overtime can still move it.
+  # Read off Line::PERIODS so a scope added later needs nothing here.
+  def earliest_for(scope)
+    Line::PERIODS.fetch(scope).end ? HALFTIME_AFTER : FINAL_AFTER
+  end
+
+  def settling? = ripe.any? { |starts_at, _scope| starts_at > STALE_AFTER.ago }
 
   def last_run_at
     return @last_run_at if defined?(@last_run_at)

@@ -11,6 +11,11 @@ class LineScorer
       references(:contestants).
       where.not(contestants: { scores: [] }).
       find_each do |line|
+        # The game may be part way through. A first half is settled at the
+        # half; a full game or a second half is not settled until overtime
+        # can no longer add to it.
+        next unless line.settleable?
+
         results = LineScorerFactory.build(line).run
         scores[line.kind][:wins] += results.fetch(:wins, 0)
         scores[line.kind][:losses] += results.fetch(:losses, 0)

@@ -62,10 +62,17 @@ RSpec.describe UnderScorer, type: :service do
     expect(line.reload).to be_win
   end
 
-  it "raises for a scope it does not recognise" do
-    line = total_for(44.5)
-    allow(line).to receive_messages(game?: false, first_half?: false, second_half?: false)
+  # Half time writes only the periods that are in, so a second half line spends
+  # a stretch of every game with nothing to add up. Grading it then would
+  # settle it 0-0 while the third quarter was being played.
+  it "leaves a second half total pending while only the first half is in" do
+    away.update!(scores: [10, 10])
+    home.update!(scores: [7, 7])
+    line = total_for(10.0, scope: :second_half)
 
-    expect { described_class.new(line).contestant_score(away) }.to raise_error(/invalid line scope/)
+    results = described_class.run(line)
+
+    expect(line.reload).to be_pending
+    expect(results).to eq(wins: 0, losses: 0, pushes: 0)
   end
 end

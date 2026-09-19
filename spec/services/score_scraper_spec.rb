@@ -21,13 +21,29 @@ RSpec.describe ScoreScraper, type: :service do
     values.map { |v| { "value" => v } }
   end
 
-  def competition(status: "post", completed: true, type: "STD", date: game_time, teams: [])
+  def competition(status: "post", completed: true, type: "STD", date: game_time, teams: [],
+                  period: nil, status_name: nil)
     {
       "type" => { "abbreviation" => type },
-      "status" => { "type" => { "state" => status, "completed" => completed } },
+      "status" => {
+        "period" => period,
+        "type" => { "state" => status, "completed" => completed, "name" => status_name }
+      },
       "date" => date.strftime("%Y-%m-%dT%H:%MZ"),
       "competitors" => teams
     }
+  end
+
+  # The shapes below are what ESPN actually served for three live college
+  # games on 2026-09-19, checked against the api rather than imagined.
+  def in_progress(teams:, period:)
+    competition(status: "in", completed: false, period: period,
+                status_name: "STATUS_IN_PROGRESS", teams: teams)
+  end
+
+  def halftime(teams:)
+    competition(status: "in", completed: false, period: 2,
+                status_name: "STATUS_HALFTIME", teams: teams)
   end
 
   def team(name, *scores)
@@ -69,6 +85,69 @@ RSpec.describe ScoreScraper, type: :service do
 
     (Date.new(2023, 9, 6)..Date.new(2023, 9, 12)).each do |date|
       expect(a_request(:get, /dates=#{date.strftime("%Y%m%d")}(&|$)/)).to have_been_made
+    end
+  end
+
+  describe "a game that is still being played" do
+    # ESPN keeps a running total in the linescore of the period in progress -
+    # observed live: a game one second from the half already reported a second
+    # quarter figure that could still move. Writing it would settle a first
+    # half on a number that has not stopped changing.
+    it "ignores the period being played right now" do
+      stub_scoreboard(events: [{
+        "competitions" => [in_progress(period: 2, teams: [team("Buffalo Bills", 7, 3),
+                                                          team("New York Jets", 0, 10)])]
+      }])
+
+      described_class.run(:nfl, 1)
+
+      expect(game.contestants.find_by(competitor: bills).reload.scores).to eq([7])
+    end
+
+    it "writes both quarters once the half is over" do
+      stub_scoreboard(events: [{
+        "competitions" => [halftime(teams: [team("Buffalo Bills", 7, 3),
+                                            team("New York Jets", 0, 10)])]
+      }])
+
+      described_class.run(:nfl, 1)
+
+      expect(game.contestants.find_by(competitor: bills).reload.scores).to eq([7, 3])
+      expect(game.contestants.find_by(competitor: jets).reload.scores).to eq([0, 10])
+    end
+
+    it "writes nothing at all during the first period" do
+      stub_scoreboard(events: [{
+        "competitions" => [in_progress(period: 1, teams: [team("Buffalo Bills", 7),
+                                                          team("New York Jets", 0)])]
+      }])
+
+      described_class.run(:nfl, 1)
+
+      expect(game.contestants.find_by(competitor: bills).reload.scores).to eq([])
+    end
+
+    # The fact the scores array can no longer carry on its own.
+    it "does not mark the game completed at the half" do
+      stub_scoreboard(events: [{
+        "competitions" => [halftime(teams: [team("Buffalo Bills", 7, 3),
+                                            team("New York Jets", 0, 10)])]
+      }])
+
+      described_class.run(:nfl, 1)
+
+      expect(game.reload.completed_at).to be_nil
+    end
+
+    it "marks it completed at the final whistle" do
+      stub_scoreboard(events: [{
+        "competitions" => [competition(teams: [team("Buffalo Bills", 7, 3, 0, 10),
+                                               team("New York Jets", 0, 3, 3, 0)])]
+      }])
+
+      described_class.run(:nfl, 1)
+
+      expect(game.reload.completed_at).to be_present
     end
   end
 

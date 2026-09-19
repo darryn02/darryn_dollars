@@ -25,16 +25,4 @@ class PointSpreadScorer < Scorer
       end
     end
   end
-
-  def contestant_score(contestant)
-    if line.game?
-      contestant.scores.sum
-    elsif line.first_half?
-      contestant.scores[0..1].sum
-    elsif line.second_half?
-      contestant.scores[2..].sum
-    else
-      raise 'invalid line scope'
-    end
-  end
 end

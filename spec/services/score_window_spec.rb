@@ -17,8 +17,8 @@ RSpec.describe ScoreWindow, type: :service do
   # here goes through one. Saved without validation on purpose: the model
   # refuses a wager on a game that has already kicked off, and every game
   # worth scoring has.
-  def confirmed_wager_on(game)
-    line = game.lines.create!(kind: :point_spread, scope: :game, value: -3.0, hidden: false)
+  def confirmed_wager_on(game, scope: :game)
+    line = game.lines.create!(kind: :point_spread, scope: scope, value: -3.0, hidden: false)
 
     Wager.new(account: account, bet_slip: BetSlip.create!(account: account, status: :confirmed),
               line: line, amount: 100, status: :confirmed, placed_at: game.starts_at - 1.hour).
@@ -64,16 +64,55 @@ RSpec.describe ScoreWindow, type: :service do
       expect(window).to be_due
     end
 
-    # A fresh instance per assertion on purpose: a window memoises what it
-    # found, because it answers one scheduler tick and then goes away.
-    it "gives college games longer, because they run longer" do
-      confirmed_wager_on(game_at(now - 3.hours - 10.minutes, sport: :ncaaf))
+    # One rule for every league on purpose. A per-sport table is a thing that
+    # goes stale quietly, and half an hour early costs a wasted request while
+    # being wrong costs a wrongly graded wager.
+    it "uses the same three hours for college" do
+      confirmed_wager_on(game_at(now - 2.hours, sport: :ncaaf))
 
       expect(described_class.new(:ncaaf)).not_to be_due
 
-      confirmed_wager_on(game_at(now - 3.hours - 40.minutes, sport: :ncaaf))
+      confirmed_wager_on(game_at(now - 3.hours - 10.minutes, sport: :ncaaf))
 
       expect(described_class.new(:ncaaf)).to be_due
+    end
+  end
+
+  # The point of the whole exercise: a first half is decided at the half, so
+  # waiting the full three hours to ask about it settles it two hours late.
+  describe "a wager that settles before the game ends" do
+    it "asks about a first half once the half is plausibly over" do
+      confirmed_wager_on(game_at(now - 100.minutes), scope: :first_half)
+
+      expect(window).to be_due
+    end
+
+    it "still will not ask before the half could be over" do
+      confirmed_wager_on(game_at(now - 1.hour), scope: :first_half)
+
+      expect(window).not_to be_due
+    end
+
+    it "leaves a second half waiting for the final whistle" do
+      confirmed_wager_on(game_at(now - 100.minutes), scope: :second_half)
+
+      expect(window).not_to be_due
+    end
+
+    it "leaves a full game line waiting too" do
+      confirmed_wager_on(game_at(now - 100.minutes), scope: :game)
+
+      expect(window).not_to be_due
+    end
+
+    # Which scopes can settle early is read off Line::PERIODS rather than a
+    # list of scope names here, so a quarter or a hockey period added later
+    # gets the early cadence without touching this class.
+    it "treats every bounded scope as settleable at a break" do
+      bounded = Line::PERIODS.select { |_scope, periods| periods.end }.keys
+
+      expect(bounded).to include("first_half")
+      expect(Line::PERIODS.reject { |_s, p| p.end }.keys).to match_array(%w[game second_half])
     end
   end
 
