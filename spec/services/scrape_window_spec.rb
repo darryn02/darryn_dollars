@@ -139,6 +139,15 @@ RSpec.describe ScrapeWindow, type: :service do
 
       expect(window.interval).to eq(10.minutes)
     end
+
+    # The client only reports no_data once every url it knows has come back
+    # empty, so it is the book declining to answer rather than a quiet day.
+    # Polling straight through it produced ten identical alerts an hour.
+    it "eases off on no data too" do
+      run_at(now - 1.minute, outcome: ScrapeRun::NO_DATA)
+
+      expect(window.interval).to eq(described_class::FIRST_BACKOFF)
+    end
   end
 
   it "only considers runs for its own sport" do
