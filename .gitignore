@@ -13,3 +13,6 @@
 /public/assets
 /tags
 /tmp/*
+
+# Claude Code personal settings
+.claude/settings.local.json
