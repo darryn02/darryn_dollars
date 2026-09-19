@@ -10,7 +10,12 @@ class ScrapeRun < ApplicationRecord
   ERROR = "error".freeze
 
   # Outcomes that mean the book pushed back and we should ease off.
-  BACKOFF_OUTCOMES = [CHALLENGED, ERROR].freeze
+  #
+  # NO_DATA counts because the client only reports it once every url it knows
+  # has come back empty. That is not a quiet day, it is the book declining to
+  # tell us anything - and hammering it every ten minutes while it does so
+  # bought us nothing except ten identical alerts an hour.
+  BACKOFF_OUTCOMES = [CHALLENGED, ERROR, NO_DATA].freeze
 
   scope :for_sport, ->(sport) { where(sport: sport.to_s) }
   scope :recent_first, -> { order(ran_at: :desc) }

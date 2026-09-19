@@ -82,24 +82,95 @@ RSpec.describe BovadaApiClient, type: :service do
     end
   end
 
-  # Pinned because dropping the query string is invisible from our side: the
-  # book answers 200 with an empty array rather than an error, which lands as
-  # a NO_DATA run and a board that quietly stops moving.
-  describe "the url it asks for" do
-    it "sends lang=en on the league request" do
-      stub_api(body: [{ events: [] }].to_json)
+  # An empty body is a stuck cache key, not an empty board. Which key is stuck
+  # moves around - the bare v2 url on 2026-09-09, that same url with ?lang=en
+  # ten days later - so the client has to survive any one of them being dead
+  # rather than betting on a particular query string.
+  describe "a url that answers with an empty body" do
+    let(:v2) { %r{/event/v2/events/A/description/football/nfl$} }
+    let(:coupon) { %r{/event/coupon/events/A/description/football/nfl$} }
 
-      described_class.update_lines(sport: :nfl) rescue nil
-
-      expect(a_request(:get, %r{/description/football/nfl\?lang=en})).to have_been_made.at_least_once
+    def game_payload
+      [{ events: [nfl_event] }].to_json
     end
 
-    it "sends lang=en on the super bowl fallback too" do
-      stub_api(body: [{ events: [] }].to_json)
+    def nfl_event
+      {
+        "id" => "evt1",
+        "startTime" => (Time.current + 3.hours).to_i * 1000,
+        "competitors" => [
+          { "home" => true,  "name" => "Buffalo Bills" },
+          { "home" => false, "name" => "New York Jets" }
+        ],
+        "displayGroups" => [{
+          "description" => "Game Lines",
+          "markets" => [{
+            "description" => "Point Spread",
+            "period" => { "live" => false, "abbreviation" => "G" },
+            "outcomes" => [
+              { "type" => "H", "price" => { "handicap" => -3.5, "american" => "-110" } },
+              { "type" => "A", "price" => { "handicap" => 3.5, "american" => "-110" } }
+            ]
+          }]
+        }]
+      }
+    end
 
-      described_class.update_lines(sport: :nfl) rescue nil
+    it "falls through to the next source instead of believing it" do
+      stub_api(body: [].to_json)
+      stub_request(:get, coupon).to_return(status: 200, body: game_payload,
+                                           headers: { "Content-Type" => "application/json" })
 
-      expect(a_request(:get, %r{/description/football/super-bowl\?lang=en})).to have_been_made.at_least_once
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::SUCCESS)
+      expect(a_request(:get, coupon)).to have_been_made.at_least_once
+    end
+
+    it "stops asking as soon as a source has events" do
+      stub_api(body: game_payload)
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(a_request(:get, coupon)).not_to have_been_made
+    end
+
+    it "reports no data only once every source is empty" do
+      stub_api(body: [].to_json)
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::NO_DATA)
+      expect(existing_line.reload).not_to be_hidden
+    end
+
+    # A nonce would defeat the whole point: an unrecognised query string makes
+    # the origin return [] every time, so every retry would be born empty.
+    it "asks only urls the book already honours" do
+      stub_api(body: [].to_json)
+
+      described_class.update_lines(sport: :nfl)
+
+      queries = WebMock::RequestRegistry.instance.requested_signatures.hash.keys.
+        map { |req| URI(req.uri.to_s).query }.compact
+      expect(queries.uniq).to all(eq("lang=es"))
+    end
+  end
+
+  # The super bowl url holds exactly one event - the Pro Bowl, between "NFC
+  # Conference" and "AFC Conference". Reaching for it because we built no
+  # *lines* turned every unresolvable nfl response into a competitor alert.
+  describe "the super bowl fallback" do
+    let(:super_bowl) { %r{/description/football/super-bowl} }
+
+    it "is not consulted when the book listed games we simply could not name" do
+      stub_api(body: [{ events: [{ "id" => "x", "startTime" => (Time.current + 3.hours).to_i * 1000,
+                                   "competitors" => [{ "home" => true, "name" => "Sharks" },
+                                                     { "home" => false, "name" => "Jets" }] }] }].to_json)
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(a_request(:get, super_bowl)).not_to have_been_made
     end
   end
 
@@ -136,7 +207,7 @@ RSpec.describe BovadaApiClient, type: :service do
     end
 
     def parse(events)
-      client.send(:parse_and_assert_lines, [{ "events" => events }])
+      client.send(:parse_and_assert_lines, events)
     end
 
     it "builds lines for an event whose teams it recognises" do

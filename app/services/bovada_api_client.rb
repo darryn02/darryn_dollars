@@ -1,6 +1,27 @@
 class BovadaApiClient
-  URL_BASE = "https://www.bovada.lv/services/sports/event/v2/events/A/description"
-  QUERY = "lang=en".freeze
+  HOST = "https://www.bovada.lv".freeze
+
+  # Bovada's edge caches per full URL, and a key can get stuck holding an
+  # empty body - no cache-control at all, and an age that climbs without ever
+  # expiring. Measured on 2026-09-19: the stuck key answered with age 5611 and
+  # no max-age while a healthy key sat at age 30 under max-age=600. Which key
+  # is stuck moves around. On 2026-09-09 it was the bare v2 url and ?lang=en
+  # was fine; ten days later that had swapped exactly.
+  #
+  # So an empty body is not an answer about the board, it is a key to stop
+  # using. These three URLs were verified to return the same events with the
+  # same English team names, so falling through them costs a request and
+  # nothing else.
+  #
+  # A nonce does not work here and must not be reintroduced: an unrecognised
+  # query string makes the origin return [] every time (0 events for 5 of 5
+  # random strings tried), which is the same symptom for a different reason.
+  # Only keys Bovada already honours are worth asking.
+  SOURCES = [
+    ["services/sports/event/v2/events/A/description", nil],
+    ["services/sports/event/coupon/events/A/description", nil],
+    ["services/sports/event/v2/events/A/description", "lang=es"]
+  ].freeze
 
   API_SPORT_MAP = {
     nfl: "football/nfl",
@@ -30,10 +51,17 @@ class BovadaApiClient
     created_before = Line.count
 
     session = BovadaSession.new.warm!
-    lines = parse_and_assert_lines(session.get_json(url_for(sport)))
-    if lines.empty? && sport == :nfl
-      lines = parse_and_assert_lines(session.get_json(url_for(:super_bowl)))
-    end
+    events = events_for(session, sport)
+
+    # Only when the book listed nothing at all. This used to fire whenever we
+    # built no *lines*, which meant an nfl response full of games we could not
+    # name sent us to the super bowl url - whose sole event is the Pro Bowl,
+    # between "NFC Conference" and "AFC Conference", teams no sane competitors
+    # table carries. So a stuck cache key announced itself as an unrecognised
+    # competitor, and the actual failure never said its own name.
+    events = events_for(session, :super_bowl) if events.empty? && sport == :nfl
+
+    lines = parse_and_assert_lines(events)
 
     # A book that returns nothing while we hold active lines is telling us
     # something is wrong with the request, not that every game was cancelled.
@@ -63,11 +91,24 @@ class BovadaApiClient
 
   attr_reader :sport
 
-  # ?lang=en is not cosmetic. Without it the nfl and college-football paths
-  # answer 200 with an empty array while nba and super-bowl still return a
-  # full board - so the site quietly showed a stale board for hours and the
-  # only symptom was a NO_DATA run. Pinned in the spec for that reason.
-  def url_for(key) = "#{File.join(URL_BASE, API_SPORT_MAP[key])}?#{QUERY}"
+  # The first source that lists any events wins. Nothing anywhere is the only
+  # honest empty, and the caller still refuses to act on it while we hold
+  # active lines.
+  def events_for(session, key)
+    SOURCES.each do |prefix, query|
+      events = events_in(session.get_json(url_for(prefix, query, key)))
+      return events if events.any?
+    end
+
+    []
+  end
+
+  def url_for(prefix, query, key)
+    url = File.join(HOST, prefix, API_SPORT_MAP[key])
+    query.present? ? "#{url}?#{query}" : url
+  end
+
+  def events_in(json) = Array.wrap(Array.wrap(json).first&.fetch("events", nil))
 
   def no_data(deactivate_ids)
     message = "Bovada returned no lines while #{deactivate_ids.size} are active - left them alone."
@@ -77,12 +118,12 @@ class BovadaApiClient
     ScrapeResult.new(outcome: ScrapeRun::NO_DATA, message: message)
   end
 
-  def parse_and_assert_lines(json)
-    return [] if (json = Array.wrap(json).first).blank?
+  def parse_and_assert_lines(events)
+    return [] if events.blank?
 
     unresolved = []
 
-    lines = Array.wrap(json["events"]).flat_map { |event|
+    lines = events.flat_map { |event|
       names = team_names(event)
       if names.nil?
         unresolved << "event #{event["id"]} (not a two-sided contest)"
