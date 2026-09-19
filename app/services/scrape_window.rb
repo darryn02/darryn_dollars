@@ -92,7 +92,7 @@ class ScrapeWindow
   end
 
   def consecutive_pushbacks
-    ScrapeRun.for_sport(sport).recent_first.limit(10).take_while(&:backoff?).count
+    ScrapeRun.for_sport(sport).for_lines.recent_first.limit(10).take_while(&:backoff?).count
   end
 
   def next_kickoff
@@ -106,6 +106,6 @@ class ScrapeWindow
   def last_run_at
     return @last_run_at if defined?(@last_run_at)
 
-    @last_run_at = ScrapeRun.for_sport(sport).maximum(:ran_at)
+    @last_run_at = ScrapeRun.for_sport(sport).for_lines.maximum(:ran_at)
   end
 end
