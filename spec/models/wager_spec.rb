@@ -80,6 +80,18 @@ RSpec.describe Wager, type: :model do
       expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /no longer active/)
     end
 
+    # Moneyline is the one kind whose odds move, and LineBuilder keys the
+    # lookup on odds - so an ordinary one-point tick mints a new row and
+    # hides the one the slip is holding. The line is still on the board;
+    # "no longer active" would send the player looking for a cancelled game.
+    it "tells a moneyline bettor the price moved rather than that the line died" do
+      moneyline = create_moneyline(game: game, contestant: game.contestants.order(:priority).first, odds: 240)
+      wager = create_wager(account: account, line: moneyline, amount: 100)
+      moneyline.update!(hidden: true)
+
+      expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /has moved off 240/)
+    end
+
     # credit_limit(200) + balance(0) - liabilities(0) has to clear the stake.
     it "rejects confirming a wager the account has no credit for" do
       wager = create_wager(account: account, line: card[:away_spread], amount: 250)
