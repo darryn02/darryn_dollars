@@ -39,6 +39,15 @@ RSpec.describe AmericanOdds do
       expect(described_class.from_probability(0.5)).to eq(100)
     end
 
+    # Division leaks about 1e-14 here, and a bare ceil turns an exact 110
+    # into 111 - a fifth of a point of extra vig conjured out of float
+    # noise, on exactly the pair the board prices everything else at.
+    it "leaves a magnitude that is already an integer alone" do
+      pick_em = 2 * described_class.implied_probability(-110) / 2
+
+      expect(described_class.from_probability(pick_em)).to eq(-110)
+    end
+
     it "round-trips the probability ceiling to a real price" do
       expect(described_class.from_probability(0.99)).to eq(-9900)
     end

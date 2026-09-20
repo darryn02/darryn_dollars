@@ -31,8 +31,17 @@ RSpec.describe MoneylinePricer, type: :service do
     it "raises a very thin pair without losing the floor to rounding" do
       pair = described_class.normalize(-2000, 1500)
 
-      expect(pair).to eq([-5819, 1449])
+      expect(pair).to eq([-5819, 1450])
       expect(overround(pair)).to be >= floor
+    end
+
+    # A pick'em pair scales to exactly the price this board charges on
+    # every spread and total. Getting -111/-111 here - which is what a bare
+    # ceil produces, because the division lands on 110.00000000000001 -
+    # would make moneyline the one market that quietly costs more, on the
+    # shape of game most worth offering.
+    it "normalizes a pick'em pair to the board's own -110" do
+      expect(described_class.normalize(100, 100)).to eq([-110, -110])
     end
 
     # The formula's favorite/underdog framing implies a split that does not

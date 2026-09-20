@@ -43,7 +43,7 @@ edge over its true probability, so what a one-sided market gives up is balancing
 of action — variance, not expected value.
 
 Withholding only the dog is what made the favorite bound necessary rather than
-optional, and that is why the two were settled together: the cap removes a +1449
+optional, and that is why the two were settled together: the cap removes a +1450
 dog and would otherwise leave its -5819 partner bettable. Between them the two
 bounds describe one band. From roughly -394 (the favorite opposite a +300 dog)
 down to -999, a game offers a favorite only; past -999 its moneyline goes dark
@@ -200,12 +200,30 @@ probabilities back with plain `.round` lands *below* the floor in most cases:
  -185/+160    scale=1.0134   .round → -192/+157   = 104.66%    BELOW FLOOR
                              book   → -193/+156   = 104.93%    ok
 -2000/+1500   scale=1.0323   .round → -5818/+1450 = 104.762%   BELOW FLOOR
-                             book   → -5819/+1449 = 104.766%   ok
+                             book   → -5819/+1450 = 104.762%   ok
 ```
 
 So the favorite rounds away from zero (ceil the magnitude) and the dog rounds
 down. Integer odds can then only ever overshoot the floor, never undershoot,
 which is the whole point of the one-directional rule.
+
+**Correction, 2026-09-20, found in implementation.** This table previously
+gave the second row's dog as **+1449**, and that was a floating-point
+artifact rather than the rule's output. The exact scaled probability is
+`22/341`, whose price is exactly `31900/22 = 1450`; the division lands on
+`1449.9999999999998` and a bare `floor` takes a point off it. The favorite
+is unaffected, because `704000/121 = 5818.18...` is genuinely fractional.
+
+The same noise is worse on a **pick'em pair**, which is the shape most worth
+offering: `+100/+100` scales to exactly `-110/-110`, the price this board
+charges on every spread and total, but the division gives
+`110.00000000000001` and a bare `ceil` returns **-111/-111** - 105.21% where
+the book asks 104.76%.
+
+So `from_probability` snaps a magnitude that is already an integer (within
+1e-9) to that integer before rounding. This cannot cost the floor anything
+that matters: 1e-9 of magnitude is roughly 1e-13 of implied probability, and
+the sweep below holds to 1e-12.
 
 **The normalizer must short-circuit when `scale == 1.0`.** Re-deriving odds
 through probability when nothing needs raising damages a pair that is already at
@@ -331,7 +349,8 @@ case-insensitive, off for absent or anything else), `max_odds`
 short-circuit when `scale == 1.0`, clamp, convert back with book rounding.
 
 *Tests:* -415/+310 (never lowered), -110/-110 (returned identical, not
-re-derived), -185/+160 (raised, result's overround ≥ floor), -105/-115 (two
+re-derived), +100/+100 (a pick'em pair normalizes to exactly -110/-110, not
+-111/-111), -185/+160 (raised, result's overround ≥ floor), -105/-115 (two
 favorites), -5000/+3500 (clamp prevents overflow, does not raise, emits valid
 odds). Plus a sweep asserting **no pair in which neither side clamps ever comes
 back with a lower overround than it went in with** — the clamp is the documented

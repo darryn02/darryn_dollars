@@ -122,6 +122,7 @@ class BovadaApiClient
     return [] if events.blank?
 
     unresolved = []
+    @skipped_markets = []
 
     lines = events.flat_map { |event|
       names = team_names(event)
@@ -147,6 +148,7 @@ class BovadaApiClient
     }.compact
 
     report_unresolved(unresolved)
+    report_skipped_markets
 
     lines
   end
@@ -224,17 +226,99 @@ class BovadaApiClient
   end
 
   def find_or_create_line(market, game, away_contestant, home_contestant)
-    market["outcomes"].map do |outcome|
-      contestant = outcome["type"] == "A" ? away_contestant : (outcome["type"] == "H" ? home_contestant : nil)
+    return moneyline_lines(market, game, away_contestant, home_contestant) if moneyline_market?(market)
 
-      LineBuilder.new.
-        game(game).
-        kind(market["description"] == "Total" ? outcome["type"] : market["description"]).
-        scope(market["period"]["abbreviation"]).
-        value(outcome["price"]["handicap"]).
-        odds(outcome["price"]["american"]).
-        contestant(contestant).
-        find_or_create!
+    market["outcomes"].map do |outcome|
+      build_line(market, outcome, game, away_contestant, home_contestant,
+                 odds: outcome["price"]["american"])
     end
+  end
+
+  def moneyline_market?(market) = market["description"] == "Moneyline"
+
+  # The trust boundary for moneyline prices, and the only market where the
+  # book does not set its own price.
+  #
+  # Both the validation and the normalization belong here rather than in
+  # LineBuilder, which sees one outcome at a time and - the part that
+  # matters - sees only the normalizer's output. A bad raw price caught
+  # there has already corrupted the other side's re-pricing through the
+  # overround and the scale, and the integer that comes out of that looks
+  # plausible enough to pass any bound downstream.
+  def moneyline_lines(market, game, away_contestant, home_contestant)
+    outcomes = Array.wrap(market["outcomes"])
+
+    # A one-sided market - the other side suspended - has no pair to
+    # normalize. Offering it means offering it at whatever overround
+    # Bovada happened to publish, so skip the market rather than the check.
+    unless outcomes.size == 2
+      return skip_market(market, game, "has #{outcomes.size} outcome(s) rather than two")
+    end
+
+    raw = outcomes.map { |outcome| parse_american(outcome.dig("price", "american")) }
+    if raw.any?(&:nil?)
+      published = outcomes.map { |outcome| outcome.dig("price", "american").inspect }.join(", ")
+      return skip_market(market, game, "carries an unusable price (#{published})")
+    end
+
+    normalized = MoneylinePricer.normalize(*raw)
+
+    outcomes.each_with_index.map do |outcome, index|
+      build_line(market, outcome, game, away_contestant, home_contestant,
+                 odds: normalized[index], raw_odds: raw[index])
+    end
+  rescue ArgumentError => e
+    skip_market(market, game, e.message)
+  end
+
+  # Bovada writes exactly +100 as "EVEN". That is a well-defined price, not
+  # corrupt data, so it is mapped rather than rejected - rejecting it would
+  # silently drop the moneyline market for every near-pick'em game, which is
+  # the shape of game most worth offering. "EVEN".to_i is 0, which is what
+  # the old parse produced and what made a winning bet pay $0.
+  #
+  # nil for anything that is not an integer outside the (-100, 100) dead
+  # band, which the caller turns into a skipped market.
+  def parse_american(value)
+    published = value.to_s.strip
+    return 100 if published.casecmp("EVEN").zero?
+
+    odds = Integer(published, exception: false)
+    odds if odds && odds.abs >= 100
+  end
+
+  def build_line(market, outcome, game, away_contestant, home_contestant, odds:, raw_odds: nil)
+    contestant = outcome["type"] == "A" ? away_contestant : (outcome["type"] == "H" ? home_contestant : nil)
+
+    LineBuilder.new.
+      game(game).
+      kind(market["description"] == "Total" ? outcome["type"] : market["description"]).
+      scope(market["period"]["abbreviation"]).
+      value(outcome["price"]["handicap"]).
+      odds(odds).
+      raw_odds(raw_odds).
+      contestant(contestant).
+      find_or_create!
+  end
+
+  # Skip and report, never raise. find_or_create_line runs inside an
+  # unrescued flat_map, so raising here would abort every other game in the
+  # response, write no ScrapeRun at all, and 500 the second half board
+  # through LinesController's before_action - the same failure an
+  # unrecognised competitor used to cause, and the same discipline applies.
+  def skip_market(market, game, reason)
+    @skipped_markets << "#{game.short_matchup} #{market["period"]["abbreviation"]} " \
+                        "#{market["description"].downcase} #{reason}"
+    []
+  end
+
+  def report_skipped_markets
+    return if @skipped_markets.blank?
+
+    message = "Skipped #{@skipped_markets.size} #{sport} market(s) with unusable prices: " \
+              "#{@skipped_markets.join("; ")}"
+
+    Rails.logger.warn(message)
+    Honeybadger.notify(message, context: { sport: sport, markets: @skipped_markets }) if defined?(Honeybadger)
   end
 end
