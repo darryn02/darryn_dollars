@@ -80,4 +80,75 @@ RSpec.describe "Wager history", type: :system do
       expect(page).to have_content("Nothing to see here")
     end
   end
+  # The combined ledger shows every player's money to whoever can see it, so
+  # the test that matters most is the one proving a player cannot.
+  describe "the book's combined view" do
+    let(:rival) { create_user(name: "Reg Rival") }
+    let!(:rival_account) { create_account(user: rival) }
+    let!(:own_account) { create_account(user: user) }
+
+    before do
+      create_wager(account: own_account, line: card[:away_spread], amount: 100, status: :win)
+      create_wager(account: rival_account, line: card[:home_spread], amount: 250, status: :loss)
+    end
+
+    context "as a player" do
+      it "offers no ledger tab" do
+        visit history_wagers_path
+
+        expect(page).to have_no_css("#house-tab")
+        expect(page).to have_no_content("The Book")
+      end
+
+      it "shows no other player's action anywhere on the page" do
+        visit history_wagers_path
+
+        expect(page).to have_no_content("Reg Rival")
+        expect(page).to have_no_content("$250.00")
+      end
+    end
+
+    context "as the book" do
+      let(:user) { create_user(name: "Darryn Book", admin: true) }
+
+      it "leads with a combined tab across every account" do
+        visit history_wagers_path
+
+        expect(page).to have_css("#house-tab", text: "The Book")
+
+        within("#house-tab-pane") do
+          expect(page).to have_content("Dana Player").or have_content("Darryn Book")
+          expect(page).to have_content("Reg Rival")
+        end
+      end
+
+      # A player winning costs the book, which is the opposite sign from the
+      # one the player sees on their own history.
+      it "reports each wager from the book's side" do
+        visit history_wagers_path
+
+        within("#house-tab-pane") do
+          expect(page).to have_css(".dd-account__net.is-down", text: "-$90.91")
+          expect(page).to have_css(".dd-account__net.is-up", text: "$250.00")
+        end
+      end
+
+      it "marks action that has not settled instead of dating it" do
+        create_wager(account: rival_account, line: card[:over], amount: 75, status: :confirmed)
+
+        visit history_wagers_path
+
+        within("#house-tab-pane") do
+          expect(page).to have_css(".dd-ledger__row--open")
+          expect(page).to have_content(/in play/i)
+        end
+      end
+
+      it "still keeps a tab per account beside it" do
+        visit history_wagers_path
+
+        expect(page).to have_css(".dd-account-tab", minimum: 3)
+      end
+    end
+  end
 end

@@ -1101,6 +1101,40 @@ body .container.main {
 }
 
 // ---------------------------------------------------------------------------
+// House ledger (admin only)
+// ---------------------------------------------------------------------------
+
+// Reuses .dd-account__* for the row skeleton; these only add the column the
+// combined view needs - whose money it was - and the marking for action that
+// has not settled.
+.dd-ledger__who {
+  flex: 0 0 5.5rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .75rem;
+  color: $text-3;
+  text-align: right;
+}
+
+.dd-ledger__row--open {
+  background: rgba(255, 255, 255, .03);
+}
+
+.dd-ledger__open-flag {
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: $text-3;
+}
+
+.dd-ledger__risk {
+  color: $text-3;
+}
+
+// ---------------------------------------------------------------------------
 // Leaderboard
 // ---------------------------------------------------------------------------
 
