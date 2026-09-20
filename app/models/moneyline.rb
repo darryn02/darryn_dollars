@@ -74,7 +74,20 @@ module Moneyline
 
   # The bettable band, (min_odds, max_odds]. Exclusive at the bottom,
   # inclusive at the top.
+  #
+  # The dead-band check is not redundant with the bounds, because zero sits
+  # inside them. 12 rows in the live database hold a price in (-100, 100) -
+  # the pre-flight count on 2026-09-20 - almost certainly zero, from the old
+  # `"EVEN".to_i` parse. Line#payout takes its odds >= 0 branch on zero and
+  # returns `amount * 0 * 0.01`, so without this the board would have
+  # offered those rows a bet that pays nothing at all on a win.
+  #
+  # The scraper can no longer mint one, and a row keyed on a new price will
+  # not be found again, so the existing ones age out on their own. This is
+  # what makes that true regardless of what is already stored.
   def self.bettable_odds?(odds)
+    return false unless odds.is_a?(Integer) && odds.abs >= 100
+
     min_odds < odds && odds <= max_odds
   end
 end
