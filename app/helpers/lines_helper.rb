@@ -7,6 +7,29 @@ module LinesHelper
     line.value.positive? ? "+#{line.value}" : line.value.to_s
   end
 
+  # "-285" / "+240" - the price itself, which is what the board cell shows
+  # on a moneyline where the sheet, slip and history show "ML".
+  #
+  # The cell carries no team, that being a separate column, and every other
+  # cell on the board already shows a bare differentiating value ("+2.5",
+  # "O 47.5"). "ML" would render identically on both rows, under a header
+  # that also says ML, and tell the bettor nothing.
+  def moneyline_label(line)
+    return nil if line.nil?
+
+    line.odds.positive? ? "+#{line.odds}" : line.odds.to_s
+  end
+
+  # Whether the board carries a moneyline column at all. The cell, the
+  # header row and the four-column grid all read this, not just the row
+  # data - gating only the data would still narrow every existing spread
+  # and total button and add a header the moment the code deploys with the
+  # switch off, which is exactly the change to spread and total rendering
+  # this work is not allowed to make.
+  def moneyline_column?
+    Moneyline.enabled?
+  end
+
   # "O 47.5" / "U 47.5"
   def total_label(line)
     return nil if line.nil?

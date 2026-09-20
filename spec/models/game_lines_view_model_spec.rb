@@ -25,6 +25,10 @@ RSpec.describe GameLinesViewModel, type: :model do
     described_class.new(game: game, lines: lines, user: user)
   end
 
+  def moneyline_for(contestant, odds)
+    game.lines.create!(kind: :moneyline, scope: :game, value: 0, odds: odds, contestant: contestant)
+  end
+
   describe "#rows" do
     it "puts the away side first and the home side second" do
       lines = [spread_for(away_contestant, 2.5), spread_for(home_contestant, -2.5)]
@@ -172,6 +176,133 @@ RSpec.describe GameLinesViewModel, type: :model do
       rows = described_class.new(game: game, lines: [favoured, other], user: chump).rows
 
       expect(rows.map(&:spread_flagged)).to all(be(false))
+    end
+  end
+
+  describe "the moneyline column" do
+    it "hangs each side's price on its own row" do
+      lines = [moneyline_for(away_contestant, -285), moneyline_for(home_contestant, 240)]
+
+      rows = view_model(lines).rows
+
+      expect(rows.map(&:abbreviation)).to eq(%w[BUF MIA])
+      expect(rows.map { |row| row.moneyline&.odds }).to eq([-285, 240])
+      expect(rows.map(&:moneyline_offered)).to eq([true, true])
+    end
+
+    it "offers both sides through bet_lines" do
+      lines = [moneyline_for(away_contestant, -285), moneyline_for(home_contestant, 240)]
+
+      expect(view_model(lines).bet_lines.map(&:odds)).to match_array([-285, 240])
+    end
+
+    it "names a side that has a moneyline but no spread" do
+      rows = view_model([moneyline_for(home_contestant, 240)]).rows
+
+      expect(rows.map(&:abbreviation)).to eq(%w[BUF MIA])
+    end
+
+    describe "an underdog past the cap" do
+      let(:lines) { [moneyline_for(away_contestant, -5819), moneyline_for(home_contestant, 450)] }
+
+      it "keeps its price on its own row rather than disappearing" do
+        rows = view_model(lines).rows
+
+        expect(rows.second.moneyline.odds).to eq(450)
+        expect(rows.second.moneyline_offered).to be(false)
+      end
+
+      # The one that would put the right price against the wrong team.
+      # rows pairs positionally against competitors.first/.second, so
+      # filtering the withheld dog out before pairing would slide the
+      # favorite down onto the underdog's row.
+      it "leaves its partner where it belongs instead of shifting it" do
+        rows = view_model(lines).rows
+
+        expect(rows.first.abbreviation).to eq("BUF")
+        expect(rows.first.moneyline.odds).to eq(-5819)
+      end
+
+      it "gets no bet button while its partner keeps one" do
+        # -5819 is past the favorite bound too, so widen it for this case.
+        ENV["MONEYLINE_MIN_ODDS"] = "-9999"
+
+        offered = view_model(lines).bet_lines.select(&:moneyline?)
+
+        expect(offered.map(&:odds)).to eq([-5819])
+      ensure
+        ENV.delete("MONEYLINE_MIN_ODDS")
+      end
+    end
+
+    it "withholds a favorite past the bound while keeping its price" do
+      lines = [moneyline_for(away_contestant, -1200), moneyline_for(home_contestant, 900)]
+
+      rows = view_model(lines).rows
+
+      expect(rows.first.moneyline.odds).to eq(-1200)
+      expect(rows.map(&:moneyline_offered)).to eq([false, false])
+      expect(view_model(lines).bet_lines.select(&:moneyline?)).to be_empty
+    end
+
+    it "offers nothing when the switch is off" do
+      ENV["MONEYLINE_ENABLED"] = "0"
+      lines = [moneyline_for(away_contestant, -285), moneyline_for(home_contestant, 240)]
+
+      model = view_model(lines)
+
+      expect(model.bet_lines.select(&:moneyline?)).to be_empty
+      expect(model.rows.map(&:moneyline_offered)).to eq([false, false])
+    end
+
+    # A moneyline belongs to a side, and lines nullifies contestant_id on
+    # delete. Same reason spread_lines drops one - but the survivor stays on
+    # its own row rather than sliding up into the orphan's place, which is
+    # what positional pairing would do.
+    it "drops a moneyline whose side has been deleted, without moving its partner" do
+      orphan = moneyline_for(away_contestant, -285)
+      partner = moneyline_for(home_contestant, 240)
+      orphan.update_columns(contestant_id: nil)
+
+      rows = view_model([orphan.reload, partner]).rows
+
+      expect(rows.map(&:abbreviation)).to eq(%w[BUF MIA])
+      expect(rows.map { |row| row.moneyline&.odds }).to eq([nil, 240])
+    end
+  end
+
+  # The money bag is a comparison between two sides, and summing stake was
+  # only ever meaningful because both sides of a spread or a total are
+  # priced at -110.
+  describe "the chump stamp on a moneyline" do
+    it "reads what the book would owe, not what was staked" do
+      favorite = moneyline_for(away_contestant, -500)
+      underdog = moneyline_for(home_contestant, 300)
+      chump = create_account(user: create_user(name: "Chump"))
+      # More money on the favorite, far more exposure on the underdog.
+      create_wager(account: chump, line: favorite, amount: 500)
+      create_wager(account: chump, line: underdog, amount: 100)
+
+      rows = view_model([favorite, underdog]).rows
+
+      expect(rows.first.moneyline_flagged).to be(false)
+      expect(rows.second.moneyline_flagged).to be(true)
+    end
+
+    # Both sides of a spread are -110, so payout-weighting scales the
+    # comparison by the same 0.909 on each side and can flip no stamp that
+    # stands today.
+    it "still flags the side with the most money on a spread" do
+      away_spread = spread_for(away_contestant, 2.5)
+      home_spread = spread_for(home_contestant, -2.5)
+      chump = create_account(user: create_user(name: "Chump"))
+      create_wager(account: chump, line: away_spread, amount: 400)
+      create_wager(account: chump, line: home_spread, amount: 100)
+
+      rows = view_model([away_spread, home_spread]).rows
+
+      expect(rows.first.spread_flagged).to be(true)
+      expect(rows.second.spread_flagged).to be(false)
     end
   end
 end
