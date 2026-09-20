@@ -268,4 +268,171 @@ RSpec.describe BovadaApiClient, type: :service do
       parse([event("Georgia", "Alabama")])
     end
   end
+
+  # Moneyline is the one market where Bovada sets the price rather than the
+  # book, so this is the trust boundary: validate the pair, normalize it to
+  # the floor, then build. Nothing downstream re-checks it.
+  describe "a moneyline market" do
+    let(:client) { described_class.new(:nfl) }
+
+    def market(description:, outcomes:, abbreviation: "G")
+      {
+        "description" => description,
+        "period" => { "live" => false, "abbreviation" => abbreviation },
+        "outcomes" => outcomes
+      }
+    end
+
+    def moneyline(home_price, away_price, abbreviation: "G")
+      market(description: "Moneyline", abbreviation: abbreviation, outcomes: [
+        { "type" => "H", "price" => { "handicap" => 0.0, "american" => home_price } },
+        { "type" => "A", "price" => { "handicap" => 0.0, "american" => away_price } }
+      ])
+    end
+
+    def spread
+      market(description: "Point Spread", outcomes: [
+        { "type" => "H", "price" => { "handicap" => -3.5, "american" => "-110" } },
+        { "type" => "A", "price" => { "handicap" => 3.5, "american" => "-110" } }
+      ])
+    end
+
+    def total
+      market(description: "Total", outcomes: [
+        { "type" => "O", "price" => { "handicap" => 47.5, "american" => "-110" } },
+        { "type" => "U", "price" => { "handicap" => 47.5, "american" => "-110" } }
+      ])
+    end
+
+    def event(*markets, id: SecureRandom.hex(4), home: "Buffalo Bills", away: "New York Jets")
+      {
+        "id" => id,
+        "startTime" => (Time.current + 3.hours).to_i * 1000,
+        "competitors" => [
+          { "home" => true,  "name" => home },
+          { "home" => false, "name" => away }
+        ],
+        "displayGroups" => [{ "description" => "Game Lines", "markets" => markets }]
+      }
+    end
+
+    def parse(events) = client.send(:parse_and_assert_lines, events)
+
+    def moneylines_in(lines) = lines.select(&:moneyline?)
+
+    it "stores the normalized pair, not the prices the book published" do
+      lines = moneylines_in(parse([event(moneyline("-185", "+160"))]))
+
+      expect(lines.map(&:odds)).to match_array([-193, 156])
+    end
+
+    it "keeps a pair that already clears the floor exactly as published" do
+      lines = moneylines_in(parse([event(moneyline("-415", "+310"))]))
+
+      expect(lines.map(&:odds)).to match_array([-415, 310])
+    end
+
+    it "attributes each price to the side that was quoted it" do
+      lines = moneylines_in(parse([event(moneyline("-185", "+160"))]))
+      by_abbreviation = lines.to_h { |line| [line.competitor.abbreviation, line.odds] }
+
+      expect(by_abbreviation).to eq("BUF" => -193, "NYJ" => 156)
+    end
+
+    it "retains the price the book published alongside the one it offers" do
+      lines = moneylines_in(parse([event(moneyline("-185", "+160"))]))
+
+      expect(lines.to_h { |line| [line.odds, line.raw_odds] }).to eq(-193 => -185, 156 => 160)
+    end
+
+    # raw_odds is written after the find, not inside a create block. Left in
+    # the block it would answer nothing: the block runs only on create, so
+    # every row that survives a scrape would stay NULL forever.
+    it "refreshes the published price on a row that already existed" do
+      parse([event(moneyline("-185", "+160"))])
+      favorite = Line.moneyline.find_by(odds: -193)
+
+      # A raw tick that normalizes to the same offered price, so the lookup
+      # finds the same row rather than minting a new one.
+      parse([event(moneyline("-186", "+160"))])
+
+      expect(Line.moneyline.count).to eq(2)
+      expect(favorite.reload.raw_odds).to eq(-186)
+    end
+
+    # "EVEN" is Bovada's rendering of exactly +100, and "EVEN".to_i is 0 -
+    # which sends Line#payout down its odds >= 0 branch and pays $0 on a
+    # winning bet. It is mapped, not rejected: rejecting it would drop the
+    # market for every near-pick'em game.
+    it "reads EVEN as +100 rather than as zero" do
+      lines = moneylines_in(parse([event(moneyline("EVEN", "EVEN"))]))
+
+      expect(lines.map(&:raw_odds)).to eq([100, 100])
+      expect(lines.map(&:odds)).to eq([-110, -110])
+      expect(lines.map { |line| line.payout(100) }).to all(be > 0)
+    end
+
+    describe "a price it cannot use" do
+      it "skips only its own market and still lands the spread and total" do
+        lines = nil
+        expect { lines = parse([event(moneyline("n/a", "+160"), spread, total)]) }.not_to raise_error
+
+        expect(moneylines_in(lines)).to be_empty
+        expect(lines.map(&:kind).uniq).to match_array(%w[point_spread over under])
+      end
+
+      it "keeps every other event in the response" do
+        lines = parse([
+          event(moneyline("n/a", "+160"), id: "bad"),
+          event(moneyline("-185", "+160"), id: "good", home: "Buffalo Bills", away: "New York Jets")
+        ])
+
+        expect(moneylines_in(lines).map(&:odds)).to match_array([-193, 156])
+      end
+
+      it "reports the skip rather than failing silently" do
+        expect(Rails.logger).to receive(:warn).with(/unusable prices.*moneyline carries an unusable price/)
+
+        parse([event(moneyline("n/a", "+160"))])
+      end
+
+      it "refuses a price inside the dead band, where no price exists" do
+        lines = parse([event(moneyline("-50", "+40"), spread)])
+
+        expect(moneylines_in(lines)).to be_empty
+        expect(lines).to be_present
+      end
+    end
+
+    # No pair to normalize, so offering it means offering it at whatever
+    # overround Bovada happened to publish.
+    it "skips a one-sided market entirely" do
+      one_sided = market(description: "Moneyline", outcomes: [
+        { "type" => "H", "price" => { "handicap" => 0.0, "american" => "-185" } }
+      ])
+
+      lines = nil
+      expect { lines = parse([event(one_sided, spread)]) }.not_to raise_error
+
+      expect(moneylines_in(lines)).to be_empty
+      expect(lines.map(&:kind).uniq).to eq(["point_spread"])
+    end
+
+    it "normalizes each scope's pair on its own" do
+      lines = moneylines_in(parse([event(moneyline("-185", "+160"),
+                                         moneyline("-415", "+310", abbreviation: "1H"))]))
+
+      expect(lines.select(&:game?).map(&:odds)).to match_array([-193, 156])
+      expect(lines.select(&:first_half?).map(&:odds)).to match_array([-415, 310])
+    end
+
+    # The constraint the whole plan is written under.
+    it "leaves spread and total priced at exactly -110, with no published price" do
+      lines = parse([event(moneyline("-185", "+160"), spread, total)])
+      others = lines.reject(&:moneyline?)
+
+      expect(others.map(&:odds).uniq).to eq([-110])
+      expect(others.map(&:raw_odds).uniq).to eq([nil])
+    end
+  end
 end

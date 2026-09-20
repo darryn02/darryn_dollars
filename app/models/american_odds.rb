@@ -43,9 +43,34 @@ module AmericanOdds
     end
 
     if probability > 0.5
-      -(100.0 * probability / (1 - probability)).ceil
+      -round_toward_book(100.0 * probability / (1 - probability), :up)
     else
-      (100.0 * (1 - probability) / probability).floor
+      round_toward_book(100.0 * (1 - probability) / probability, :down)
     end
+  end
+
+  # How far off an integer a magnitude may be and still be treated as that
+  # integer. Well below the 1e-4 or so that would be needed to move a real
+  # price by a point, and well above the 1e-11 that division actually leaks.
+  SNAP = 1e-9
+
+  # The magnitude as an integer, moved in the book's favour - unless it
+  # already is one.
+  #
+  # The snap is not cosmetic. A pick'em pair scales to exactly -110/-110,
+  # which is the price this board charges on every spread and total, but
+  # the division lands on 110.00000000000001 and a bare ceil makes that
+  # -111 - charging 105.21% where the book asks 104.76%, on the shape of
+  # game most worth offering. The same noise costs -2000/+1500's underdog a
+  # point, turning an exact 1450 into 1449.
+  #
+  # Snapping cannot undershoot the floor in any way that matters: it moves
+  # a magnitude by at most 1e-9, which is roughly 1e-13 of implied
+  # probability, and the sweep in MoneylinePricer's spec holds to 1e-12.
+  def round_toward_book(magnitude, direction)
+    nearest = magnitude.round
+    return nearest if (magnitude - nearest).abs < SNAP
+
+    direction == :up ? magnitude.ceil : magnitude.floor
   end
 end
