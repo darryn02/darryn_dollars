@@ -92,8 +92,14 @@ class Line < ApplicationRecord
 
   private
 
+  # A moneyline has no handicap, so it contributes no value segment at all -
+  # "BUF ML (-285 1H)". The value column still holds 0.0 because it is NOT
+  # NULL, and without this branch the spread arm below read that zero and
+  # printed a -285 favorite as "BUF PICK (-285 1H)".
   def value_string(kind)
-    if %w[over under].include?(kind)
+    if kind == "moneyline"
+      nil
+    elsif %w[over under].include?(kind)
       value.to_s
     else
       if value < 0
@@ -111,6 +117,8 @@ class Line < ApplicationRecord
       "O"
     elsif kind == "under"
       "U"
+    elsif kind == "moneyline"
+      "ML"
     end
   end
 

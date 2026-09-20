@@ -34,6 +34,21 @@ RSpec.describe Line, type: :model do
       expect(line.to_s).to eq("BUF/MIA O24.5 (-110 2H)")
     end
 
+    # value is NOT NULL so a moneyline still stores 0.0, which the spread
+    # arm below read as PICK - a -285 favorite printed "BUF PICK (-285)".
+    # That string is what the admin vig-waiver dropdown renders today.
+    it "names a moneyline ML and gives it no value segment" do
+      line = game.lines.create!(kind: :moneyline, scope: :game, value: 0, odds: -285, contestant: contestant)
+
+      expect(line.to_s).to eq("BUF ML (-285)")
+    end
+
+    it "names the half on a moneyline too" do
+      line = game.lines.create!(kind: :moneyline, scope: :first_half, value: 0, odds: 240, contestant: contestant)
+
+      expect(line.to_s).to eq("BUF ML (240 1H)")
+    end
+
     it "writes a zero spread as PICK" do
       line = game.lines.create!(kind: :point_spread, scope: :game, value: 0.0, contestant: contestant)
 
