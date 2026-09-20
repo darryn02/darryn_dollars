@@ -1,7 +1,7 @@
 # Adding moneyline betting to Darryn Dollars
 
 **Branch:** `moneyline-betting` (off `master`)
-**Status:** plan, reviewed 2026-09-10; rollout revised 2026-09-19; cap sub-decision and favorite bound settled 2026-09-20. Ready to implement; nothing implemented yet.
+**Status:** plan, reviewed 2026-09-10; rollout revised 2026-09-19; cap sub-decision and favorite bound settled 2026-09-20. **Implemented 2026-09-20 on `moneyline-betting`, phases 0 through 7.** Everything that is code is done and the suite is green; what remains is the Phase 7 rollout sequence itself (steps 18 and 19), which is operational. One number in "Pricing math, as verified" was corrected during implementation - see the marked correction there.
 **Constraint:** do not change point spread or total behavior.
 
 Moneyline lines are already scraped and stored — `BovadaApiClient` treats

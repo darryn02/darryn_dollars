@@ -10,7 +10,11 @@ module Admin
 
     def new
       @games = Game.viewable.order(:starts_at)
-      @lines = Line.active.includes(game: :contestants).order("games.starts_at").
+      # Moneyline excluded for v1, for the same reason it is out of
+      # Line::KIND_GROUPS: waiving the vig on a favorite refunds 65-80% of
+      # stake, against 9% on the -110 the tool was built around.
+      @lines = Line.active.where.not(kind: :moneyline).
+        includes(game: :contestants).order("games.starts_at").
         joins(:game).references(:game)
     end
 
