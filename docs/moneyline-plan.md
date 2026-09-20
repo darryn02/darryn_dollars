@@ -1,7 +1,7 @@
 # Adding moneyline betting to Darryn Dollars
 
 **Branch:** `moneyline-betting` (off `master`)
-**Status:** plan, reviewed 2026-09-10; rollout revised 2026-09-19. Nothing implemented.
+**Status:** plan, reviewed 2026-09-10; rollout revised 2026-09-19; cap sub-decision settled 2026-09-20. Nothing implemented.
 **Constraint:** do not change point spread or total behavior.
 
 Moneyline lines are already scraped and stored — `BovadaApiClient` treats
@@ -27,9 +27,24 @@ thing off without a deploy.
 | Probability clamp | **0.99** on the scaling path | Bounds the converted probability whenever a pair is being raised to the floor. A pair already at or above the floor short-circuits untouched and is therefore *not* subject to the clamp — so this is not a global price ceiling, and a raw -12000 can still be stored. |
 | Kill switch | `MONEYLINE_ENABLED`, absent = **off** | Deliberately inverted from the `NCAAF_ENABLED` convention (absent = on) for the first deploy, so shipping the code does not ship the market. **Truthiness is an explicit allowlist**, not the `Sports` idiom: on only for `"1"` or `"true"` (case-insensitive), off for absent or anything else. Copying `Sports`' `!= "0"` test would make `MONEYLINE_ENABLED=false` read as *enabled* — the one control that must fail closed. |
 
-**Still open — see Deferred / Open Questions:** whether the cap withholds only
-the underdog side or the whole moneyline market for that game. An earlier draft
-recorded this as settled; it was not.
+**Cap sub-decision, settled 2026-09-20: the cap withholds only the underdog
+side.** The favorite stays bettable, and the withheld underdog still prints its
+price in the existing non-interactive closed-cell treatment — so the row reads
+as "there is a price here and you cannot bet it" rather than as a market that
+was never scraped.
+
+*Rejected: withholding the whole moneyline market for that game.* It would have
+cost 13.5% of games their moneyline outright to buy a symmetry the board does
+not otherwise promise, since a side with no line already simply has no line. The
+argument that a one-sided market surrenders the book's edge does not hold
+either: after normalization the favorite leg still carries roughly 3.7 points of
+edge over its true probability, so what a one-sided market gives up is balancing
+of action — variance, not expected value.
+
+**Still open — see Deferred / Open Questions:** whether the favorite side needs
+a bound of its own. Withholding only the dog is what makes that question
+load-bearing: the dog is capped at +300, but its partner is not capped at all,
+so a +1449 dog that the cap removes leaves a -5819 favorite on the board.
 
 ---
 
@@ -426,6 +441,17 @@ differentiating value (`"+2.5"`, `"O 47.5"`). Reusing `"ML"` would render
 identically on both rows, under a header that also says ML, giving the bettor
 nothing to read.
 
+**A withheld underdog keeps its price and loses its button**, rendering through
+the existing `.dd-bet-cell--closed` branch of `_bet_cell.html.haml` rather than
+the `--empty` one. `--empty` is `aria-hidden` with a bare dash and means "this
+market was never scraped"; it also fires symmetrically, on both sides at once. A
+capped underdog is neither of those things, and players will meet this state on
+roughly one game in seven, so reusing `--empty` would present a deliberate risk
+decision as a data gap — to sighted players and assistive technology alike.
+`--closed` already exists, already carries a visible label, and already prints
+at `.9375rem`/weight 600 against the live button's `1rem`/weight 700, so the
+withheld side is visibly quieter than the bettable one with no new CSS.
+
 **Chump stamp: moneyline is included**, via a payout-weighted comparison.
 `GameLinesViewModel#chump_total` sums each side's stake today, which is
 meaningful only because both sides are -110; on a moneyline, $500 on a -500
@@ -439,8 +465,18 @@ existing comparison by the same 0.909 and can flip no current stamp. `Row` gets 
 **16. `app/views/lines/_game.html.haml`, `index.html.haml` and `_theme.scss:476-486`**
 — third bet cell, four-column grid, columns down to roughly 4.25rem to fit a
 360px phone. Add `white-space: nowrap` to `.dd-bet-btn__value`, which has no rule
-today. (A one-liner is the whole fix: with the cap in place, four-figure prices
-are not offered, so no ellipsis or font-scaling scheme is warranted.)
+today.
+
+`grid-template-columns` is declared once on `.dd-game__row` and governs both team
+rows, so the withheld underdog printing smaller does not widen the column for the
+row above or below it — the column has to fit the longest string either side can
+produce. The underdog cannot exceed four characters, because the cap withholds it
+past +300. **The favorite is the binding case**, and until the open question
+below is answered it has no bound at all: a +1449 dog is withheld while its
+-5819 partner stays a live button. If the favorite is bounded at -1000, four
+characters becomes a structural guarantee and `nowrap` is the whole fix; if it is
+not, this needs a truncation or font-scaling scheme that the one-liner does not
+provide.
 
 The column header row (Spread / Total / ML) goes **once at the top of `.dd-board`
 in `index.html.haml`**, not in `_game.html.haml` — that partial renders per game
@@ -534,30 +570,28 @@ wager on a game days out.
 
 ## Deferred / Open Questions
 
-### From 2026-09-10 review
+*Both questions from the 2026-09-10 review are now answered and recorded in
+Decisions and in Phase 6: the cap withholds only the underdog, and a withheld
+cell keeps its price in the closed treatment rather than blanking.*
 
-- **Withhold only the underdog side, or the whole moneyline market, when the cap binds?** — Decisions, cap sub-decision (P1, product-lens + design-lens, confidence 75)
+### Open
 
-  On roughly one game in seven the cap removes a side, and the two branches give
-  players materially different boards. Withholding only the dog leaves a live
-  button on a heavy favorite — which can be a four-figure price once the clamp is
-  involved, the case that makes the bet-button width question real at all — and
-  produces an asymmetric row where one side is bettable and the other is blank.
-  Withholding the whole market costs those games their moneyline entirely but
-  keeps every rendered pair symmetric and every displayed price short. The claim
-  that a one-sided market surrenders the book's edge does not hold: after
-  normalization the favorite leg still carries roughly 3.7 points of edge over
-  its true probability, so what is lost is balancing of action — variance, not
-  expected value. An earlier draft of this plan recorded this as settled; only
-  the three numeric decisions were.
+- **Does the favorite side need a bound of its own?**
 
-- **Does a capped-out cell read as "no line" or as "closed"?** — Phase 6, board (P2, design-lens, confidence 75)
+  The +300 cap bounds one side of the pair and, now that only the underdog is
+  withheld, nothing bounds the other. Removing a +1449 dog leaves its -5819
+  partner bettable, which is both the widest string the board can be asked to
+  render and inventory nobody can use: at the $1,000 default credit limit a
+  maximum stake on -5819 wins $17.19, and the $50 minimum wins 86 cents.
 
-  Follows from the question above, and only arises on the withhold-the-dog
-  branch. Today the empty treatment fires only when a market genuinely was not
-  scraped, and it fires symmetrically on both sides — it is `aria-hidden` with a
-  bare dash. A capped underdog reusing it means a deliberate risk decision is
-  indistinguishable from a data gap, to sighted players and assistive technology
-  alike, on a state players would hit regularly. The closed treatment already in
-  the codebase says "there is a price here and you cannot bet it", which is what
-  is actually true.
+  Recommended: withhold the favorite at -1000 or worse. That makes four
+  characters a structural guarantee rather than something the stylesheet has to
+  absorb, and it is consistent with the cap rather than an independent number —
+  a -999 favorite pairs with roughly a +621 dog, which the cap already removes.
+  The resulting band is legible: from about -394 (the favorite opposite a +300
+  dog) down to -999 a game offers a favorite only, and past -999 its moneyline
+  goes dark entirely.
+
+  The alternative is to leave the favorite unbounded and absorb long prices in
+  the stylesheet, which trades a policy line for a rendering scheme and leaves
+  unusable inventory on the board.
