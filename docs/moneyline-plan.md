@@ -1,7 +1,7 @@
 # Adding moneyline betting to Darryn Dollars
 
 **Branch:** `moneyline-betting` (off `master`)
-**Status:** plan, reviewed 2026-09-10; rollout revised 2026-09-19; cap sub-decision settled 2026-09-20. Nothing implemented.
+**Status:** plan, reviewed 2026-09-10; rollout revised 2026-09-19; cap sub-decision and favorite bound settled 2026-09-20. Ready to implement; nothing implemented yet.
 **Constraint:** do not change point spread or total behavior.
 
 Moneyline lines are already scraped and stored — `BovadaApiClient` treats
@@ -25,6 +25,7 @@ thing off without a deploy.
 | Underdog odds cap | **+300**, `MONEYLINE_MAX_ODDS` | Pulls the dog side from 13.5% of games (vs 26% at +250) and caps a single bet at 3× stake. Evaluated at read time, so it is a dial that can be tightened mid-season with a config change and no re-scrape. |
 | Vig floor | **derived from `-110`** in code — `2 × implied_probability(-110)` = 1.047619 | No env var and no magic constant, so it can never drift from what spread and total already charge. The rule states itself: every market on this board pays at least what -110 pays. |
 | Probability clamp | **0.99** on the scaling path | Bounds the converted probability whenever a pair is being raised to the floor. A pair already at or above the floor short-circuits untouched and is therefore *not* subject to the clamp — so this is not a global price ceiling, and a raw -12000 can still be stored. |
+| Favorite bound | **-1000**, `MONEYLINE_MIN_ODDS` | Withholds a favorite priced at -1000 or worse. Its underdog partner is already past the +300 cap by then, so in practice this takes the whole market off that game. Removes inventory nobody can use — at -999 the $50 minimum wager wins $5.01 and a maximum stake at the default credit limit wins $100.10 — and makes the bettable range exactly (-1000, +300], so no price can exceed four characters. |
 | Kill switch | `MONEYLINE_ENABLED`, absent = **off** | Deliberately inverted from the `NCAAF_ENABLED` convention (absent = on) for the first deploy, so shipping the code does not ship the market. **Truthiness is an explicit allowlist**, not the `Sports` idiom: on only for `"1"` or `"true"` (case-insensitive), off for absent or anything else. Copying `Sports`' `!= "0"` test would make `MONEYLINE_ENABLED=false` read as *enabled* — the one control that must fail closed. |
 
 **Cap sub-decision, settled 2026-09-20: the cap withholds only the underdog
@@ -41,10 +42,16 @@ either: after normalization the favorite leg still carries roughly 3.7 points of
 edge over its true probability, so what a one-sided market gives up is balancing
 of action — variance, not expected value.
 
-**Still open — see Deferred / Open Questions:** whether the favorite side needs
-a bound of its own. Withholding only the dog is what makes that question
-load-bearing: the dog is capped at +300, but its partner is not capped at all,
-so a +1449 dog that the cap removes leaves a -5819 favorite on the board.
+Withholding only the dog is what made the favorite bound necessary rather than
+optional, and that is why the two were settled together: the cap removes a +1449
+dog and would otherwise leave its -5819 partner bettable. Between them the two
+bounds describe one band. From roughly -394 (the favorite opposite a +300 dog)
+down to -999, a game offers a favorite only; past -999 its moneyline goes dark
+entirely.
+
+*Rejected: leaving the favorite unbounded and absorbing long prices in the
+stylesheet.* That trades a policy line for a rendering scheme and leaves
+unusable inventory on the board.
 
 ---
 
@@ -314,9 +321,11 @@ helper specs for `side_label` across all four kinds.
 **7. New `app/models/moneyline.rb`** — modelled on `Sports` in shape but not in
 truthiness: `enabled?` (`MONEYLINE_ENABLED`, on only for `"1"`/`"true"`
 case-insensitive, off for absent or anything else), `max_odds`
-(`MONEYLINE_MAX_ODDS`, default 300), `VIG_FLOOR` derived from -110,
-`PROBABILITY_CEILING` = 0.99, and `offerable?(line)` combining the switch and the
-cap.
+(`MONEYLINE_MAX_ODDS`, default 300), `min_odds` (`MONEYLINE_MIN_ODDS`, default
+-1000), `VIG_FLOOR` derived from -110, `PROBABILITY_CEILING` = 0.99, and
+`offerable?(line)` combining the switch with both bounds — bettable is
+`min_odds < line.odds && line.odds <= max_odds`, an exclusive lower bound so
+-1000 itself is withheld and -999 is the longest price that can reach the board.
 
 **8. New `app/services/moneyline_pricer.rb`** — `.normalize(odds_a, odds_b)`:
 short-circuit when `scale == 1.0`, clamp, convert back with book rounding.
@@ -417,8 +426,10 @@ flash intact, so the player is told a rejected wager succeeded while it sits
 errors, leave the slip pending when any wager failed, and surface them.
 
 *Tests:* request specs posting to `/wagers` and `/wagers/confirm_pending` with a
-`line_id` for (a) an over-cap dog and (b) any moneyline with the switch off,
-**bypassing the board entirely** — that is the actual threat. Plus: the switch
+`line_id` for (a) an over-cap dog, (b) an under-bound favorite, and (c) any
+moneyline with the switch off, **bypassing the board entirely** — that is the
+actual threat. Both bounds are exercised at both ends, including that -1000 is
+refused and -999 is accepted. Plus: the switch
 off leaves `bet_lines` empty of moneyline *and* rejects the direct POST *and*
 leaves a slip containing a stale pending moneyline wager unconfirmed with an
 accurate message.
@@ -467,16 +478,14 @@ existing comparison by the same 0.909 and can flip no current stamp. `Row` gets 
 360px phone. Add `white-space: nowrap` to `.dd-bet-btn__value`, which has no rule
 today.
 
-`grid-template-columns` is declared once on `.dd-game__row` and governs both team
-rows, so the withheld underdog printing smaller does not widen the column for the
-row above or below it — the column has to fit the longest string either side can
-produce. The underdog cannot exceed four characters, because the cap withholds it
-past +300. **The favorite is the binding case**, and until the open question
-below is answered it has no bound at all: a +1449 dog is withheld while its
--5819 partner stays a live button. If the favorite is bounded at -1000, four
-characters becomes a structural guarantee and `nowrap` is the whole fix; if it is
-not, this needs a truncation or font-scaling scheme that the one-liner does not
-provide.
+The one-liner is the whole fix, and it is the two odds bounds rather than the
+stylesheet that make it sufficient. `grid-template-columns` is declared once on
+`.dd-game__row` and governs both team rows, so the withheld underdog printing
+smaller does not widen the column for the row above or below it — the column has
+to fit the longest string either side can produce. With the bettable range fixed
+at (-1000, +300], that longest string is four characters, so nothing can overflow
+and no truncation or font-scaling scheme is warranted. If either bound is ever
+relaxed, this is the assumption that breaks.
 
 The column header row (Spread / Total / ML) goes **once at the top of `.dd-board`
 in `index.html.haml`**, not in `_game.html.haml` — that partial renders per game
@@ -568,30 +577,13 @@ wager on a game days out.
 
 ---
 
-## Deferred / Open Questions
+## Decisions log
 
-*Both questions from the 2026-09-10 review are now answered and recorded in
-Decisions and in Phase 6: the cap withholds only the underdog, and a withheld
-cell keeps its price in the closed treatment rather than blanking.*
+None outstanding. Both questions raised by the 2026-09-10 review, and the
+follow-up the first of them created, are settled and recorded in Decisions and
+in Phase 6 — the cap withholds only the underdog, a withheld cell keeps its
+price in the closed treatment rather than blanking, and the favorite is bounded
+at -1000. Each carries its rejected alternative alongside it.
 
-### Open
-
-- **Does the favorite side need a bound of its own?**
-
-  The +300 cap bounds one side of the pair and, now that only the underdog is
-  withheld, nothing bounds the other. Removing a +1449 dog leaves its -5819
-  partner bettable, which is both the widest string the board can be asked to
-  render and inventory nobody can use: at the $1,000 default credit limit a
-  maximum stake on -5819 wins $17.19, and the $50 minimum wins 86 cents.
-
-  Recommended: withhold the favorite at -1000 or worse. That makes four
-  characters a structural guarantee rather than something the stylesheet has to
-  absorb, and it is consistent with the cap rather than an independent number —
-  a -999 favorite pairs with roughly a +621 dog, which the cap already removes.
-  The resulting band is legible: from about -394 (the favorite opposite a +300
-  dog) down to -999 a game offers a favorite only, and past -999 its moneyline
-  goes dark entirely.
-
-  The alternative is to leave the favorite unbounded and absorb long prices in
-  the stylesheet, which trades a policy line for a rendering scheme and leaves
-  unusable inventory on the board.
+The plan is ready to implement. Phase 0 and Phase 1 depend on none of these
+decisions and can start first.
