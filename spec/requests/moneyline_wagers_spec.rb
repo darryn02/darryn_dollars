@@ -56,6 +56,16 @@ RSpec.describe "Betting a moneyline directly", type: :request do
       expect { post_wager(moneyline(-999)) }.to change(Wager, :count).by(1)
     end
 
+    # The pre-flight count found 12 of these in the live database. They
+    # pass every bound - zero is inside (-1000, +300] - and Line#payout
+    # returns nothing on them, so a player could have staked $100 on a
+    # winner and been paid $0.
+    it "is refused on a legacy row left at zero by the old EVEN parse" do
+      sign_in player
+
+      expect { post_wager(moneyline(0)) }.not_to change(Wager, :count)
+    end
+
     it "is refused on any price at all when the switch is off" do
       ENV["MONEYLINE_ENABLED"] = "0"
       sign_in player

@@ -70,6 +70,18 @@ RSpec.describe Moneyline do
       expect(described_class.bettable_odds?(-100)).to be(true)
     end
 
+    # Zero is inside (-1000, +300], so the bounds alone let it through -
+    # and Line#payout returns amount * 0 * 0.01 on it, meaning a winning
+    # bet pays nothing. 12 rows in the live database hold such a price,
+    # left by the old "EVEN".to_i parse.
+    it "refuses a price in the dead band, which the bounds alone allow" do
+      expect(Moneyline.min_odds < 0 && 0 <= Moneyline.max_odds).to be(true)
+
+      [-99, 0, 99].each do |odds|
+        expect(described_class.bettable_odds?(odds)).to be(false)
+      end
+    end
+
     it "fails closed on a bound that does not parse" do
       ENV["MONEYLINE_MAX_ODDS"] = "soon"
 
@@ -111,6 +123,12 @@ RSpec.describe Moneyline do
 
     # Deliberately not a general predicate over lines. Nothing should be
     # asking it about a spread, and no is the safe way to be wrong.
+    it "withholds a legacy row left at zero by the old EVEN parse" do
+      ENV["MONEYLINE_ENABLED"] = "1"
+
+      expect(described_class.offerable?(moneyline(0))).to be(false)
+    end
+
     it "answers no about a line that is not a moneyline, and about nil" do
       ENV["MONEYLINE_ENABLED"] = "1"
       spread = create_spread(game: game, contestant: away, value: 2.5)
