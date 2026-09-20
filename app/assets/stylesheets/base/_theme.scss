@@ -485,6 +485,32 @@ body .container.main {
   }
 }
 
+// Three bet columns at the two-column width would leave about 90px for the
+// team block on a 360px phone, so they narrow together. 4.25rem is enough
+// only because the odds bounds fix the bettable range at (-1000, +300], so
+// the longest string any cell can hold is four characters. The grid is
+// declared once and governs both team rows, so a withheld underdog printing
+// smaller does not let the column shrink - it has to fit whatever the wider
+// side needs. If either bound is relaxed, this is the assumption that breaks.
+.dd-game__row--ml {
+  grid-template-columns: minmax(0, 1fr) 4.25rem 4.25rem 4.25rem;
+}
+
+// Only rendered alongside the moneyline column - two columns were survivable
+// unlabelled, three are not. Tracks .dd-game__row--ml exactly.
+.dd-board__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.25rem 4.25rem 4.25rem;
+  gap: .5rem;
+  padding: 0 .75rem .25rem;
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: $text-3;
+}
+
 .dd-game__team {
   display: flex;
   flex-direction: column;
@@ -540,6 +566,13 @@ body .container.main {
     outline: 2px solid $brand-hover;
     outline-offset: 2px;
   }
+}
+
+// Had no rule at all, which was survivable while the widest value was
+// "O 47.5" in a 5.25rem column. In a 4.25rem one a signed price could wrap
+// or spill into the neighbouring cell instead of staying put.
+.dd-bet-btn__value {
+  white-space: nowrap;
 }
 
 // The money bag floats over the corner rather than sitting in the text flow,

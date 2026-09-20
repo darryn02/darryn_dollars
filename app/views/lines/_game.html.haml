@@ -4,7 +4,7 @@
     - if game_lines.status_label
       %span.dd-game__status= game_lines.status_label
   - game_lines.rows.each do |row|
-    .dd-game__row
+    %div{ class: moneyline_column? ? "dd-game__row dd-game__row--ml" : "dd-game__row" }
       .dd-game__team
         %span.dd-game__abbr= row.abbreviation
         %span.dd-game__name= row.name
@@ -12,3 +12,12 @@
         label: spread_label(row.spread), wagerable: game_lines.wagerable?
       = render "bet_cell", line: row.total, flagged: row.total_flagged,
         label: total_label(row.total), wagerable: game_lines.wagerable?
+      -# A withheld underdog keeps its price and loses its button: the line
+      -# is still passed, so the cell renders closed rather than empty.
+      -# --empty is aria-hidden and means "never scraped", and it fires on
+      -# both sides at once; a capped dog is neither of those things, and
+      -# players meet it on roughly one game in seven.
+      - if moneyline_column?
+        = render "bet_cell", line: row.moneyline, flagged: row.moneyline_flagged,
+          label: moneyline_label(row.moneyline),
+          wagerable: game_lines.wagerable? && row.moneyline_offered

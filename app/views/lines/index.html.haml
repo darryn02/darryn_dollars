@@ -9,6 +9,15 @@
     %p Check back a bit closer to kickoff.
 - else
   .dd-board
+    -# Once at the top of the board, not inside _game - that partial renders
+    -# per game card, so a header there repeats above every game on the slate.
+    -# Two columns were survivable unlabelled; three are not.
+    - if moneyline_column?
+      .dd-board__header{ "aria-hidden" => "true" }
+        %span
+        %span Spread
+        %span Total
+        %span ML
     - @games.each do |game_lines|
       = render "game", game_lines: game_lines
 
