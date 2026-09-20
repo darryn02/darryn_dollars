@@ -1,0 +1,41 @@
+.dd-account.dd-ledger
+  .dd-account__summary
+    %p.dd-eyebrow House net
+    %p.dd-account__balance{ class: money_direction_class(ledger.settled_net) }
+      = currency(ledger.settled_net)
+    - if ledger.open_wagers.any?
+      %p.dd-account__inplay= "#{currency(ledger.exposure)} at risk on #{pluralize(ledger.open_wagers.size, 'open wager')}"
+
+    %dl.dd-account__stats
+      %div
+        %dt Settled wagers
+        %dd= ledger.settled_wagers.size
+      %div
+        %dt Accounts in play
+        %dd= ledger.rows.map(&:account_id).uniq.size
+
+  %ul.dd-account__list
+    - ledger.rows.each do |wager|
+      -# Open wagers carry no settlement time, so they are labelled by when
+         they were placed rather than dated as though they had been decided.
+      - settled = !wager.confirmed?
+      %li.dd-account__row.dd-ledger__row{ id: "ledger-wager-#{wager.id}",
+        class: ("dd-ledger__row--open" unless settled) }
+        .dd-account__when
+          - if settled
+            = wager.updated_at.strftime("%-m/%-d %-l:%M%P")
+          - else
+            %span.dd-ledger__open-flag In play
+        .dd-account__bet
+          %span.dd-account__bet-line= wager_line_label(wager.line)
+          %span.dd-account__bet-meta= "#{currency(wager.amount)} #{line_terms(wager.line)}"
+          = vig_waived_badge(wager)
+        .dd-ledger__who= wager.account.qualified_name
+        .dd-account__outcome
+          = wager_result_badge(wager)
+          - if settled
+            -# The book's side of it, which is the opposite of the player's.
+            - house_net = ledger.house_net(wager)
+            %span.dd-account__net{ class: money_direction_class(house_net) }= currency(house_net)
+          - else
+            %span.dd-account__net.dd-ledger__risk= "-#{currency(wager.potential_profit)}"

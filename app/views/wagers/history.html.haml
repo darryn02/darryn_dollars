@@ -1,28 +1,31 @@
+-# The book's combined view is the first pane when there is one, and an
+-# ordinary account is every pane after it. Written as one list rather than a
+-# second set of tabs beside the first so there is only ever one notion of
+-# which pane is showing.
+- panes = history_panes(@house_ledger, @wagers_by_account, current_user)
+
 .history
   %h1.dd-page-title History
 
-  - if @wagers_by_account.keys.many?
+  - if panes.many?
     %nav.dd-account-tabs#account-tabs{ role: "tablist", "aria-label" => "Accounts" }
-      - @wagers_by_account.each_with_index do |(account, wagers), index|
-        - tab_name = current_user.admin? ? account.qualified_name : account.to_s
-        %button.dd-account-tab{ id: "account-#{account.id}-tab",
+      - panes.each_with_index do |pane, index|
+        %button.dd-account-tab{ id: "#{pane.id}-tab",
           class: (index.zero? ? "active" : ""),
-          data: { bs_toggle: "tab", bs_target: "#account-#{account.id}-tab-pane" },
+          data: { bs_toggle: "tab", bs_target: "##{pane.id}-tab-pane" },
           type: "button", role: "tab",
-          "aria-controls" => "account-#{account.id}-tab-pane",
-          "aria-selected" => (index.zero? ? "true" : "false") }= tab_name
+          "aria-controls" => "#{pane.id}-tab-pane",
+          "aria-selected" => (index.zero? ? "true" : "false") }= pane.label
     .tab-content#account-tabs-content
-      - @wagers_by_account.each_with_index do |(account, wagers), index|
-        .tab-pane.fade{ id: "account-#{account.id}-tab-pane",
+      - panes.each_with_index do |pane, index|
+        .tab-pane.fade{ id: "#{pane.id}-tab-pane",
           class: (index.zero? ? "show active" : ""), role: "tabpanel",
-          "aria-labelledby" => "account-#{account.id}-tab", tabindex: "0" }
-          = render "account_history", account: account, wagers: wagers
+          "aria-labelledby" => "#{pane.id}-tab", tabindex: "0" }
+          = render pane.partial, pane.locals
+  - elsif panes.any?
+    = render panes.first.partial, panes.first.locals
   - else
-    - account, wagers = @wagers_by_account.first
-    - if account.present?
-      = render "account_history", account: account, wagers: wagers
-    - else
-      .blank-state
-        = icon "clock-history"
-        %h2 Nothing to see here
-        %p Come back after you've won or lost something.
+    .blank-state
+      = icon "clock-history"
+      %h2 Nothing to see here
+      %p Come back after you've won or lost something.

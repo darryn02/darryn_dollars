@@ -14,6 +14,8 @@ class WagersController < ApplicationController
 
   def history
     @wagers_by_account = wagers([:win, :loss, :push, :confirmed]).group_by(&:account)
+    # nil for everybody but the book - see HouseLedger.
+    @house_ledger = HouseLedger.for(current_user)
   end
 
   def create
