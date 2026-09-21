@@ -9,5 +9,11 @@
     - if flagged
       %span.dd-bet-btn__money{ "aria-hidden" => "true" } 💰
       %span.visually-hidden most money on this side
+- elsif local_assigns[:closed_note].present?
+  -# Only a withheld moneyline passes closed_note. Every other caller
+  -# takes the branch below, so this markup is unchanged for them.
+  %span.dd-bet-cell.dd-bet-cell--closed
+    %span{ "aria-hidden" => "true" }= label
+    %span.visually-hidden= local_assigns[:closed_note]
 - else
   %span.dd-bet-cell.dd-bet-cell--closed= label

@@ -10,7 +10,11 @@ module Admin
 
     def new
       @games = Game.viewable.order(:starts_at)
-      @lines = Line.active.includes(game: :contestants).order("games.starts_at").
+      # Moneyline excluded for v1, for the same reason it is out of
+      # Line::KIND_GROUPS: waiving the vig on a favorite refunds 65-80% of
+      # stake, against 9% on the -110 the tool was built around.
+      @lines = Line.active.where.not(kind: :moneyline).
+        includes(game: :contestants).order("games.starts_at").
         joins(:game).references(:game)
     end
 
@@ -48,8 +52,17 @@ module Admin
       params.permit(:scope_type, :line_id, :game_id, :kind_group, :date).to_h.symbolize_keys
     end
 
+    # The exclusion has to live here, not only on the `new` dropdown.
+    # scope_type "line" selects on line_id alone and never consults
+    # Line::KIND_GROUPS, so filtering the groups and the select options left
+    # a hand-submitted line_id able to waive a moneyline - turning a $100
+    # loss at -500 into a $20 one.
+    #
+    # A subquery rather than a join: matching_scope already joins :line for
+    # the game and day scopes.
     def matching_wagers
-      Wager.matching_scope(**scope_params)
+      Wager.matching_scope(**scope_params).
+        where(line_id: Line.where.not(kind: :moneyline))
     end
   end
 end

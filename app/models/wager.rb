@@ -20,6 +20,7 @@ class Wager < ApplicationRecord
   validate :second_half_has_not_started
   validate :line_must_be_active
   validate :account_has_sufficient_credit
+  validate :moneyline_is_offerable
 
   def self.historical
     where(status: [:win, :loss, :push])
@@ -139,8 +140,18 @@ class Wager < ApplicationRecord
 
   def line_must_be_active
     return unless confirming?
+    return unless line.hidden?
 
-    if line.hidden?
+    # Moneyline is the only kind whose odds move, and LineBuilder keys the
+    # lookup on odds - so every one-point tick mints a new row and hides
+    # the one the slip is holding. A player will meet this routinely, on a
+    # line that is still very much on the board, and "no longer active"
+    # sends them looking for a cancelled game. Second half moneylines are
+    # re-scraped on any page view older than a minute, so it is not rare.
+    if line.moneyline?
+      errors.add(:line, "has moved off #{line.odds} - remove this wager and add it " \
+                        "again from the board at the current price")
+    else
       errors.add(:line, "is no longer active")
     end
   end
@@ -151,6 +162,37 @@ class Wager < ApplicationRecord
     if account.credit_limit + account.balance - account.liabilities < amount
       errors.add(:accout, "has insufficient credit")
     end
+  end
+
+  # The kill switch and both odds bounds, enforced where the board cannot be
+  # gone around. WagersController#create takes any line_id with no kind
+  # check at all, so this is the only thing standing between a crafted POST
+  # and a payout at whatever price happens to be on the row.
+  #
+  # Registered unconditionally and guarded inside the body, the way
+  # game_has_not_started and line_must_be_active already are.
+  # `validate :x, on: :create, if: :confirming?` can never fire in either
+  # context - confirming? requires persisted?, which is false while a new
+  # record is validated - so written that way the switch and the bounds
+  # would silently enforce nothing at all.
+  #
+  # Only create and confirm. The guard is what keeps the admin vig-waiver
+  # working: wager.update!(vig_waived: true) on a historical moneyline
+  # placed before the cap tightened is neither, so it passes.
+  def moneyline_is_offerable
+    return unless new_record? || confirming?
+    return unless line&.moneyline?
+    return if Moneyline.offerable?(line)
+
+    errors.add(:line, moneyline_rejection)
+  end
+
+  # One message for both reasons. The player cannot act on the difference
+  # between a switched-off market and a price past the cap, and spelling
+  # out an exclusive numeric bound explained the book to them rather than
+  # their bet.
+  def moneyline_rejection
+    "is not available to bet right now"
   end
 
   def confirming?

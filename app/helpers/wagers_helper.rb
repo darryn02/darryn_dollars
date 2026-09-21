@@ -35,13 +35,13 @@ module WagersHelper
     nil
   end
 
-  # "BUF +2.5" for a spread, "BUF/MIA O 47.5" for a total - the same data
-  # Line#to_s already reaches for, so this adds no queries.
+  # "BUF +2.5" for a spread, "BUF/MIA O 47.5" for a total, "BUF ML" for a
+  # moneyline - the same data Line#to_s already reaches for, so this adds no
+  # queries. side_label owns the per-kind naming; see LinesHelper.
   def wager_line_label(line)
     team = line.competitor&.abbreviation || line.game.short_matchup
-    side = line.point_spread? ? spread_label(line) : total_label(line)
 
-    [team, side].compact.join(" ")
+    [team, side_label(line)].compact.join(" ")
   end
 
   # Result badges pair a color with a letter, so the outcome never depends on

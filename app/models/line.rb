@@ -28,11 +28,21 @@ class Line < ApplicationRecord
   # "Total" is not a kind of its own - a total is one over line and one
   # under line, priced together. Anywhere a person picks a market type
   # rather than a database column, these are the choices.
+  #
+  # Moneyline is deliberately absent, from "all" as well as on its own.
+  # The only consumer is the admin vig waiver, and waiving the vig on a
+  # moneyline favorite is not the small refund the tool was built for:
+  # Wager#loss_amount caps a loss at min(potential_profit, amount), which
+  # is 9% of stake at -110 but 65% at -285 and 80% at -500. Leaving
+  # moneyline in "all" would have swept those automatically the first time
+  # a day-wide waiver ran.
+  #
+  # Removing the key rather than the value is what makes this safe: an
+  # unknown group fetches to [], which matches no wagers at all.
   KIND_GROUPS = {
     "spread" => %w[point_spread],
     "total" => %w[over under],
-    "moneyline" => %w[moneyline],
-    "all" => %w[point_spread moneyline over under]
+    "all" => %w[point_spread over under]
   }.freeze
 
   def periods = PERIODS.fetch(scope) { raise "invalid line scope #{scope.inspect}" }
@@ -92,8 +102,14 @@ class Line < ApplicationRecord
 
   private
 
+  # A moneyline has no handicap, so it contributes no value segment at all -
+  # "BUF ML (-285 1H)". The value column still holds 0.0 because it is NOT
+  # NULL, and without this branch the spread arm below read that zero and
+  # printed a -285 favorite as "BUF PICK (-285 1H)".
   def value_string(kind)
-    if %w[over under].include?(kind)
+    if kind == "moneyline"
+      nil
+    elsif %w[over under].include?(kind)
       value.to_s
     else
       if value < 0
@@ -111,6 +127,8 @@ class Line < ApplicationRecord
       "O"
     elsif kind == "under"
       "U"
+    elsif kind == "moneyline"
+      "ML"
     end
   end
 

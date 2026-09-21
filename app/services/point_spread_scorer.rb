@@ -13,10 +13,10 @@ class PointSpreadScorer < Scorer
     { wins: 0, losses: 0, pushes: 0 }.tap do |results|
       if my_score.blank? || their_score.blank?
         line.pending!
-      elsif my_score + line.value > their_score
+      elsif my_score + margin_threshold > their_score
         line.win!
         results[:wins] += 1
-      elsif my_score + line.value < their_score
+      elsif my_score + margin_threshold < their_score
         line.loss!
         results[:losses] += 1
       else
@@ -24,5 +24,18 @@ class PointSpreadScorer < Scorer
         results[:pushes] += 1
       end
     end
+  end
+
+  private
+
+  # What this side's score is adjusted by before the two are compared. A
+  # spread carries its handicap in line.value; a moneyline has none and says
+  # so, rather than leaning on the value column happening to hold 0.0.
+  #
+  # Reading it off the column would mean a moneyline row that somehow
+  # acquired a value - a bad payload, a kind corrected by hand - would
+  # quietly grade as a spread instead of failing visibly.
+  def margin_threshold
+    line.value
   end
 end

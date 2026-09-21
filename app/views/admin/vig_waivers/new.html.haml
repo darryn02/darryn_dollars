@@ -2,6 +2,9 @@
 %p.dd-admin-note
   Caps a loss at what a win would have paid instead of the full stake -
   works on a bet that already settled too, and recalculates immediately.
+  %br
+  Moneyline wagers are excluded: waiving the vig on a favorite refunds
+  65-80% of stake, against 9% on a -110 spread.
 
 .dd-panel
   .dd-panel__header
@@ -10,6 +13,10 @@
     = form_tag(admin_vig_waivers_path, method: :get) do
       = hidden_field_tag :scope_type, "line"
       .mb-3
+        -# Moneyline lines are absent here as well as from the market
+        -# dropdowns. This form posts scope_type "line", which selects on
+        -# line_id alone and never consults Line::KIND_GROUPS, so filtering
+        -# the groups would have left this route wide open.
         = label_tag :line_id, "Line"
         = select_tag :line_id,
           options_from_collection_for_select(@lines, :id, ->(line) { "#{line.game} — #{line}" }),
@@ -30,7 +37,7 @@
       .mb-3
         = label_tag :kind_group, "Market"
         = select_tag :kind_group,
-          options_for_select([["All markets", "all"], ["Spread", "spread"], ["Total", "total"], ["Moneyline", "moneyline"]]),
+          options_for_select([["Spread and total", "all"], ["Spread", "spread"], ["Total", "total"]]),
           class: "form-select"
       = submit_tag "Preview", class: "btn btn-primary"
 
@@ -46,6 +53,6 @@
       .mb-3
         = label_tag :kind_group, "Market"
         = select_tag :kind_group,
-          options_for_select([["All markets", "all"], ["Spread", "spread"], ["Total", "total"], ["Moneyline", "moneyline"]]),
+          options_for_select([["Spread and total", "all"], ["Spread", "spread"], ["Total", "total"]]),
           class: "form-select"
       = submit_tag "Preview", class: "btn btn-primary"

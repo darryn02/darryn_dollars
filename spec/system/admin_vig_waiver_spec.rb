@@ -50,7 +50,7 @@ RSpec.describe "Waiving the vig from the admin screen", type: :system do
     expect(page).to have_no_content("-$110.00")
   end
 
-  it "reaches every market at once with All markets, for a whole game" do
+  it "reaches every market at once with Spread and total, for a whole game" do
     total_line = create_total(game: game, kind: :over, value: 47.5, odds: -110)
     spread_wager = create_wager(account: player_account, line: line, amount: 110, status: :loss)
     total_wager = create_wager(account: player_account, line: total_line, amount: 110, status: :loss)
@@ -58,7 +58,7 @@ RSpec.describe "Waiving the vig from the admin screen", type: :system do
     visit new_admin_vig_waiver_path
     within(".dd-panel", text: "One game") do
       select game.to_s.squish, from: "Game"
-      select "All markets", from: "Market"
+      select "Spread and total", from: "Market"
       click_button "Preview"
     end
 

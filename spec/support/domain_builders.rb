@@ -54,16 +54,43 @@ module DomainBuilders
     game.lines.create!(kind: kind, scope: scope, value: value, odds: odds, **attrs)
   end
 
+  # A moneyline always belongs to a side, so contestant: is required here
+  # where create_total does not take one at all. odds is required too: the
+  # column default of -110 is a spread price, and a moneyline that quietly
+  # inherits it tests nothing this market does differently.
+  #
+  # value is zero because the column is NOT NULL and a moneyline carries no
+  # handicap - not because zero means anything.
+  def create_moneyline(game:, contestant:, odds:, scope: :game, **attrs)
+    game.lines.create!(kind: :moneyline, scope: scope, value: 0, odds: odds,
+                       contestant: contestant, **attrs)
+  end
+
   # A full card: both spreads and both sides of the total.
-  def create_full_card(game:)
+  #
+  # Moneyline is off by default. Adding it unconditionally would change the
+  # shape of every board and chump-stamp spec that builds a card, so a spec
+  # that wants one asks for it.
+  #
+  # The default pair is -150/+120, which is already above the vig floor and
+  # so passes through MoneylinePricer untouched - a card built here looks
+  # like one the scraper would have produced.
+  def create_full_card(game:, moneyline: false)
     away, home = game.contestants.sort_by(&:priority)
 
-    {
+    card = {
       away_spread: create_spread(game: game, contestant: away, value: 2.5),
       home_spread: create_spread(game: game, contestant: home, value: -2.5),
       over: create_total(game: game, kind: :over, value: 47.5),
       under: create_total(game: game, kind: :under, value: 47.5)
     }
+
+    return card unless moneyline
+
+    card.merge(
+      away_moneyline: create_moneyline(game: game, contestant: away, odds: 120),
+      home_moneyline: create_moneyline(game: game, contestant: home, odds: -150)
+    )
   end
 
   def create_wager(account:, line:, amount: 100, status: :pending, bet_slip: nil)
@@ -72,8 +99,4 @@ module DomainBuilders
     Wager.create!(account: account, bet_slip: bet_slip, line: line,
                   amount: amount, status: status)
   end
-end
-
-RSpec.configure do |config|
-  config.include DomainBuilders
 end

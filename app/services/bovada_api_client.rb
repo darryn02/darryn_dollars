@@ -9,15 +9,27 @@ class BovadaApiClient
   # was fine; ten days later that had swapped exactly.
   #
   # So an empty body is not an answer about the board, it is a key to stop
-  # using. These three URLs were verified to return the same events with the
-  # same English team names, so falling through them costs a request and
-  # nothing else.
+  # using. Every URL here was verified to return the same events with the same
+  # English team names - Bovada does not translate NFL team names, so the lang
+  # variants are just extra cache keys onto the same board - and falling
+  # through them costs a request and nothing else.
   #
   # A nonce does not work here and must not be reintroduced: an unrecognised
   # query string makes the origin return [] every time (0 events for 5 of 5
   # random strings tried), which is the same symptom for a different reason.
   # Only keys Bovada already honours are worth asking.
+  #
+  # Three keys was not enough headroom. On 2026-09-20 all three were dead at
+  # once and the nfl board sat empty for at least half an hour: the bare v2 url
+  # at age 35129 with no cache-control, ?lang=es at age 2817 likewise, and the
+  # bare coupon url legitimately caching an empty board under max-age=3600.
+  # The keys listed first are the ones measured live that day (6 events, age 0,
+  # max-age=600); the last three are the old set, kept because which key is
+  # stuck moves around and today's healthy key is tomorrow's dead one.
   SOURCES = [
+    ["services/sports/event/coupon/events/A/description", "lang=en"],
+    ["services/sports/event/v2/events/A/description", "lang=fr"],
+    ["services/sports/event/coupon/events/A/description", "lang=es"],
     ["services/sports/event/v2/events/A/description", nil],
     ["services/sports/event/coupon/events/A/description", nil],
     ["services/sports/event/v2/events/A/description", "lang=es"]
@@ -53,15 +65,29 @@ class BovadaApiClient
     session = BovadaSession.new.warm!
     events = events_for(session, sport)
 
-    # Only when the book listed nothing at all. This used to fire whenever we
-    # built no *lines*, which meant an nfl response full of games we could not
-    # name sent us to the super bowl url - whose sole event is the Pro Bowl,
-    # between "NFC Conference" and "AFC Conference", teams no sane competitors
-    # table carries. So a stuck cache key announced itself as an unrecognised
-    # competitor, and the actual failure never said its own name.
-    events = events_for(session, :super_bowl) if events.empty? && sport == :nfl
+    # Only when the book listed nothing at all, and the fallback board never
+    # files a competitor report.
+    #
+    # Outside the handful of weeks the Super Bowl is listed, the Pro Bowl is
+    # the only event on that url, between "NFC Conference" and "AFC
+    # Conference" - names no sane competitors table carries. So every trip
+    # here that is not Super Bowl week produces exactly one unresolvable event
+    # and zero lines.
+    #
+    # This fired whenever we built no *lines*, which sent an nfl response full
+    # of games we could not name to the super bowl url, so a stuck cache key
+    # announced itself as an unrecognised competitor. Narrowing the condition
+    # to "no events at all" was not enough: on 2026-09-20 every source url was
+    # stuck, the board really was empty, and the alert still pointed at the
+    # competitors table instead of at the cache. Reaching for the fallback
+    # already means the nfl board came back empty, which no_data reports below
+    # and says plainly - so the second, misdirecting report is suppressed. A
+    # real Super Bowl whose teams we cannot name still builds no lines, and
+    # still reaches no_data.
+    fallback = events.empty? && sport == :nfl
+    events = events_for(session, :super_bowl) if fallback
 
-    lines = parse_and_assert_lines(events)
+    lines = parse_and_assert_lines(events, fallback: fallback)
 
     # A book that returns nothing while we hold active lines is telling us
     # something is wrong with the request, not that every game was cancelled.
@@ -118,10 +144,11 @@ class BovadaApiClient
     ScrapeResult.new(outcome: ScrapeRun::NO_DATA, message: message)
   end
 
-  def parse_and_assert_lines(events)
+  def parse_and_assert_lines(events, fallback: false)
     return [] if events.blank?
 
     unresolved = []
+    @skipped_markets = []
 
     lines = events.flat_map { |event|
       names = team_names(event)
@@ -146,7 +173,8 @@ class BovadaApiClient
       extract_lines_from_markets(event, game, away_contestant, home_contestant)
     }.compact
 
-    report_unresolved(unresolved)
+    report_unresolved(unresolved) unless fallback
+    report_skipped_markets
 
     lines
   end
@@ -224,17 +252,123 @@ class BovadaApiClient
   end
 
   def find_or_create_line(market, game, away_contestant, home_contestant)
-    market["outcomes"].map do |outcome|
-      contestant = outcome["type"] == "A" ? away_contestant : (outcome["type"] == "H" ? home_contestant : nil)
+    return moneyline_lines(market, game, away_contestant, home_contestant) if moneyline_market?(market)
 
-      LineBuilder.new.
-        game(game).
-        kind(market["description"] == "Total" ? outcome["type"] : market["description"]).
-        scope(market["period"]["abbreviation"]).
-        value(outcome["price"]["handicap"]).
-        odds(outcome["price"]["american"]).
-        contestant(contestant).
-        find_or_create!
+    market["outcomes"].map do |outcome|
+      build_line(market, outcome, game, away_contestant, home_contestant,
+                 odds: outcome["price"]["american"])
     end
+  end
+
+  def moneyline_market?(market) = market["description"] == "Moneyline"
+
+  # The trust boundary for moneyline prices, and the only market where the
+  # book does not set its own price.
+  #
+  # Both the validation and the normalization belong here rather than in
+  # LineBuilder, which sees one outcome at a time and - the part that
+  # matters - sees only the normalizer's output. A bad raw price caught
+  # there has already corrupted the other side's re-pricing through the
+  # overround and the scale, and the integer that comes out of that looks
+  # plausible enough to pass any bound downstream.
+  def moneyline_lines(market, game, away_contestant, home_contestant)
+    outcomes = Array.wrap(market["outcomes"])
+
+    # A one-sided market - the other side suspended - has no pair to
+    # normalize. Offering it means offering it at whatever overround
+    # Bovada happened to publish, so skip the market rather than the check.
+    unless outcomes.size == 2
+      return skip_market(market, game, "has #{outcomes.size} outcome(s) rather than two")
+    end
+
+    raw = outcomes.map { |outcome| parse_american(published_price(outcome)) }
+    if raw.any?(&:nil?)
+      published = outcomes.map { |outcome| published_price(outcome).inspect }.join(", ")
+      return skip_market(market, game, "carries an unusable price (#{published})")
+    end
+
+    normalized = MoneylinePricer.normalize(*raw)
+
+    # Normalization can only raise a favorite as far as the probability
+    # clamp allows (-9900) and can only shorten an underdog, so a raw pair
+    # in range stays in range. Checked anyway, because the cost of being
+    # wrong is a RangeError thrown past skip_market at persist time.
+    unless (raw + normalized).all? { |odds| storable?(odds) }
+      return skip_market(market, game, "prices outside the range the database can store (#{raw.join(", ")})")
+    end
+
+    outcomes.each_with_index.map do |outcome, index|
+      build_line(market, outcome, game, away_contestant, home_contestant,
+                 odds: normalized[index], raw_odds: raw[index])
+    end
+  rescue ArgumentError => e
+    skip_market(market, game, e.message)
+  end
+
+  # Bovada writes exactly +100 as "EVEN". That is a well-defined price, not
+  # corrupt data, so it is mapped rather than rejected - rejecting it would
+  # silently drop the moneyline market for every near-pick'em game, which is
+  # the shape of game most worth offering. "EVEN".to_i is 0, which is what
+  # the old parse produced and what made a winning bet pay $0.
+  #
+  # nil for anything that is not an integer outside the (-100, 100) dead
+  # band, which the caller turns into a skipped market.
+  def parse_american(value)
+    published = value.to_s.strip
+    return 100 if published.casecmp("EVEN").zero?
+
+    odds = Integer(published, exception: false)
+    odds if odds && odds.abs >= 100
+  end
+
+  # Bovada has been seen to put a bare string where the price object
+  # belongs. String#dig raises TypeError rather than answering nil, which
+  # escapes skip_market entirely and aborts every other game in the
+  # response - the exact failure skip-and-report exists to prevent.
+  def published_price(outcome)
+    price = outcome["price"] if outcome.is_a?(Hash)
+
+    price["american"] if price.is_a?(Hash)
+  end
+
+  # odds and raw_odds are 4-byte integer columns. A price past that raises
+  # ActiveModel::RangeError at persist time, which is also past skip_market.
+  INT4_LIMIT = 2_147_483_647
+
+  def storable?(odds) = odds.abs <= INT4_LIMIT
+
+  def build_line(market, outcome, game, away_contestant, home_contestant, odds:, raw_odds: nil)
+    contestant = outcome["type"] == "A" ? away_contestant : (outcome["type"] == "H" ? home_contestant : nil)
+
+    LineBuilder.new.
+      game(game).
+      kind(market["description"] == "Total" ? outcome["type"] : market["description"]).
+      scope(market["period"]["abbreviation"]).
+      value(outcome["price"]["handicap"]).
+      odds(odds).
+      raw_odds(raw_odds).
+      contestant(contestant).
+      find_or_create!
+  end
+
+  # Skip and report, never raise. find_or_create_line runs inside an
+  # unrescued flat_map, so raising here would abort every other game in the
+  # response, write no ScrapeRun at all, and 500 the second half board
+  # through LinesController's before_action - the same failure an
+  # unrecognised competitor used to cause, and the same discipline applies.
+  def skip_market(market, game, reason)
+    @skipped_markets << "#{game.short_matchup} #{market["period"]["abbreviation"]} " \
+                        "#{market["description"].downcase} #{reason}"
+    []
+  end
+
+  def report_skipped_markets
+    return if @skipped_markets.blank?
+
+    message = "Skipped #{@skipped_markets.size} #{sport} market(s) with unusable prices: " \
+              "#{@skipped_markets.join("; ")}"
+
+    Rails.logger.warn(message)
+    Honeybadger.notify(message, context: { sport: sport, markets: @skipped_markets }) if defined?(Honeybadger)
   end
 end

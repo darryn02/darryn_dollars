@@ -33,13 +33,16 @@ RSpec.describe "The chump stamp", type: :system do
     create_wager(account: second_chump_account, line: card[:home_spread], amount: 100)
   end
 
-  def away_row
-    find(:xpath, "//div[@class='dd-game__row'][.//span[text()='BUF']]")
+  # Matched on the class token rather than the whole attribute: the row
+  # carries a second class when the board is showing a moneyline column.
+  def row_for(abbreviation)
+    find(:xpath, "//div[contains(concat(' ', normalize-space(@class), ' '), ' dd-game__row ')]" \
+                 "[.//span[text()='#{abbreviation}']]")
   end
 
-  def home_row
-    find(:xpath, "//div[@class='dd-game__row'][.//span[text()='MIA']]")
-  end
+  def away_row = row_for("BUF")
+
+  def home_row = row_for("MIA")
 
   it "is hidden from a plain player, who is the one being read" do
     login_as(chump, scope: :user)

@@ -80,6 +80,18 @@ RSpec.describe Wager, type: :model do
       expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /no longer active/)
     end
 
+    # Moneyline is the one kind whose odds move, and LineBuilder keys the
+    # lookup on odds - so an ordinary one-point tick mints a new row and
+    # hides the one the slip is holding. The line is still on the board;
+    # "no longer active" would send the player looking for a cancelled game.
+    it "tells a moneyline bettor the price moved rather than that the line died" do
+      moneyline = create_moneyline(game: game, contestant: game.contestants.order(:priority).first, odds: 240)
+      wager = create_wager(account: account, line: moneyline, amount: 100)
+      moneyline.update!(hidden: true)
+
+      expect { wager.confirmed! }.to raise_error(ActiveRecord::RecordInvalid, /has moved off 240/)
+    end
+
     # credit_limit(200) + balance(0) - liabilities(0) has to clear the stake.
     it "rejects confirming a wager the account has no credit for" do
       wager = create_wager(account: account, line: card[:away_spread], amount: 250)
@@ -248,6 +260,38 @@ RSpec.describe Wager, type: :model do
       )
 
       expect(matched).to match_array([spread_wager, other_total_wager])
+    end
+  end
+
+  # Waiving the vig caps a loss at what a win would have paid. On a -110
+  # spread that is a 9% refund, which is the vig. On a -285 moneyline
+  # favorite it is 65%, and on a -500 it is 80% - so moneyline is out of
+  # every market group the waiver can select, including "all", until
+  # loss_amount means something sane on it.
+  describe ".matching_scope excluding moneyline" do
+    let(:user) { create_user }
+    let!(:account) { create_account(user: user) }
+    let(:game) { create_game(starts_at: 2.hours.from_now) }
+    let(:card) { create_full_card(game: game) }
+
+    it "leaves a moneyline out of a day-wide All markets waiver" do
+      moneyline = create_moneyline(game: game, contestant: game.contestants.order(:priority).first, odds: -285)
+      on_moneyline = create_wager(account: account, line: moneyline, amount: 100)
+      on_spread = create_wager(account: account, line: card[:away_spread], amount: 100)
+
+      matched = Wager.matching_scope(scope_type: "day", kind_group: "all", date: game.starts_at.to_date)
+
+      expect(matched).to include(on_spread)
+      expect(matched).not_to include(on_moneyline)
+    end
+
+    # Removing the key rather than the value: an unknown group fetches to
+    # [], so asking for moneyline by hand selects nothing at all.
+    it "matches nothing when moneyline is asked for by name" do
+      moneyline = create_moneyline(game: game, contestant: game.contestants.order(:priority).first, odds: -285)
+      create_wager(account: account, line: moneyline, amount: 100)
+
+      expect(Wager.matching_scope(scope_type: "game", game_id: game.id, kind_group: "moneyline")).to be_empty
     end
   end
 end
