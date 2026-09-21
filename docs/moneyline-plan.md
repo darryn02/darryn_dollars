@@ -307,6 +307,25 @@ inspected. `LineScorer.run` defaults to `Line.pending` with no kind filter, so
 otherwise the first real exercise of moneyline grading is a bulk write across 386
 historical rows rather than the controlled run in Phase 7.
 
+**Revised 2026-09-20, after review.** Scoping the *first run* is not enough,
+because `LineScorer.run` is reached by two unscoped callers - the scheduled
+`score:lines` task and the admin dashboard's Score Lines button - and a
+review reproduced the dashboard button grading a historical moneyline with
+`MONEYLINE_ENABLED=0`. Operational discipline cannot cover a button.
+
+A settlement gate inside `LineScorer` was considered and **rejected**: its
+absence would silently stop moneyline settlement forever, leaving confirmed
+wagers stuck in `Account#liabilities`, which is a worse failure than the
+unreviewed bulk write it prevents. It makes the dangerous state the default
+state.
+
+Instead the backlog is *retired* rather than gated, by
+`rake score:moneyline_backlog`. It is dry by default, grading inside a
+transaction it rolls back so the report comes from the real `MoneylineScorer`
+rather than a second implementation of the rules; `COMMIT=1` keeps the writes.
+Once those rows are no longer `pending` there is nothing for an unscoped run
+to find, from any caller, permanently - and no gate to remember.
+
 *Tests:* rewrite `spec/services/moneyline_scorer_spec.rb` — favorite wins, dog
 wins, tie pushes, missing scores stay pending, contestant-less row returns a zero
 tally, 1H and 2H scoping. Plus one end-to-end `LineScorer` → `WagerScorer` case

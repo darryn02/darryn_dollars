@@ -146,6 +146,8 @@ RSpec.describe BovadaApiClient, type: :service do
 
     # A nonce would defeat the whole point: an unrecognised query string makes
     # the origin return [] every time, so every retry would be born empty.
+    # Asserted against SOURCES rather than a literal, so adding a key to the
+    # pool cannot quietly become permission to invent one.
     it "asks only urls the book already honours" do
       stub_api(body: [].to_json)
 
@@ -153,7 +155,24 @@ RSpec.describe BovadaApiClient, type: :service do
 
       queries = WebMock::RequestRegistry.instance.requested_signatures.hash.keys.
         map { |req| URI(req.uri.to_s).query }.compact
-      expect(queries.uniq).to all(eq("lang=es"))
+      expect(queries.uniq).to all(be_in(described_class::SOURCES.map(&:last).compact))
+    end
+
+    # Three keys were all stuck at once on 2026-09-20 and the board sat empty.
+    it "keeps enough honoured keys that one dead key is not an outage" do
+      expect(described_class::SOURCES.size).to be >= 4
+      expect(described_class::SOURCES.uniq.size).to eq(described_class::SOURCES.size)
+    end
+
+    it "tries every source before giving up" do
+      stub_api(body: [].to_json)
+
+      described_class.update_lines(sport: :nfl)
+
+      described_class::SOURCES.each do |prefix, query|
+        url = %r{#{Regexp.escape(prefix)}/football/nfl#{query ? "\\?#{Regexp.escape(query)}" : "$"}}
+        expect(a_request(:get, url)).to have_been_made.at_least_once
+      end
     end
   end
 
@@ -171,6 +190,39 @@ RSpec.describe BovadaApiClient, type: :service do
       described_class.update_lines(sport: :nfl)
 
       expect(a_request(:get, super_bowl)).not_to have_been_made
+    end
+
+    # The Pro Bowl is unnameable by design, so an empty nfl board used to raise
+    # a competitor alert on top of the no_data one - and that alert pointed at
+    # the competitors table while the real fault was a stuck cache key.
+    it "does not report the pro bowl as an unrecognised nfl competitor" do
+      stub_api(body: [].to_json)
+      stub_request(:get, super_bowl).to_return(
+        status: 200,
+        body: [{ events: [{ "id" => "pb", "startTime" => (Time.current + 3.hours).to_i * 1000,
+                            "competitors" => [{ "home" => true, "name" => "NFC Conference" },
+                                              { "home" => false, "name" => "AFC Conference" }] }] }].to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+      allow(Honeybadger).to receive(:notify)
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::NO_DATA)
+      expect(Honeybadger).not_to have_received(:notify).with(/unrecognised competitors/, anything)
+      expect(Honeybadger).to have_received(:notify).with(/returned no lines/, anything)
+    end
+
+    # Suppressing the fallback report must not suppress the real one.
+    it "still reports an unnameable competitor on the primary board" do
+      stub_api(body: [{ events: [{ "id" => "x", "startTime" => (Time.current + 3.hours).to_i * 1000,
+                                   "competitors" => [{ "home" => true, "name" => "Sharks" },
+                                                     { "home" => false, "name" => "Jets" }] }] }].to_json)
+      allow(Honeybadger).to receive(:notify)
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(Honeybadger).to have_received(:notify).with(/unrecognised competitors/, anything)
     end
   end
 
