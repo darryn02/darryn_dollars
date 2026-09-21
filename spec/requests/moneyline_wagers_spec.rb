@@ -87,7 +87,7 @@ RSpec.describe "Betting a moneyline directly", type: :request do
 
       post_wager(moneyline(450))
 
-      expect(response.body).to match(/outside what the book is taking bets on/)
+      expect(response.body).to match(/is not available to bet right now/)
     end
   end
 
@@ -130,7 +130,7 @@ RSpec.describe "Betting a moneyline directly", type: :request do
       expect(stale.reload).to be_pending
       expect(stale.bet_slip.reload).to be_pending
       follow_redirect!
-      expect(flash[:notice]).to match(/could not be/)
+      expect(flash[:alert]).to match(/could not be/)
     end
 
     it "confirms the wagers it can and refuses only the one it cannot" do

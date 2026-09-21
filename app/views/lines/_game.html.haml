@@ -20,4 +20,5 @@
       - if moneyline_column?
         = render "bet_cell", line: row.moneyline, flagged: row.moneyline_flagged,
           label: moneyline_label(row.moneyline),
-          wagerable: game_lines.wagerable? && row.moneyline_offered
+          wagerable: game_lines.wagerable? && row.moneyline_offered,
+          closed_note: moneyline_closed_note(row, wagerable: game_lines.wagerable?)

@@ -255,13 +255,21 @@ class BovadaApiClient
       return skip_market(market, game, "has #{outcomes.size} outcome(s) rather than two")
     end
 
-    raw = outcomes.map { |outcome| parse_american(outcome.dig("price", "american")) }
+    raw = outcomes.map { |outcome| parse_american(published_price(outcome)) }
     if raw.any?(&:nil?)
-      published = outcomes.map { |outcome| outcome.dig("price", "american").inspect }.join(", ")
+      published = outcomes.map { |outcome| published_price(outcome).inspect }.join(", ")
       return skip_market(market, game, "carries an unusable price (#{published})")
     end
 
     normalized = MoneylinePricer.normalize(*raw)
+
+    # Normalization can only raise a favorite as far as the probability
+    # clamp allows (-9900) and can only shorten an underdog, so a raw pair
+    # in range stays in range. Checked anyway, because the cost of being
+    # wrong is a RangeError thrown past skip_market at persist time.
+    unless (raw + normalized).all? { |odds| storable?(odds) }
+      return skip_market(market, game, "prices outside the range the database can store (#{raw.join(", ")})")
+    end
 
     outcomes.each_with_index.map do |outcome, index|
       build_line(market, outcome, game, away_contestant, home_contestant,
@@ -286,6 +294,22 @@ class BovadaApiClient
     odds = Integer(published, exception: false)
     odds if odds && odds.abs >= 100
   end
+
+  # Bovada has been seen to put a bare string where the price object
+  # belongs. String#dig raises TypeError rather than answering nil, which
+  # escapes skip_market entirely and aborts every other game in the
+  # response - the exact failure skip-and-report exists to prevent.
+  def published_price(outcome)
+    price = outcome["price"] if outcome.is_a?(Hash)
+
+    price["american"] if price.is_a?(Hash)
+  end
+
+  # odds and raw_odds are 4-byte integer columns. A price past that raises
+  # ActiveModel::RangeError at persist time, which is also past skip_market.
+  INT4_LIMIT = 2_147_483_647
+
+  def storable?(odds) = odds.abs <= INT4_LIMIT
 
   def build_line(market, outcome, game, away_contestant, home_contestant, odds:, raw_odds: nil)
     contestant = outcome["type"] == "A" ? away_contestant : (outcome["type"] == "H" ? home_contestant : nil)
