@@ -149,7 +149,8 @@ class Wager < ApplicationRecord
     # sends them looking for a cancelled game. Second half moneylines are
     # re-scraped on any page view older than a minute, so it is not rare.
     if line.moneyline?
-      errors.add(:line, "has moved off #{line.odds} - add it again at the new price")
+      errors.add(:line, "has moved off #{line.odds} - remove this wager and add it " \
+                        "again from the board at the current price")
     else
       errors.add(:line, "is no longer active")
     end
@@ -186,11 +187,12 @@ class Wager < ApplicationRecord
     errors.add(:line, moneyline_rejection)
   end
 
+  # One message for both reasons. The player cannot act on the difference
+  # between a switched-off market and a price past the cap, and spelling
+  # out an exclusive numeric bound explained the book to them rather than
+  # their bet.
   def moneyline_rejection
-    return "is on a market the book is not offering right now" unless Moneyline.enabled?
-
-    "is priced at #{line.odds}, outside what the book is taking bets on " \
-    "(#{Moneyline.min_odds} to #{Moneyline.max_odds}, exclusive of #{Moneyline.min_odds})"
+    "is not available to bet right now"
   end
 
   def confirming?

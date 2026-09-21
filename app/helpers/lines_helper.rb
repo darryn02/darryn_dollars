@@ -17,7 +17,28 @@ module LinesHelper
   def moneyline_label(line)
     return nil if line.nil?
 
-    line.odds.positive? ? "+#{line.odds}" : line.odds.to_s
+    odds_label(line.odds)
+  end
+
+  # "+240" / "-285". Signed, the way a sportsbook writes a price, and the
+  # one place that decides it - the board cell used to sign a positive
+  # price while the sheet, slip and history showed a bare "240" for the
+  # same bet. Spread and total are always -110, so nothing there changes.
+  def odds_label(odds)
+    odds.to_i.positive? ? "+#{odds}" : odds.to_s
+  end
+
+  # What a screen reader gets in place of a bare price on a withheld
+  # moneyline. The closed cell names no team and no market, so "+450" on
+  # its own conveys neither what the number is nor why it cannot be bet.
+  #
+  # nil once the game itself has closed: the whole board is non-interactive
+  # then, the game header says so, and every cell would repeat it.
+  def moneyline_closed_note(row, wagerable:)
+    return nil unless wagerable
+    return nil if row.moneyline.nil? || row.moneyline_offered
+
+    "#{row.abbreviation} moneyline #{moneyline_label(row.moneyline)}, not available"
   end
 
   # Whether the board carries a moneyline column at all. The cell, the
@@ -66,7 +87,7 @@ module LinesHelper
 
   # "-110" or "-110 · 1st Half"
   def line_terms(line)
-    [line.odds, line_scope_label(line)].compact.join(" · ")
+    [odds_label(line.odds), line_scope_label(line)].compact.join(" · ")
   end
 
   def line_scope_label(line)
