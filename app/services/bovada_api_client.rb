@@ -9,15 +9,27 @@ class BovadaApiClient
   # was fine; ten days later that had swapped exactly.
   #
   # So an empty body is not an answer about the board, it is a key to stop
-  # using. These three URLs were verified to return the same events with the
-  # same English team names, so falling through them costs a request and
-  # nothing else.
+  # using. Every URL here was verified to return the same events with the same
+  # English team names - Bovada does not translate NFL team names, so the lang
+  # variants are just extra cache keys onto the same board - and falling
+  # through them costs a request and nothing else.
   #
   # A nonce does not work here and must not be reintroduced: an unrecognised
   # query string makes the origin return [] every time (0 events for 5 of 5
   # random strings tried), which is the same symptom for a different reason.
   # Only keys Bovada already honours are worth asking.
+  #
+  # Three keys was not enough headroom. On 2026-09-20 all three were dead at
+  # once and the nfl board sat empty for at least half an hour: the bare v2 url
+  # at age 35129 with no cache-control, ?lang=es at age 2817 likewise, and the
+  # bare coupon url legitimately caching an empty board under max-age=3600.
+  # The keys listed first are the ones measured live that day (6 events, age 0,
+  # max-age=600); the last three are the old set, kept because which key is
+  # stuck moves around and today's healthy key is tomorrow's dead one.
   SOURCES = [
+    ["services/sports/event/coupon/events/A/description", "lang=en"],
+    ["services/sports/event/v2/events/A/description", "lang=fr"],
+    ["services/sports/event/coupon/events/A/description", "lang=es"],
     ["services/sports/event/v2/events/A/description", nil],
     ["services/sports/event/coupon/events/A/description", nil],
     ["services/sports/event/v2/events/A/description", "lang=es"]
@@ -53,15 +65,29 @@ class BovadaApiClient
     session = BovadaSession.new.warm!
     events = events_for(session, sport)
 
-    # Only when the book listed nothing at all. This used to fire whenever we
-    # built no *lines*, which meant an nfl response full of games we could not
-    # name sent us to the super bowl url - whose sole event is the Pro Bowl,
-    # between "NFC Conference" and "AFC Conference", teams no sane competitors
-    # table carries. So a stuck cache key announced itself as an unrecognised
-    # competitor, and the actual failure never said its own name.
-    events = events_for(session, :super_bowl) if events.empty? && sport == :nfl
+    # Only when the book listed nothing at all, and the fallback board never
+    # files a competitor report.
+    #
+    # Outside the handful of weeks the Super Bowl is listed, the Pro Bowl is
+    # the only event on that url, between "NFC Conference" and "AFC
+    # Conference" - names no sane competitors table carries. So every trip
+    # here that is not Super Bowl week produces exactly one unresolvable event
+    # and zero lines.
+    #
+    # This fired whenever we built no *lines*, which sent an nfl response full
+    # of games we could not name to the super bowl url, so a stuck cache key
+    # announced itself as an unrecognised competitor. Narrowing the condition
+    # to "no events at all" was not enough: on 2026-09-20 every source url was
+    # stuck, the board really was empty, and the alert still pointed at the
+    # competitors table instead of at the cache. Reaching for the fallback
+    # already means the nfl board came back empty, which no_data reports below
+    # and says plainly - so the second, misdirecting report is suppressed. A
+    # real Super Bowl whose teams we cannot name still builds no lines, and
+    # still reaches no_data.
+    fallback = events.empty? && sport == :nfl
+    events = events_for(session, :super_bowl) if fallback
 
-    lines = parse_and_assert_lines(events)
+    lines = parse_and_assert_lines(events, fallback: fallback)
 
     # A book that returns nothing while we hold active lines is telling us
     # something is wrong with the request, not that every game was cancelled.
@@ -118,7 +144,7 @@ class BovadaApiClient
     ScrapeResult.new(outcome: ScrapeRun::NO_DATA, message: message)
   end
 
-  def parse_and_assert_lines(events)
+  def parse_and_assert_lines(events, fallback: false)
     return [] if events.blank?
 
     unresolved = []
@@ -147,7 +173,7 @@ class BovadaApiClient
       extract_lines_from_markets(event, game, away_contestant, home_contestant)
     }.compact
 
-    report_unresolved(unresolved)
+    report_unresolved(unresolved) unless fallback
     report_skipped_markets
 
     lines
