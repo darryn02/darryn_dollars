@@ -16,6 +16,24 @@ RSpec.describe "The moneyline column", type: :system do
   describe "with the switch on" do
     before { create_full_card(game: game) }
 
+    # Order is a deliberate choice, so it is pinned. The two team-side
+    # markets sit together and the total, which belongs to the game rather
+    # than to either row, comes last. Nothing asserted order before, so a
+    # future edit could have shuffled the columns silently.
+    it "puts the moneyline between spread and total, in the cells and the header" do
+      moneyline(away, -285)
+      moneyline(home, 240)
+
+      visit lines_path
+
+      expect(find(".dd-board__header").all("span").map(&:text)).to eq(["", "SPREAD", "ML", "TOTAL"])
+
+      away_row = find(:xpath, "//div[contains(concat(' ', normalize-space(@class), ' '), ' dd-game__row ')]" \
+                              "[.//span[text()='BUF']]")
+      cells = away_row.all(".dd-bet-btn, .dd-bet-cell").map(&:text)
+      expect(cells).to eq(["+2.5", "-285", "O 47.5"])
+    end
+
     it "shows the price on the button, not the letters ML" do
       moneyline(away, -285)
       moneyline(home, 240)

@@ -10,8 +10,11 @@
         %span.dd-game__name= row.name
       = render "bet_cell", line: row.spread, flagged: row.spread_flagged,
         label: spread_label(row.spread), wagerable: game_lines.wagerable?
-      = render "bet_cell", line: row.total, flagged: row.total_flagged,
-        label: total_label(row.total), wagerable: game_lines.wagerable?
+      -# Moneyline sits between spread and total, not on the end. The two
+      -# team-side markets stay adjacent, and the total - the one market
+      -# that belongs to the game rather than to either row - is what the
+      -# eye lands on last.
+      -#
       -# A withheld underdog keeps its price and loses its button: the line
       -# is still passed, so the cell renders closed rather than empty.
       -# --empty is aria-hidden and means "never scraped", and it fires on
@@ -22,3 +25,5 @@
           label: moneyline_label(row.moneyline),
           wagerable: game_lines.wagerable? && row.moneyline_offered,
           closed_note: moneyline_closed_note(row, wagerable: game_lines.wagerable?)
+      = render "bet_cell", line: row.total, flagged: row.total_flagged,
+        label: total_label(row.total), wagerable: game_lines.wagerable?

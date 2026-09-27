@@ -16,8 +16,8 @@
       .dd-board__header{ "aria-hidden" => "true" }
         %span
         %span Spread
-        %span Total
         %span ML
+        %span Total
     - @games.each do |game_lines|
       = render "game", game_lines: game_lines
 
