@@ -8,10 +8,20 @@ class Account < ApplicationRecord
   # every other account's limit already is, by hand.
   DEFAULT_CREDIT_LIMIT = ENV.fetch("DEFAULT_CREDIT_LIMIT", 1_000).to_i
 
+  # What a player can pick as an account's avatar. A fixed list rather than
+  # any emoji at all: a free text field would have to decide what counts as
+  # one emoji (flags, skin tones and joined sequences are several code points
+  # each), and a list of faces that read at 24px is all the avatar needs.
+  # Fifteen, so that with the initials choice ahead of them the picker fills
+  # two rows of eight on a phone.
+  EMOJI_CHOICES = %w[🐻 🐭 🦁 🐯 🦊 🐶 🦅 🦈 🐢 🦉 🎲 🔥 💎 👑 ⚡].freeze
+
   belongs_to :user
   has_many :bet_slips
   has_many :wagers, through: :bet_slips
   has_many :payments
+
+  validates :emoji, inclusion: { in: EMOJI_CHOICES }, allow_blank: true
 
   def self.list_all
     Account.includes(:user, wagers: { line: { game: :contestants } }).map do |account|

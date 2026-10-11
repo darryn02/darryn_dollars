@@ -22,13 +22,17 @@ module AccountsHelper
     words.first(2).map { |word| word[0] }.join.upcase
   end
 
+  # The emoji the player picked, or the initials until they pick one.
+  #
   # Decorative: every place this is drawn also spells the account's name out,
   # so a screen reader gets the name once rather than the initials and then
   # the name.
   def account_avatar(account, css_class: nil)
-    tag.span(account_initials(account),
-             class: ["dd-acct-avatar", account_color_class(account), css_class].compact.join(" "),
-             aria: { hidden: true })
+    classes = ["dd-acct-avatar", account_color_class(account), css_class]
+    classes << "dd-acct-avatar--emoji" if account.emoji.present?
+
+    tag.span(account.emoji.presence || account_initials(account),
+             class: classes.compact.join(" "), aria: { hidden: true })
   end
 
   # Account#liabilities is a query on every call, and the lines board draws a

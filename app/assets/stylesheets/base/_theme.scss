@@ -767,6 +767,85 @@ $account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
   font-size: .625rem;
 }
 
+// An emoji carries its own colours, so the disc drops to a tint with a ring
+// in the account's colour rather than sitting the emoji on a solid fill.
+.dd-acct-avatar--emoji {
+  font-size: 1.25rem;
+  font-weight: 400;
+  background-color: var(--dd-acct-tint, #{$surface-2});
+  box-shadow: inset 0 0 0 2px var(--dd-acct, #{$text-3});
+
+  &.dd-acct-avatar--sm {
+    font-size: .8125rem;
+    box-shadow: inset 0 0 0 1.5px var(--dd-acct, #{$text-3});
+  }
+}
+
+// The avatar choice on the settings page: a radio group drawn as faces.
+.dd-emoji-picker {
+  margin: 1rem 0 0;
+
+  // Bootstrap sets a legend at heading size and floats it; here it is one
+  // more field label.
+  legend {
+    float: none;
+    width: auto;
+    font-size: $font-size-base;
+  }
+
+  .form-text {
+    margin: .5rem 0 0;
+  }
+}
+
+.dd-emoji-picker__choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr));
+  gap: .375rem;
+}
+
+.dd-emoji-choice {
+  position: relative;
+  display: block;
+  margin: 0;
+}
+
+// Kept in the page and focusable, just not drawn; the face beside it shows
+// the state.
+.dd-emoji-choice__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dd-emoji-choice__face {
+  display: grid;
+  place-items: center;
+  height: 2.75rem;
+  font-size: 1.375rem;
+  line-height: 1;
+  background-color: $surface-2;
+  border: 2px solid $line;
+  border-radius: $border-radius;
+}
+
+.dd-emoji-choice__face--initials {
+  font-size: .8125rem;
+  font-weight: 800;
+  color: $text-1;
+}
+
+.dd-emoji-choice__input:checked + .dd-emoji-choice__face {
+  background-color: var(--dd-acct-tint, #{$surface-3});
+  border-color: var(--dd-acct, #{$brand-hover});
+}
+
+.dd-emoji-choice__input:focus-visible + .dd-emoji-choice__face {
+  outline: .2rem solid rgba($brand-hover, .6);
+  outline-offset: 2px;
+}
+
 // The confirmation after a bet is added by a player who chose an account.
 .dd-flash--added {
   border-left-color: $win;

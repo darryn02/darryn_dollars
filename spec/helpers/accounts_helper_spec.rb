@@ -50,6 +50,16 @@ RSpec.describe AccountsHelper, type: :helper do
       expect(html).to include("dd-acct--0")
       expect(html).to include(">BJ<")
     end
+
+    it "shows the emoji once the player has picked one" do
+      big.update!(emoji: "🐻")
+
+      html = helper.account_avatar(big)
+
+      expect(html).to include(">🐻<")
+      expect(html).to include("dd-acct-avatar--emoji")
+      expect(html).not_to include("BJ")
+    end
   end
 
   describe "#available_credit" do
