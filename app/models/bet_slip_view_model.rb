@@ -18,6 +18,21 @@ class BetSlipViewModel
     end
   end
 
+  # Whether this slip needs telling apart from a sibling: its owner has more
+  # than one account. Asked of the owner, not the viewer, so the book sees a
+  # two-account player's slips marked the same way the player does.
+  def show_avatar?
+    account.user.accounts.many?
+  end
+
+  # "Confirm 2 wagers", or "Confirm Big Joe's 2 wagers" where there is another
+  # slip it could be mistaken for.
+  def confirm_label
+    count = ActionController::Base.helpers.pluralize(wagers.size, "wager")
+
+    show_avatar? ? "Confirm #{account.display_name}'s #{count}" : "Confirm #{count}"
+  end
+
   def pending?
     status == "pending"
   end
@@ -30,7 +45,7 @@ class BetSlipViewModel
 
   def name
     if user.accounts.many?
-      account.name
+      account.display_name
     elsif user.admin?
       account.qualified_name
     end

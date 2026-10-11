@@ -1,0 +1,4 @@
+%span.dd-flash__added
+  = account_avatar(wager.account, css_class: "dd-acct-avatar--sm")
+  %span.dd-flash__added-text= "Added to #{wager.account.display_name}'s slip."
+  = link_to "Undo", wager_path(wager), method: :delete, remote: true, class: "dd-flash__undo"

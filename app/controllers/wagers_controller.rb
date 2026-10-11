@@ -161,6 +161,7 @@ class WagersController < ApplicationController
   def create_wager
     wager = slip.wagers.build(wager_params)
     if wager.save
+      @wager = wager
       @notice = "Added to your bet slip. You now have #{current_user.wagers.pending.count} pending wager(s).".html_safe
     else
       @error = "There was a problem creating your wager. #{wager.errors.full_messages.join('. ')}".html_safe
@@ -179,10 +180,13 @@ class WagersController < ApplicationController
     params[:wager][:amount] = params[:wager][:amount].gsub(/[\$\,]/, "")
   end
 
+  # Pending first, then the order the accounts were opened in - the same
+  # order the bet sheet lays its account buttons out in, so one account is
+  # always the upper slip and the left-hand button.
   def bet_slip_sort_order(bet_slip)
     [
       bet_slip.status == "pending" ? 0 : 1,
-      bet_slip.account.name.to_s
+      bet_slip.account.id
     ]
   end
 end

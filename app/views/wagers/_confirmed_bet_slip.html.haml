@@ -1,10 +1,15 @@
 .dd-slip.dd-slip--confirmed
-  .dd-slip__header
-    %h2.dd-slip__title= bet_slip.title
-    %p.dd-slip__summary
-      %span= "#{currency(bet_slip.wagers.sum(&:amount))} in play"
-      %span.dd-slip__dot &middot;
-      %span= "#{currency(bet_slip.wagers.sum(&:potential_profit))} max profit"
+  -# The avatar and tint only appear where there is a sibling slip to
+  -# confuse this one with. The left border still says pending or confirmed.
+  .dd-slip__header{ class: (account_color_class(bet_slip.account) if bet_slip.show_avatar?) }
+    - if bet_slip.show_avatar?
+      = account_avatar(bet_slip.account)
+    .dd-slip__heading
+      %h2.dd-slip__title= bet_slip.title
+      %p.dd-slip__summary
+        %span= "#{currency(bet_slip.wagers.sum(&:amount))} in play"
+        %span.dd-slip__dot &middot;
+        %span= "#{currency(bet_slip.wagers.sum(&:potential_profit))} max profit"
 
   %ul.dd-slip__list
     - bet_slip.wagers.each do |wager|
