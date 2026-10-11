@@ -90,9 +90,9 @@ class BovadaApiClient
 
   def self.ensure_second_half_lines_are_recent!(sport: :nfl)
     last_update = Line.send(sport).active.second_half.maximum(:updated_at)
-    if last_update.nil? || last_update < 1.minute.ago
-      update_lines(sport: sport)
-    end
+    return unless last_update.nil? || last_update < 1.minute.ago
+
+    ScrapeRun.track(sport: sport, scope: ScrapeRun::PAGE_VIEW) { update_lines(sport: sport) }
   end
 
   def self.update_lines(sport: :nfl)

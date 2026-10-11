@@ -176,6 +176,49 @@ RSpec.describe BovadaApiClient, type: :service do
     end
   end
 
+  # Opening the second half board is the other way a fetch happens, and the
+  # only one a player sets off. It left no trace, so a halftime that came and
+  # went without lines could not be told apart from one nobody looked at.
+  describe "a fetch set off by opening the second half board" do
+    it "is written to the scrape log as a page view" do
+      stub_api(body: [{ events: [] }].to_json)
+
+      expect { described_class.ensure_second_half_lines_are_recent!(sport: :nfl) }.
+        to change(ScrapeRun, :count).by(1)
+
+      expect(ScrapeRun.last).to have_attributes(sport: "nfl", scope: ScrapeRun::PAGE_VIEW)
+    end
+
+    # rack-timeout raises an Exception that is not a StandardError, so the
+    # fetch that ran too long was exactly the one that went unrecorded.
+    it "is still written when the request is cut off for running too long" do
+      cut_off = Class.new(Exception) # rubocop:disable Lint/InheritException
+      allow(described_class).to receive(:update_lines).and_raise(cut_off, "Request ran for longer than 15000ms")
+
+      expect { described_class.ensure_second_half_lines_are_recent!(sport: :nfl) }.to raise_error(cut_off)
+
+      expect(ScrapeRun.last).to have_attributes(scope: ScrapeRun::PAGE_VIEW, outcome: ScrapeRun::ERROR,
+                                                detail: a_string_including("15000ms"))
+    end
+
+    it "leaves a signal to stop the process unrecorded" do
+      allow(described_class).to receive(:update_lines).and_raise(SignalException, "SIGTERM")
+
+      expect { described_class.ensure_second_half_lines_are_recent!(sport: :nfl) }.to raise_error(SignalException)
+
+      expect(ScrapeRun.count).to eq(0)
+    end
+
+    it "asks nobody and writes nothing when the board was refreshed inside the last minute" do
+      game.lines.create!(kind: :over, scope: :second_half, value: 23.5, hidden: false)
+
+      expect { described_class.ensure_second_half_lines_are_recent!(sport: :nfl) }.
+        not_to change(ScrapeRun, :count)
+
+      expect(a_request(:get, api)).not_to have_been_made
+    end
+  end
+
   # Past max-age the edge serves the expired copy and refreshes behind it, so
   # the fresh board goes to the next request. Measured 2026-10-11: a copy 930
   # seconds old, and 36 seconds old when asked again 37 seconds later. Taking

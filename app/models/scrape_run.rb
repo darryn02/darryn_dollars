@@ -25,12 +25,25 @@ class ScrapeRun < ApplicationRecord
   # every call site.
   SCORES = "scores".freeze
 
+  # The scope a fetch set off by somebody opening the second half board is
+  # recorded under. Those used to leave no row at all, so when a halftime came
+  # and went without lines on 2026-10-08 the trail could show the scheduled
+  # scrape that missed it and nothing about the player who had been asking.
+  #
+  # Kept out of the scheduler's arithmetic on purpose. The row is there to be
+  # read, and a page view at 9:38 is no reason for the 9:41 tick to stand down
+  # or, if it was challenged, to back off for half an hour - neither happened
+  # while these went unrecorded, and recording them should not change that.
+  PAGE_VIEW = "page_view".freeze
+
   scope :for_sport, ->(sport) { where(sport: sport.to_s) }
   scope :recent_first, -> { order(ran_at: :desc) }
 
   # IS DISTINCT FROM rather than !=, because scope is null on every line
   # scrape written before scopes existed and != drops nulls on the floor.
-  scope :for_lines, -> { where("scrape_runs.scope IS DISTINCT FROM ?", SCORES) }
+  scope :for_scheduled_lines, lambda {
+    where("scrape_runs.scope IS DISTINCT FROM ? AND scrape_runs.scope IS DISTINCT FROM ?", SCORES, PAGE_VIEW)
+  }
   scope :for_scores, -> { where(scope: SCORES) }
 
   def self.record!(sport:, outcome:, scope: nil, **attrs)
@@ -50,7 +63,17 @@ class ScrapeRun < ApplicationRecord
 
       record!(sport: sport, scope: scope, **attrs)
     end
-  rescue StandardError => e
+  # Exception, not StandardError. rack-timeout stops a request that has run
+  # 15 seconds with an Exception, precisely so application code does not
+  # swallow it - which meant the slowest page view fetches, the ones most
+  # worth reading about afterwards, were the ones that left no row.
+  #
+  # A signal or an exit is the process being told to stop rather than the
+  # fetch failing, and recording one as an error would back the scheduler
+  # off because a dyno was cycled. Those pass through untouched.
+  rescue Exception => e # rubocop:disable Lint/RescueException
+    raise if e.is_a?(SignalException) || e.is_a?(SystemExit)
+
     outcome = e.respond_to?(:scrape_outcome) ? e.scrape_outcome : ERROR
     record!(sport: sport, scope: scope, outcome: outcome, detail: "#{e.class}: #{e.message}".first(500))
     raise

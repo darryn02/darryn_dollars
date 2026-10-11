@@ -200,6 +200,26 @@ RSpec.describe ScrapeWindow, type: :service do
     end
   end
 
+  # A fetch set off by somebody opening the second half board is recorded so
+  # it can be read back, not so it can steer the scheduler.
+  describe "page view fetches in the same table" do
+    before { game_at(now + 1.hour) } # would otherwise be a 10 minute cadence
+
+    it "does not count a page view fetch as a scheduled scrape" do
+      ScrapeRun.create!(sport: "nfl", scope: ScrapeRun::PAGE_VIEW,
+                        ran_at: now - 1.minute, outcome: ScrapeRun::SUCCESS)
+
+      expect(window).to be_due
+    end
+
+    it "does not back off the scheduler when a page view was challenged" do
+      ScrapeRun.create!(sport: "nfl", scope: ScrapeRun::PAGE_VIEW,
+                        ran_at: now - 1.minute, outcome: ScrapeRun::CHALLENGED)
+
+      expect(window.interval).to eq(10.minutes)
+    end
+  end
+
   it "only considers runs for its own sport" do
     game_at(now + 1.hour)
     ScrapeRun.create!(sport: "ncaaf", ran_at: now - 1.minute, outcome: ScrapeRun::SUCCESS)
