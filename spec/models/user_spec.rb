@@ -1,6 +1,22 @@
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
+  describe "#accounts" do
+    # Nothing ordered this association, so Postgres returned the rows in heap
+    # order - and an UPDATE writes a new row version further down the heap.
+    # Saving a nickname on the older account moved it behind the newer one,
+    # which silently changed which account the bet sheet offered first.
+    it "keeps the order the accounts were opened in after one of them is saved" do
+      user = create_user
+      first = create_account(user: user, name: "Big Joe")
+      second = create_account(user: user, name: "Little Joe")
+
+      first.update!(nickname: "Big")
+
+      expect(User.find(user.id).accounts.to_a).to eq([first, second])
+    end
+  end
+
   describe "#chump? and #non_chump?" do
     it "is not a chump when admin" do
       user = create_user(admin: true)
