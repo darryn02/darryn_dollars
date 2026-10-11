@@ -159,7 +159,7 @@ class Wager < ApplicationRecord
   def account_has_sufficient_credit
     return unless confirming?
 
-    if account.credit_limit + account.balance - account.liabilities < amount
+    if account.available_credit < amount
       errors.add(:accout, "has insufficient credit")
     end
   end

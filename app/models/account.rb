@@ -28,6 +28,26 @@ class Account < ApplicationRecord
     (nickname || name).to_s
   end
 
+  # What a player calls one of their own accounts when they are choosing
+  # between them: on the bet sheet, on a slip, in the confirmation.
+  #
+  # name comes first because it is what the bet sheet dropdown and the slip
+  # titles already showed, so it is what a player with two accounts has been
+  # reading. nickname is the leaderboard handle and is the fallback - when
+  # there is no name, or when a sibling account has the same one, since two
+  # choices labelled alike is the mistake this exists to prevent. The last
+  # resort is the id, so the label is never blank.
+  def display_name
+    [:name, :nickname].each do |field|
+      label = self[field].to_s.squish
+      next if label.blank?
+
+      return label if user.accounts.none? { |other| other.id != id && other[field].to_s.squish.casecmp?(label) }
+    end
+
+    name.to_s.squish.presence || nickname.to_s.squish.presence || "Account ##{id}"
+  end
+
   def qualified_name
     if to_s.downcase.strip == "default"
       user.name
@@ -78,6 +98,13 @@ class Account < ApplicationRecord
     else
       wagers.loss.sum(:net)
     end
+  end
+
+  # What this account can still put at risk. The one definition, so the
+  # figure shown beside an account on the bet sheet cannot drift from the
+  # check that refuses a wager at confirmation.
+  def available_credit
+    credit_limit + balance - liabilities
   end
 
   def liabilities

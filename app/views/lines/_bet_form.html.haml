@@ -15,7 +15,11 @@
         = f.input :line_id, as: :hidden, value: line.id
 
         - if user.accounts.many?
-          = f.input :account_id, collection: user.accounts, include_blank: false
+          -# Enter in a field presses a form's first submit button. Here that
+          -# would be the first account's - a default nobody chose, which is
+          -# what the per-account buttons below exist to remove. A disabled
+          -# first submit button means Enter submits nothing.
+          %button{ type: "submit", disabled: true, hidden: true, tabindex: "-1", "aria-hidden" => "true" }
         - else
           = f.hidden_field :account_id, value: user.accounts.first.id
 
@@ -34,4 +38,19 @@
                           autocomplete: "off", placeholder: "$0.00",
                           data: { type: "currency", odds: "#{line.odds}" } }
 
-        = f.submit "Add to Bet Slip", class: "btn btn-primary dd-bet-submit"
+        - if user.accounts.many?
+          -# One submit per account and no account chosen in advance. This was
+          -# a dropdown preselected to the first account, and a bet for the
+          -# other one meant remembering to change it every time.
+          .dd-bet-as{ role: "group", "aria-labelledby" => "betAsLabel-#{line.id}" }
+            %p.dd-bet-as__label{ id: "betAsLabel-#{line.id}" } Add this bet for
+            .dd-bet-as__choices
+              - user.accounts.each do |account|
+                %button.dd-bet-as__btn{ type: "submit", name: "wager[account_id]", value: account.id,
+                  class: account_color_class(account) }
+                  = account_avatar(account)
+                  %span.dd-bet-as__who
+                    %span.dd-bet-as__name= account.display_name
+                    %span.dd-bet-as__credit= "#{number_to_currency(available_credit(account), precision: 0)} available"
+        - else
+          = f.submit "Add to Bet Slip", class: "btn btn-primary dd-bet-submit"

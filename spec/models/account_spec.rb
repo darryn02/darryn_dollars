@@ -120,6 +120,45 @@ RSpec.describe Account, type: :model do
     end
   end
 
+  describe "#display_name" do
+    it "is the name, which is what the bet sheet and the slips have always shown" do
+      account.update!(name: "Big Joe", nickname: "Big")
+
+      expect(account.display_name).to eq("Big Joe")
+    end
+
+    it "falls back to the nickname when there is no name" do
+      account.update!(name: nil, nickname: "Big")
+
+      expect(account.display_name).to eq("Big")
+    end
+
+    # Two choices labelled alike is the mistake the label exists to prevent.
+    it "uses the nickname when a sibling account has the same name" do
+      account.update!(name: "Joe", nickname: "Big")
+      sibling = create_account(user: user, name: "joe ", nickname: "Little")
+
+      expect(Account.find(account.id).display_name).to eq("Big")
+      expect(Account.find(sibling.id).display_name).to eq("Little")
+    end
+
+    it "is never blank" do
+      account.update!(name: nil, nickname: " ")
+
+      expect(account.display_name).to eq("Account ##{account.id}")
+    end
+  end
+
+  describe "#available_credit" do
+    it "is the limit, moved by the balance, less what is already in play" do
+      create_wager(account: account, line: card[:away_spread], amount: 300, status: :loss)
+      create_wager(account: account, line: card[:home_spread], amount: 200, status: :confirmed)
+
+      # 5,000 limit + (1,000 starting - 300 lost) - 200 in play.
+      expect(Account.find(account.id).available_credit).to eq(5_500)
+    end
+  end
+
   describe "#qualified_name" do
     it "is just the user's name when the account is the default one" do
       account.update!(name: "Default", nickname: nil)

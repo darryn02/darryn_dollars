@@ -103,6 +103,73 @@ RSpec.describe "Placing a wager", type: :system do
     expect(page).to have_no_css(".dd-slip--pending")
   end
 
+  it "asks a player with one account nothing about accounts" do
+    visit lines_path
+
+    open_bet_sheet(card[:away_spread], labelled: "+2.5")
+
+    within("#betOffcanvas-#{card[:away_spread].id}") do
+      expect(page).to have_button("Add to Bet Slip")
+      expect(page).to have_no_css(".dd-bet-as")
+    end
+  end
+
+  # One login, two accounts. The sheet used to carry a dropdown preselected
+  # to the first account, and a bet for the other one meant remembering to
+  # change it on every single bet.
+  context "with more than one account" do
+    let!(:account) { create_account(user: user, name: "Big Joe") }
+    let!(:little) { create_account(user: user, name: "Little Joe") }
+
+    let(:sheet) { "#betOffcanvas-#{card[:away_spread].id}" }
+
+    it "offers a button per account and nothing chosen in advance" do
+      visit lines_path
+
+      open_bet_sheet(card[:away_spread], labelled: "+2.5")
+
+      within(sheet) do
+        expect(page).to have_no_css("select")
+        expect(page).to have_no_button("Add to Bet Slip")
+        expect(page).to have_css(".dd-bet-as__btn", count: 2)
+        expect(page).to have_css(".dd-bet-as__btn .dd-acct-avatar", text: "BJ")
+        expect(page).to have_css(".dd-bet-as__btn .dd-acct-avatar", text: "LJ")
+        expect(page).to have_css(".dd-bet-as__btn", text: "$5,000 available", count: 2)
+      end
+    end
+
+    it "puts the bet on the account whose button was pressed" do
+      visit lines_path
+
+      open_bet_sheet(card[:away_spread], labelled: "+2.5")
+
+      within(sheet) do
+        click_button "$100"
+        find(".dd-bet-as__btn", text: "Little Joe").click
+      end
+
+      expect(page).to have_css(".flash-from-js", text: "Added to")
+      expect(little.reload.wagers.count).to eq(1)
+      expect(Wager.where(account_id: account.id).count).to eq(0)
+    end
+
+    # Enter presses a form's first submit button, which here would be the
+    # first account's: a default by another route.
+    it "adds nothing when Enter is pressed in the amount field" do
+      visit lines_path
+
+      open_bet_sheet(card[:away_spread], labelled: "+2.5")
+
+      within(sheet) do
+        click_button "$100"
+        find(".js-wager-amount-bet").send_keys(:enter)
+      end
+
+      expect(page).to have_css("#{sheet}.show")
+      expect(Wager.count).to eq(0)
+    end
+  end
+
   # Betting opens Wager::WINDOW before kickoff. Before that the board is a
   # scoreboard, not a form - there is no button to press at all, which is what
   # a spec hunting for one needs to know.

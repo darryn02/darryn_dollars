@@ -142,6 +142,14 @@ class WagersController < ApplicationController
   end
 
   def valid_account_id?
+    # A player with several accounts gets a button per account and nothing
+    # chosen in advance, so a bet can arrive naming none. Guessing one is the
+    # mistake those buttons replace.
+    if wager_params[:account_id].blank?
+      @error = "Choose which account this bet is for."
+      return false
+    end
+
     if current_user.account_ids.exclude?(wager_params[:account_id].to_i)
       @error = "Nice try - you do not have access to that account.".html_safe
       return false
