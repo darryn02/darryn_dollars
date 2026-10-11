@@ -3,6 +3,7 @@ class WagersController < ApplicationController
   # hidden these controls from players; that hid the buttons, not the routes.
   before_action :require_admin!, only: [:mark_as_win, :mark_as_loss, :mark_as_push]
   before_action :load_reachable_wager, only: [:destroy]
+  before_action :load_slip_account, only: [:confirm_pending, :cancel_pending]
 
   def bet_slip
     @bet_slips = wagers([:pending, :confirmed]).
@@ -37,7 +38,7 @@ class WagersController < ApplicationController
   end
 
   def confirm_pending
-    @wagers = current_user.wagers.pending
+    @wagers = pending_wagers_on_slip
     if @wagers.size.zero?
       redirect_to bet_slip_wagers_path, error: "No pending wagers to confirm."
     else
@@ -54,7 +55,7 @@ class WagersController < ApplicationController
   end
 
   def cancel_pending
-    @wagers = current_user.wagers.pending
+    @wagers = pending_wagers_on_slip
     if @wagers.size.zero?
       redirect_to bet_slip_wagers_path, error: "No pending wagers to cancel."
     else
@@ -101,6 +102,32 @@ class WagersController < ApplicationController
     @wager = Wager.find_by(id: params[:id])
 
     deny!("That wager is not yours to cancel.") unless @wager && reachable_account?(@wager.account_id)
+  end
+
+  # Which slip the button was pressed on. Confirm and Cancel all are rendered
+  # once per account, on that account's slip, counting that slip's wagers -
+  # and both used to take current_user.wagers.pending, every account at once.
+  #
+  # Keyed on the account rather than routed through BetSlipsController,
+  # which does take one slip: the page groups by account, not by BetSlip row,
+  # and nothing here has ever closed a BetSlip, so the rows are not what the
+  # player is looking at.
+  #
+  # No account is a refusal, not "all of them". A page left open across the
+  # deploy posts the old link, and all of them is the behaviour being removed.
+  def load_slip_account
+    if params[:account_id].blank?
+      return redirect_to bet_slip_wagers_path, alert: "Choose which slip, then try that again."
+    end
+
+    @account = Account.find_by(id: params[:account_id])
+
+    deny!("That bet slip is not yours.") unless @account && reachable_account?(@account.id)
+  end
+
+  # On wagers.account_id, the same column the bet slips page groups by.
+  def pending_wagers_on_slip
+    Wager.pending.where(account_id: @account.id)
   end
 
   def wagers(statuses)

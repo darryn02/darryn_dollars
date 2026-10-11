@@ -103,7 +103,7 @@ RSpec.describe "Betting a moneyline directly", type: :request do
     it "is refused through confirm_pending" do
       sign_in player
 
-      post confirm_pending_wagers_path
+      post confirm_pending_wagers_path(account_id: account.id)
 
       expect(stale.reload).to be_pending
       expect(account.reload.liabilities).to eq(0)
