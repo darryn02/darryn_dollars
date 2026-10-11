@@ -158,6 +158,29 @@ RSpec.describe Account, type: :model do
       expect(Account.find(sibling.id).display_name).to eq("Little")
     end
 
+    # Every account defaulted to its owner's first name as a nickname, so
+    # this is what two accounts under one login look like when neither was
+    # given a name of its own. Both came back "Default".
+    it "tells siblings apart by id when neither the name nor the nickname does" do
+      account.update!(name: "Default", nickname: "Joe")
+      sibling = create_account(user: user, name: "Default", nickname: "Joe")
+
+      labels = [account, sibling].map { |a| Account.find(a.id).display_name }
+
+      expect(labels).to eq(["Default ##{account.id}", "Default ##{sibling.id}"])
+    end
+
+    # One account's name is the other's nickname: unique within each column,
+    # identical on the screen.
+    it "does not hand out a label that is a sibling's other label" do
+      account.update!(name: "Joe", nickname: nil)
+      sibling = create_account(user: user, name: nil, nickname: "Joe")
+
+      labels = [account, sibling].map { |a| Account.find(a.id).display_name }
+
+      expect(labels.uniq.size).to eq(2)
+    end
+
     it "is never blank" do
       account.update!(name: nil, nickname: " ")
 

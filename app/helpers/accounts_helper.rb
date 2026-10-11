@@ -15,9 +15,12 @@ module AccountsHelper
     "dd-acct--#{slot}"
   end
 
-  # "BJ" for Big Joe, "M" for Main.
+  # "BJ" for Big Joe, "M" for Main. A name with no letter or digit in it - a
+  # nickname that is only an emoji - gives its first character instead, so
+  # the disc is never empty.
   def account_initials(account)
     words = account.display_name.scan(/[[:alnum:]]+/)
+    return account.display_name.strip.grapheme_clusters.first.to_s if words.empty?
 
     words.first(2).map { |word| word[0] }.join.upcase
   end
