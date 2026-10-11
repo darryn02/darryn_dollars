@@ -51,7 +51,13 @@ class BovadaSession
     self
   end
 
-  def get_json(url)
+  # The body, and how many seconds the edge says it has been holding it. A
+  # response with no Age header came straight from the origin, so it is 0.
+  Reply = Struct.new(:json, :age)
+
+  def get_json(url) = fetch_json(url).json
+
+  def fetch_json(url)
     response = get(url, referer: HOME_PAGE)
     content_type = response["content-type"].to_s
 
@@ -59,7 +65,7 @@ class BovadaSession
       raise Challenged, "expected json, got #{content_type.presence || 'nothing'} (#{response.code})"
     end
 
-    JSON.parse(response.body)
+    Reply.new(JSON.parse(response.body), response["age"].to_i)
   rescue JSON::ParserError => e
     raise Challenged, "unparseable body: #{e.message.first(120)}"
   end

@@ -176,6 +176,206 @@ RSpec.describe BovadaApiClient, type: :service do
     end
   end
 
+  # Past max-age the edge serves the expired copy and refreshes behind it, so
+  # the fresh board goes to the next request. Measured 2026-10-11: a copy 930
+  # seconds old, and 36 seconds old when asked again 37 seconds later. Taking
+  # the first answer meant every scrape saw the board as of the scrape before,
+  # and a second half market only exists for the 14 minutes of halftime.
+  describe "a copy of the board that is minutes old" do
+    let(:first_source) { %r{/event/coupon/events/A/description/football/nfl\?lang=en$} }
+    let(:second_source) { %r{/event/v2/events/A/description/football/nfl\?lang=fr$} }
+
+    let(:kickoff) { 90.minutes.ago }
+
+    before do
+      Game.create!(sport: :nfl, starts_at: kickoff)
+      allow_any_instance_of(described_class).to receive(:sleep)
+    end
+
+    def board(age:, second_half:)
+      markets = [market("G", 44.5)]
+      markets << market("2H", 23.5) if second_half
+
+      {
+        status: 200,
+        headers: { "Content-Type" => "application/json", "Age" => age.to_s },
+        body: [{ events: [{
+          "id" => "evt1",
+          "startTime" => kickoff.to_i * 1000,
+          "competitors" => [
+            { "home" => true,  "name" => "Buffalo Bills" },
+            { "home" => false, "name" => "New York Jets" }
+          ],
+          "displayGroups" => [{ "description" => "Game Lines", "markets" => markets }]
+        }] }].to_json
+      }
+    end
+
+    def market(period, total)
+      {
+        "description" => "Total",
+        "period" => { "live" => false, "abbreviation" => period },
+        "outcomes" => [
+          { "type" => "O", "price" => { "handicap" => total, "american" => "-110" } },
+          { "type" => "U", "price" => { "handicap" => total, "american" => "-110" } }
+        ]
+      }
+    end
+
+    # 600 exactly, because that is where a scrape on a 10 minute heartbeat
+    # finds the copy its last run left behind - and the edge does treat it
+    # as expired there.
+    it "asks an expired source again and builds the second half from the refreshed copy" do
+      stub_request(:get, first_source).to_return(board(age: 600, second_half: false),
+                                                 board(age: 1, second_half: true))
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(Line.second_half.active.pluck(:kind, :value)).to contain_exactly(["over", 23.5], ["under", 23.5])
+      expect(a_request(:get, first_source)).to have_been_made.twice
+      expect(a_request(:get, second_source)).not_to have_been_made
+    end
+
+    # Too old to trust, too young for the edge to replace - asking again
+    # would only get the same copy back.
+    it "moves on to the next source when the copy is aging but not yet expired" do
+      stub_request(:get, first_source).to_return(board(age: 300, second_half: false))
+      stub_request(:get, second_source).to_return(board(age: 0, second_half: true))
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(Line.second_half.active.count).to eq(2)
+      expect(a_request(:get, first_source)).to have_been_made.once
+    end
+
+    it "settles for the youngest copy when no source is fresh" do
+      stub_request(:get, api).to_return(board(age: 500, second_half: false))
+      stub_request(:get, second_source).to_return(board(age: 200, second_half: true))
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(Line.second_half.active.count).to eq(2)
+      expect(a_request(:get, api)).to have_been_made.times(described_class::SOURCES.size)
+    end
+
+    it "takes a fresh copy from the first source without asking anybody else" do
+      stub_request(:get, first_source).to_return(board(age: 45, second_half: true))
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(a_request(:get, api)).to have_been_made.once
+    end
+
+    it "says how old the copy it used was" do
+      stub_request(:get, first_source).to_return(board(age: 45, second_half: true))
+
+      expect(described_class.update_lines(sport: :nfl).to_s).to include("Board copy 45s old")
+    end
+
+    # Hunting for a fresher copy asks sources that used to go unasked, and
+    # any failure there surfaces as a challenge. With a board already in hand
+    # that would have recorded a challenge, updated nothing and backed the
+    # scheduler off for half an hour in the middle of a game.
+    it "keeps the copy in hand when a later source fails" do
+      stub_request(:get, api).to_return(status: 403, body: "denied")
+      stub_request(:get, first_source).to_return(board(age: 300, second_half: true))
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::SUCCESS)
+      expect(Line.second_half.active.count).to eq(2)
+    end
+
+    it "keeps the expired copy when asking again fails" do
+      stub_request(:get, api).to_return(status: 403, body: "denied")
+      stub_request(:get, first_source).to_return(board(age: 600, second_half: true), { status: 403, body: "denied" })
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::SUCCESS)
+      expect(Line.second_half.active.count).to eq(2)
+    end
+
+    # A cold key answers [] - see the sources above. That is not the book
+    # taking the board down.
+    it "keeps the expired copy when asking again comes back empty" do
+      stub_api(body: [].to_json)
+      stub_request(:get, first_source).to_return(
+        board(age: 600, second_half: true),
+        { status: 200, body: [].to_json, headers: { "Content-Type" => "application/json" } }
+      )
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::SUCCESS)
+      expect(Line.second_half.active.count).to eq(2)
+    end
+
+    # A page view does this inside a web request with a 15 second limit, and
+    # six expired sources would otherwise be six waits.
+    it "asks again once per run, however many sources have expired" do
+      stub_request(:get, api).to_return(board(age: 700, second_half: false))
+      expect_any_instance_of(described_class).to receive(:sleep).once
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(a_request(:get, first_source)).to have_been_made.twice
+      expect(a_request(:get, second_source)).to have_been_made.once
+    end
+
+    # Between games a board ten minutes behind is still right, and the extra
+    # requests would be spent on a site that challenges sessions it finds odd.
+    it "takes the first source as it comes when no game is on" do
+      Game.nfl.in_progress.delete_all
+      stub_request(:get, first_source).to_return(board(age: 1140, second_half: false))
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(a_request(:get, api)).to have_been_made.once
+    end
+  end
+
+  # The age in the scrape log has to be the age of the copy the lines were
+  # built from, or it answers the wrong question with a straight face.
+  describe "the copy age it reports" do
+    let(:super_bowl) { %r{/description/football/super-bowl} }
+
+    def super_bowl_board(age:)
+      {
+        status: 200,
+        headers: { "Content-Type" => "application/json", "Age" => age.to_s },
+        body: [{ events: [{
+          "id" => "sb", "startTime" => (Time.current + 3.hours).to_i * 1000,
+          "competitors" => [{ "home" => true, "name" => "Buffalo Bills" },
+                            { "home" => false, "name" => "New York Jets" }],
+          "displayGroups" => [{ "description" => "Game Lines", "markets" => [{
+            "description" => "Total", "period" => { "live" => false, "abbreviation" => "G" },
+            "outcomes" => [{ "type" => "O", "price" => { "handicap" => 44.5, "american" => "-110" } },
+                           { "type" => "U", "price" => { "handicap" => 44.5, "american" => "-110" } }]
+          }] }]
+        }] }].to_json
+      }
+    end
+
+    it "is the fallback board's when the fallback is what listed the games" do
+      stub_request(:get, api).to_return(status: 200, body: [].to_json,
+                                        headers: { "Content-Type" => "application/json", "Age" => "35129" })
+      stub_request(:get, super_bowl).to_return(super_bowl_board(age: 77))
+
+      expect(described_class.update_lines(sport: :nfl).to_s).to include("Board copy 77s old")
+    end
+
+    it "is left out when no source listed anything" do
+      existing_line.update!(hidden: true)
+      stub_api(body: [].to_json)
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(result.outcome).to eq(ScrapeRun::SUCCESS)
+      expect(result.to_s).not_to include("Board copy")
+    end
+  end
+
   # The super bowl url holds exactly one event - the Pro Bowl, between "NFC
   # Conference" and "AFC Conference". Reaching for it because we built no
   # *lines* turned every unresolvable nfl response into a competitor alert.

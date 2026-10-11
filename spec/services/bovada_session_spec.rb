@@ -35,6 +35,21 @@ RSpec.describe BovadaSession, type: :service do
       to have_been_made
   end
 
+  it "reports how long the edge has been holding the copy it served" do
+    stub_request(:get, home).to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+    stub_request(:get, api).to_return(status: 200, body: "{}",
+                                      headers: { "Content-Type" => "application/json", "Age" => "930" })
+
+    expect(described_class.new.warm!.fetch_json(api).age).to eq(930)
+  end
+
+  it "treats a response with no Age header as straight from the origin" do
+    stub_request(:get, home).to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+    stub_request(:get, api).to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
+
+    expect(described_class.new.warm!.fetch_json(api).age).to eq(0)
+  end
+
   it "raises Challenged when the response is not JSON" do
     stub_request(:get, home).to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
     stub_request(:get, api).to_return(status: 200, body: "<html>Access Denied</html>",
