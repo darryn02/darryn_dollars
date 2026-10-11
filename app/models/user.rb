@@ -3,7 +3,10 @@ class User < ApplicationRecord
 
   devise :invitable, :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :timeoutable
 
-  has_many :accounts
+  # Ordered because "the first account" is a thing the views ask for, and
+  # unordered it meant whatever Postgres returned: saving one account's row
+  # moved it behind its sibling, and which account came first flipped.
+  has_many :accounts, -> { order(:id) }
   has_many :wagers, through: :accounts
 
   after_invitation_accepted :provision_starter_account!
