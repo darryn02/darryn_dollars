@@ -142,7 +142,7 @@ const FLASH_ICONS = {
   error: "exclamation-triangle-fill"
 };
 
-const FLASH_KINDS = "dd-flash--success dd-flash--error";
+const FLASH_KINDS = "dd-flash--success dd-flash--error dd-flash--added";
 
 let flashTimer = null;
 
@@ -178,12 +178,15 @@ function renderFlash(kind, message, asHtml) {
     $body.text(message);
   }
 
-  const $icon = $(
-    '<svg class="dd-icon" aria-hidden="true" focusable="false">' +
-    '<use href="#i-' + FLASH_ICONS[kind] + '"></use></svg>'
-  );
+  // The added-to-slip flash leads with the account's avatar instead.
+  if (FLASH_ICONS[kind]) {
+    $flash.append($(
+      '<svg class="dd-icon" aria-hidden="true" focusable="false">' +
+      '<use href="#i-' + FLASH_ICONS[kind] + '"></use></svg>'
+    ));
+  }
 
-  $flash.append($icon).append($body);
+  $flash.append($body);
   flashTimer = setTimeout(cleanUp, 5000);
 }
 
@@ -196,12 +199,18 @@ function showErrorFlash(pMessage, pOptions) {
   renderFlash("error", pMessage, options.html);
 }
 
+// Markup from wagers/_added_flash, already escaped by the view.
+function showAddedFlash(html) {
+  renderFlash("added", html, true);
+}
+
 function cleanUp() {
   $(".flash-from-js")
     .removeClass("fade-in-down-out " + FLASH_KINDS)
     .empty();
 }
 
+window.showAddedFlash = showAddedFlash;
 window.showSuccessFlash = showSuccessFlash;
 window.showErrorFlash = showErrorFlash;
 

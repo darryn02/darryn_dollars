@@ -1,6 +1,7 @@
 module WagersHelper
   # One pane of the history page: a tab label and the partial behind it.
-  HistoryPane = Struct.new(:id, :label, :partial, :locals, keyword_init: true)
+  # :account is set only where the tab needs telling apart from a sibling's.
+  HistoryPane = Struct.new(:id, :label, :partial, :locals, :account, keyword_init: true)
 
   # The book's combined ledger first, when there is one, then an account per
   # pane. The ledger pane appears only because HouseLedger.for already
@@ -17,9 +18,13 @@ module WagersHelper
     wagers_by_account.each do |account, wagers|
       panes << HistoryPane.new(
         id: "account-#{account.id}",
-        label: user.admin? ? account.qualified_name : account.to_s,
+        # display_name, so a player's account carries one label on the bet
+        # sheet, on its slip and here. This was to_s, which prefers the
+        # leaderboard nickname - a different label from the other two.
+        label: user.admin? ? account.qualified_name : account.display_name,
         partial: "account_history",
-        locals: { account: account, wagers: wagers }
+        locals: { account: account, wagers: wagers },
+        account: (account if account.user.accounts.many?)
       )
     end
 

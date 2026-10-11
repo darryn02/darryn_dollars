@@ -15,7 +15,10 @@
           data: { bs_toggle: "tab", bs_target: "##{pane.id}-tab-pane" },
           type: "button", role: "tab",
           "aria-controls" => "#{pane.id}-tab-pane",
-          "aria-selected" => (index.zero? ? "true" : "false") }= pane.label
+          "aria-selected" => (index.zero? ? "true" : "false") }
+          - if pane.account
+            = account_avatar(pane.account, css_class: "dd-acct-avatar--sm")
+          %span= pane.label
     .tab-content#account-tabs-content
       - panes.each_with_index do |pane, index|
         .tab-pane.fade{ id: "#{pane.id}-tab-pane",

@@ -23,6 +23,9 @@ RSpec.describe "Wager history", type: :system do
       visit history_wagers_path
 
       expect(page).to have_css(".dd-account-tab", count: 2)
+      # Marked the same way as on the bet sheet and the slips.
+      expect(page).to have_css(".dd-account-tab .dd-acct-avatar.dd-acct--0", text: "M")
+      expect(page).to have_css(".dd-account-tab .dd-acct-avatar.dd-acct--1", text: "S")
 
       within("#account-#{main.id}-tab-pane") do
         expect(page).to have_content("BUF +2.5")

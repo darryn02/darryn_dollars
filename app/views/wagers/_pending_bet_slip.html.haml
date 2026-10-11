@@ -1,12 +1,17 @@
 .dd-slip.dd-slip--pending.pending-bet-slip
-  .dd-slip__header
-    %h2.dd-slip__title= bet_slip.title
-    %p.dd-slip__summary
-      %span= pluralize(bet_slip.wagers.size, "wager")
-      %span.dd-slip__dot &middot;
-      %span= "#{currency(bet_slip.wagers.sum(&:amount))} at risk"
-      %span.dd-slip__dot &middot;
-      %span= "#{currency(bet_slip.wagers.sum(&:potential_profit))} to win"
+  -# The avatar and tint only appear where there is a sibling slip to
+  -# confuse this one with. The left border still says pending or confirmed.
+  .dd-slip__header{ class: (account_color_class(bet_slip.account) if bet_slip.show_avatar?) }
+    - if bet_slip.show_avatar?
+      = account_avatar(bet_slip.account)
+    .dd-slip__heading
+      %h2.dd-slip__title= bet_slip.title
+      %p.dd-slip__summary
+        %span= pluralize(bet_slip.wagers.size, "wager")
+        %span.dd-slip__dot &middot;
+        %span= "#{currency(bet_slip.wagers.sum(&:amount))} at risk"
+        %span.dd-slip__dot &middot;
+        %span= "#{currency(bet_slip.wagers.sum(&:potential_profit))} to win"
 
   %ul.dd-slip__list
     - bet_slip.wagers.each do |wager|
@@ -27,7 +32,7 @@
           = icon "x-lg"
 
   .dd-slip__actions
-    = link_to "Confirm #{pluralize(bet_slip.wagers.size, 'wager')}",
+    = link_to bet_slip.confirm_label,
       confirm_pending_wagers_path(account_id: bet_slip.account.id),
       method: :post,
       class: "btn btn-primary dd-slip__confirm"

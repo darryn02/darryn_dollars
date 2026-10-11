@@ -95,6 +95,8 @@ RSpec.describe "Placing a wager", type: :system do
     visit bet_slip_wagers_path
 
     expect(page).to have_css(".dd-slip--pending")
+    # Nothing to tell this slip apart from, so nothing marking it.
+    expect(page).to have_no_css(".dd-acct-avatar")
 
     click_link "Confirm 1 wager"
 
@@ -148,9 +150,51 @@ RSpec.describe "Placing a wager", type: :system do
         find(".dd-bet-as__btn", text: "Little Joe").click
       end
 
-      expect(page).to have_css(".flash-from-js", text: "Added to")
+      # Named, and marked with the same avatar as the button that was pressed.
+      expect(page).to have_css(".flash-from-js", text: "Added to Little Joe's slip.")
+      expect(page).to have_css(".flash-from-js .dd-acct-avatar", text: "LJ")
       expect(little.reload.wagers.count).to eq(1)
       expect(Wager.where(account_id: account.id).count).to eq(0)
+    end
+
+    # The wrong button is still one slip of the thumb away, so the
+    # confirmation that names the account also takes the bet back.
+    it "takes the bet back from the confirmation" do
+      visit lines_path
+
+      open_bet_sheet(card[:away_spread], labelled: "+2.5")
+
+      within(sheet) do
+        click_button "$100"
+        find(".dd-bet-as__btn", text: "Big Joe").click
+      end
+
+      within(".flash-from-js") { click_link "Undo" }
+
+      expect(page).to have_css(".flash-from-js", text: "has been cancelled")
+      expect(Wager.count).to eq(0)
+    end
+
+    it "heads each slip with its account and confirms only the one pressed" do
+      create_wager(account: account, line: card[:away_spread], amount: 100)
+      create_wager(account: little, line: card[:over], amount: 100)
+
+      visit bet_slip_wagers_path
+
+      slips = all(".dd-slip--pending")
+      expect(slips.size).to eq(2)
+
+      # The same order as the buttons on the bet sheet.
+      expect(slips[0]).to have_css(".dd-slip__header.dd-acct--0 .dd-acct-avatar", text: "BJ")
+      expect(slips[0]).to have_css(".dd-slip__title", text: "Big Joe Pending Wagers")
+      expect(slips[1]).to have_css(".dd-slip__header.dd-acct--1 .dd-acct-avatar", text: "LJ")
+
+      click_link "Confirm Little Joe's 1 wager"
+
+      expect(page).to have_css(".dd-flash", text: "1 wagers confirmed.")
+      expect(page).to have_css(".dd-slip--confirmed", text: "Little Joe Confirmed Wagers")
+      expect(page).to have_css(".dd-slip--pending", text: "Big Joe Pending Wagers")
+      expect(Wager.where(account_id: account.id).first).to be_pending
     end
 
     # Enter presses a form's first submit button, which here would be the

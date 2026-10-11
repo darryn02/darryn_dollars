@@ -767,6 +767,25 @@ $account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
   font-size: .625rem;
 }
 
+// The confirmation after a bet is added by a player who chose an account.
+.dd-flash--added {
+  border-left-color: $win;
+}
+
+.dd-flash__added {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.dd-flash__undo {
+  // Reaches past its own text so a thumb can hit it in the five seconds it
+  // is on screen.
+  margin: -.5rem -.375rem -.5rem .25rem;
+  padding: .5rem .375rem;
+  font-weight: 700;
+}
+
 // One submit button per account, in place of a single Add to Bet Slip.
 .dd-bet-as {
   margin-top: 1rem;
@@ -856,8 +875,18 @@ $account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
 .dd-slip--confirmed { border-left-color: $brand-hover; }
 
 .dd-slip__header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
   padding: .875rem 1rem;
+  // Tinted in the account's colour where the slip has a sibling to be told
+  // from; see Account identity above.
+  background-color: var(--dd-acct-tint, transparent);
   border-bottom: 1px solid $line;
+}
+
+.dd-slip__heading {
+  min-width: 0;
 }
 
 .dd-slip__title {
@@ -1094,6 +1123,9 @@ $account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
 }
 
 .dd-account-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
   flex: 0 0 auto;
   min-height: 2.75rem;
   padding: .5rem .875rem;

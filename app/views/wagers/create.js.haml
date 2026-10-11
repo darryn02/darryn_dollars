@@ -2,6 +2,13 @@
   :plain
     window.showErrorFlash("#{j @error }");
     $("#betOffcanvas-#{ @line_id }").offcanvas('hide');
+- elsif @wager.present? && current_user.accounts.many?
+  -# Somebody who chose between accounts is told which one they chose, and
+  -# can take it back, while the tap is still fresh. Rendered from a partial
+  -# so the account name is escaped by the view rather than by hand.
+  :plain
+    window.showAddedFlash("#{ j render('wagers/added_flash', formats: [:html], wager: @wager) }");
+    $("#betOffcanvas-#{ @line_id }").offcanvas('hide');
 - elsif @notice.present?
   :plain
     window.showSuccessFlash("#{ j @notice }");
