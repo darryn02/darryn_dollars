@@ -91,6 +91,6 @@ RSpec.describe "score:wagers" do
     expect { run_task }.to raise_error(OpenURI::HTTPError)
 
     expect(ScrapeRun.last.outcome).to eq(ScrapeRun::ERROR)
-    expect(ScrapeRun.for_lines).to be_empty
+    expect(ScrapeRun.for_scheduled_lines).to be_empty
   end
 end
