@@ -28,11 +28,11 @@
 
   .dd-slip__actions
     = link_to "Confirm #{pluralize(bet_slip.wagers.size, 'wager')}",
-      confirm_pending_wagers_path,
+      confirm_pending_wagers_path(account_id: bet_slip.account.id),
       method: :post,
       class: "btn btn-primary dd-slip__confirm"
     = link_to "Cancel all",
-      cancel_pending_wagers_path,
+      cancel_pending_wagers_path(account_id: bet_slip.account.id),
       method: :delete,
       data: { confirm: "Cancel #{bet_slip.wagers.size} wager(s)?" },
       class: "btn dd-slip__cancel"
