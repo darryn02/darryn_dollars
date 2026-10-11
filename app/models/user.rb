@@ -6,7 +6,10 @@ class User < ApplicationRecord
   # Ordered because "the first account" is a thing the views ask for, and
   # unordered it meant whatever Postgres returned: saving one account's row
   # moved it behind its sibling, and which account came first flipped.
-  has_many :accounts, -> { order(:id) }
+  #
+  # inverse_of is spelled out because a scope switches off Rails own
+  # detection of it, and Account#display_name walks back up to its siblings.
+  has_many :accounts, -> { order(:id) }, inverse_of: :user
   has_many :wagers, through: :accounts
 
   after_invitation_accepted :provision_starter_account!

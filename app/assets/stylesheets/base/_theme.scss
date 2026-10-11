@@ -725,6 +725,115 @@ body .container.main {
 }
 
 // ---------------------------------------------------------------------------
+// Account identity
+//
+// Only drawn for somebody choosing between several accounts. The colours stay
+// clear of win, loss, pending and the brand blue, which already mean
+// something on these screens, and every use sits beside the account's name:
+// colour never carries the account alone.
+//
+// AccountsHelper::ACCOUNT_COLORS must match the length of this list.
+// ---------------------------------------------------------------------------
+
+$account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
+
+@each $color in $account-colors {
+  .dd-acct--#{index($account-colors, $color) - 1} {
+    --dd-acct: #{$color};
+    // Mixed here rather than with color-mix() in the browser, which the
+    // phones this is used on cannot all be assumed to have.
+    --dd-acct-tint: #{mix($color, $surface-1, 20%)};
+    --dd-acct-tint-strong: #{mix($color, $surface-1, 36%)};
+  }
+}
+
+.dd-acct-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: .8125rem;
+  font-weight: 800;
+  line-height: 1;
+  color: $surface-0;
+  background-color: var(--dd-acct, #{$text-3});
+  border-radius: 50%;
+}
+
+.dd-acct-avatar--sm {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: .625rem;
+}
+
+// One submit button per account, in place of a single Add to Bet Slip.
+.dd-bet-as {
+  margin-top: 1rem;
+}
+
+.dd-bet-as__label {
+  margin: 0 0 .35rem;
+  font-size: .875rem;
+  font-weight: 600;
+  color: $text-2;
+}
+
+.dd-bet-as__choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+}
+
+.dd-bet-as__btn {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+  min-height: 3.5rem;
+  padding: .5rem .625rem;
+  text-align: left;
+  color: $text-1;
+  background-color: var(--dd-acct-tint, #{$surface-2});
+  border: 2px solid var(--dd-acct, #{$line});
+  border-radius: $border-radius;
+
+  &:hover,
+  &:active {
+    background-color: var(--dd-acct-tint-strong, #{$surface-3});
+  }
+
+  &:focus-visible {
+    outline: .2rem solid rgba($brand-hover, .6);
+    outline-offset: 2px;
+  }
+
+  // A third account would otherwise sit alone in half a row.
+  &:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.dd-bet-as__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dd-bet-as__name {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.dd-bet-as__credit {
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+  color: $text-2;
+}
+
+// ---------------------------------------------------------------------------
 // Bet slips
 // ---------------------------------------------------------------------------
 
