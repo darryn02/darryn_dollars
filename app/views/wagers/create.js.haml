@@ -7,7 +7,7 @@
   -# can take it back, while the tap is still fresh. Rendered from a partial
   -# so the account name is escaped by the view rather than by hand.
   :plain
-    window.showAddedFlash("#{ j render('wagers/added_flash', formats: [:html], wager: @wager) }");
+    window.showAddedFlash("#{ j render(partial: 'wagers/added_flash', formats: [:html], locals: { wager: @wager }) }");
     $("#betOffcanvas-#{ @line_id }").offcanvas('hide');
 - elsif @notice.present?
   :plain
