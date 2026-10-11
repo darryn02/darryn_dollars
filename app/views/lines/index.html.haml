@@ -23,6 +23,11 @@
 
   -# Bet forms sit outside the board so the offcanvas markup never lands
   -# inside a row's grid.
+  -#
+  -# The accounts are read once here and handed to every form. Each form
+  -# asking the association for itself cost a single-account player three
+  -# queries a line, since nothing ever loaded it: two counts and a first.
+  - accounts = current_user.accounts.to_a
   - @games.each do |game_lines|
     - game_lines.bet_lines.each do |line|
-      = render "bet_form", line: line, user: current_user, game_lines: game_lines
+      = render "bet_form", line: line, accounts: accounts, game_lines: game_lines
