@@ -30,8 +30,25 @@ Capybara.default_max_wait_time = 5
 # lands on the wrong page, and a bet button is just an anchor that does nothing.
 # It is intermittent, which makes it worse.
 #
-# application.js publishes showSuccessFlash on window as its last statement, so
-# that is a truthful "everything above me has run" signal.
+# application.js publishes showSuccessFlash on window near its end. It is not
+# the last statement, and does not need to be: a module with no top-level
+# await runs start to finish in one task, so a script that can see the
+# function at all is seeing a file that has finished running.
+#
+# Wait for a flash that follows a redirect on .dd-flash--notice or
+# .dd-flash--alert, not on .dd-flash.
+#
+# Seen once, on 2026-10-11, in a full run on a loaded machine: a
+# `click_button` followed by `have_css(".dd-flash", text: ...)` raised
+# Selenium's UnknownError, "Node with given id does not belong to the
+# document". Capybara retries a stale element but not that error (it is
+# absent from Selenium::Driver#invalid_element_errors in 3.40), so it failed
+# the example outright.
+#
+# The suspected cause, not reproduced: every page carries an empty .dd-flash
+# (the .flash-from-js banner), so that selector matches a node on the page
+# being left, and reading its text as the document is swapped is what
+# raises. The typed classes are only on the page being arrived at.
 module WaitForApplicationJs
   READY = "typeof window.showSuccessFlash === 'function'".freeze
 

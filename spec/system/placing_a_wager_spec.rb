@@ -102,7 +102,7 @@ RSpec.describe "Placing a wager", type: :system do
 
     click_link "Confirm 1 wager"
 
-    expect(page).to have_css(".dd-flash", text: "1 wagers confirmed.")
+    expect(page).to have_css(".dd-flash--notice", text: "1 wagers confirmed.")
     expect(page).to have_css(".dd-slip--confirmed", text: "BUF +2.5")
     expect(page).to have_no_css(".dd-slip--pending")
   end
@@ -186,7 +186,7 @@ RSpec.describe "Placing a wager", type: :system do
         click_link "Move to Little Joe"
       end
 
-      expect(page).to have_css(".dd-flash", text: "Moved to Little Joe's slip.")
+      expect(page).to have_css(".dd-flash--notice", text: "Moved to Little Joe's slip.")
       expect(page).to have_css(".dd-slip--pending", text: "Little Joe Pending Wagers")
       expect(page).to have_no_css(".dd-slip--pending", text: "Big Joe Pending Wagers")
       within(".dd-slip--pending") { expect(page).to have_link("Move to Big Joe") }
@@ -208,7 +208,7 @@ RSpec.describe "Placing a wager", type: :system do
 
       click_link "Confirm Little Joe's 1 wager"
 
-      expect(page).to have_css(".dd-flash", text: "1 wagers confirmed.")
+      expect(page).to have_css(".dd-flash--notice", text: "1 wagers confirmed.")
       expect(page).to have_css(".dd-slip--confirmed", text: "Little Joe Confirmed Wagers")
       expect(page).to have_css(".dd-slip--pending", text: "Big Joe Pending Wagers")
       expect(Wager.where(account_id: account.id).first).to be_pending
