@@ -120,6 +120,22 @@ RSpec.describe Account, type: :model do
     end
   end
 
+  describe "emoji" do
+    it "takes one from the list, or none" do
+      account.emoji = Account::EMOJI_CHOICES.first
+      expect(account).to be_valid
+
+      account.emoji = nil
+      expect(account).to be_valid
+    end
+
+    it "refuses anything else" do
+      account.emoji = "Big"
+
+      expect(account).not_to be_valid
+    end
+  end
+
   describe "#display_name" do
     it "is the name, which is what the bet sheet and the slips have always shown" do
       account.update!(name: "Big Joe", nickname: "Big")

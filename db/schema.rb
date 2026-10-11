@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_27_035608) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_11_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "plpgsql"
@@ -24,6 +24,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_27_035608) do
     t.datetime "updated_at", null: false
     t.decimal "initial_balance", default: "0.0", null: false
     t.boolean "leaderboard_visible", default: false, null: false
+    t.string "emoji"
     t.index ["name"], name: "index_accounts_on_name"
     t.index ["nickname"], name: "index_accounts_on_nickname"
     t.index ["user_id"], name: "index_accounts_on_user_id"

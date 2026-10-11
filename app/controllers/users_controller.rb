@@ -39,7 +39,7 @@ class UsersController < ApplicationController
 
   def user_params
     params.require(:user).permit(:name, :password, :password_confirmation,
-                                 accounts_attributes: [:id, :nickname, :leaderboard_visible])
+                                 accounts_attributes: [:id, :nickname, :leaderboard_visible, :emoji])
   end
 
   # Looked up through @user.accounts.find_by rather than Account.find, so a
@@ -60,6 +60,13 @@ class UsersController < ApplicationController
       changes[:nickname] = attrs[:nickname] if attrs.key?(:nickname)
       if attrs.key?(:leaderboard_visible)
         changes[:leaderboard_visible] = ActiveModel::Type::Boolean.new.cast(attrs[:leaderboard_visible])
+      end
+
+      # An emoji off the list is dropped here rather than left to the model
+      # validation, because update! would turn a hand-built form into a 500.
+      # Blank is a real choice: it puts the avatar back to initials.
+      if attrs.key?(:emoji) && (attrs[:emoji].blank? || Account::EMOJI_CHOICES.include?(attrs[:emoji]))
+        changes[:emoji] = attrs[:emoji].presence
       end
 
       account.update!(changes) if changes.any?

@@ -39,6 +39,45 @@ RSpec.describe "Editing account settings on the settings page", type: :request d
     expect(account.reload.leaderboard_visible).to be(false)
   end
 
+  describe "an account's avatar" do
+    let!(:big) { create_account(user: user, name: "Big Joe") }
+    let!(:little) { create_account(user: user, name: "Little Joe") }
+
+    before { sign_in user }
+
+    def save_emoji(account, emoji)
+      patch user_path(user), params: {
+        user: { accounts_attributes: { "0" => { id: account.id, emoji: emoji } } }
+      }
+    end
+
+    it "is set per account" do
+      save_emoji(big, "🐻")
+
+      expect(big.reload.emoji).to eq("🐻")
+      expect(little.reload.emoji).to be_nil
+    end
+
+    it "goes back to initials when the blank choice is saved" do
+      big.update!(emoji: "🐻")
+
+      save_emoji(big, "")
+
+      expect(big.reload.emoji).to be_nil
+    end
+
+    # The form only offers the list, so anything else was typed into a request
+    # by hand. It is ignored, not a 500.
+    it "ignores anything that is not on the list" do
+      big.update!(emoji: "🐻")
+
+      save_emoji(big, "<b>nope</b>")
+
+      expect(response).to have_http_status(:redirect)
+      expect(big.reload.emoji).to eq("🐻")
+    end
+  end
+
   it "updates each account independently when a user has more than one" do
     main = create_account(user: user, name: "Main", nickname: "Old Main")
     side = create_account(user: user, name: "Side", nickname: "Old Side")

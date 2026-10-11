@@ -68,6 +68,44 @@ RSpec.describe "The settings page", type: :system do
     expect(page).to have_field("Leaderboard nickname", with: "Side Nick")
   end
 
+  # The avatar is how a player with two accounts tells them apart on the bet
+  # sheet, so the proof that picking one worked is the bet sheet.
+  it "lets each account pick an avatar, which then marks it on the bet sheet" do
+    big = create_account(user: user, name: "Big Joe")
+    little = create_account(user: user, name: "Little Joe")
+    game = create_game(starts_at: 2.hours.from_now)
+    card = create_full_card(game: game)
+
+    visit edit_user_path(user)
+
+    # The radio itself is drawn invisible over its face, so it is chosen by
+    # id rather than clicked through the face.
+    choose "account_#{big.id}_emoji_#{Account::EMOJI_CHOICES.index('🐻')}", allow_label_click: true
+    choose "account_#{little.id}_emoji_#{Account::EMOJI_CHOICES.index('🐭')}", allow_label_click: true
+    click_button "Save changes"
+    expect(page).to have_css(".dd-flash", text: "Settings updated")
+
+    expect(big.reload.emoji).to eq("🐻")
+    expect(little.reload.emoji).to eq("🐭")
+    expect(page).to have_checked_field("account_#{big.id}_emoji_#{Account::EMOJI_CHOICES.index('🐻')}", visible: :all)
+
+    visit lines_path
+    find(".dd-bet-btn", text: "+2.5").click
+
+    within("#betOffcanvas-#{card[:away_spread].id}") do
+      expect(page).to have_css(".dd-bet-as__btn", text: "Big Joe") { |button| button.has_css?(".dd-acct-avatar--emoji", text: "🐻") }
+      expect(page).to have_css(".dd-bet-as__btn", text: "Little Joe") { |button| button.has_css?(".dd-acct-avatar--emoji", text: "🐭") }
+    end
+  end
+
+  it "offers no avatar choice to a player with one account, who never sees one" do
+    create_account(user: user)
+
+    visit edit_user_path(user)
+
+    expect(page).to have_no_css(".dd-emoji-picker")
+  end
+
   it "updates each account's nickname independently" do
     main = create_account(user: user, name: "Main", nickname: "Main Nick")
     side = create_account(user: user, name: "Side", nickname: "Side Nick")

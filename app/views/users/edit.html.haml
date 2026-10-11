@@ -17,7 +17,7 @@
             hint: "Shown on the leaderboard instead of your name."
           = af.input :leaderboard_visible, as: :boolean, label: "Show me on the leaderboard"
       - elsif @user.accounts.any?
-        %p.dd-eyebrow Leaderboard, per account
+        %p.dd-eyebrow Per account
         - @user.accounts.each do |account|
           .dd-panel
             .dd-panel__header
@@ -27,5 +27,23 @@
                 = af.input :id, as: :hidden
                 = af.input :nickname, label: "Leaderboard nickname"
                 = af.input :leaderboard_visible, as: :boolean, label: "Show me on the leaderboard"
+
+                -# Only here, in the several-accounts branch: the avatar is
+                -# never drawn for a player with one account, so there would
+                -# be nothing for the choice to change.
+                %fieldset.dd-emoji-picker{ class: account_color_class(account) }
+                  %legend.form-label Avatar
+                  .dd-emoji-picker__choices
+                    %label.dd-emoji-choice
+                      = af.radio_button :emoji, "", checked: account.emoji.blank?,
+                        id: "account_#{account.id}_emoji_none", class: "dd-emoji-choice__input"
+                      %span.dd-emoji-choice__face.dd-emoji-choice__face--initials{ "aria-hidden" => "true" }= account_initials(account)
+                      %span.visually-hidden Initials
+                    - Account::EMOJI_CHOICES.each_with_index do |emoji, index|
+                      %label.dd-emoji-choice
+                        = af.radio_button :emoji, emoji,
+                          id: "account_#{account.id}_emoji_#{index}", class: "dd-emoji-choice__input"
+                        %span.dd-emoji-choice__face= emoji
+                  %p.form-text Shown beside this account on the bet sheet and on your bet slips.
 
       = f.submit "Save changes", class: "btn btn-primary w-100 mt-2"
