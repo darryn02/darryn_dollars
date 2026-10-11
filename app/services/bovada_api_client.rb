@@ -35,6 +35,51 @@ class BovadaApiClient
     ["services/sports/event/v2/events/A/description", "lang=es"]
   ].freeze
 
+  # What the edge does with a copy past its max-age, measured on 2026-10-11:
+  # it serves the expired copy anyway and refreshes behind it, so the fresh
+  # board goes to whoever asks next. A GET at 19:02:04 UTC was handed a copy
+  # 930 seconds old; the same url 37 seconds later was 36 seconds old. The
+  # cdn-stale-while-revalidate=30 it advertises is not what it does.
+  #
+  # Nobody else asks for these urls, so "whoever asks next" was us, ten or
+  # twenty minutes later - every scheduled scrape was handed the board as it
+  # stood at the scrape before. A second half market is listed for the length
+  # of halftime, about 14 minutes, so we saw it once the third quarter was
+  # under way or not at all: 24 of the 65 games played up to 2026-10-08 never
+  # got a second half line.
+  #
+  # So while a game is on, a copy is only taken as it comes if it is this
+  # young. An expired one is asked for a second time, after the refresh our
+  # first request set off. One in between - too old to use, too young for the
+  # edge to replace - sends us to the next source, whose copy ages on its own
+  # clock. Two minutes is a judgement, not a derivation: short against a 14
+  # minute halftime, long enough that a busy second half page reuses a copy
+  # instead of walking every key on every view.
+  #
+  # A copy counts as expired at exactly max-age, not past it: two keys asked
+  # at age 600 were refreshed, one asked at 599 was not. The refreshed copy
+  # was there 2.1 seconds after the expired answer came back, which is the
+  # only reason the wait is 2 - one clean sample, not a tuned number. If it
+  # is ever too short the second answer is simply stale as well, and that is
+  # handled like any other aging copy.
+  #
+  # One second ask per run, however many sources turn out to be expired. A
+  # page view runs this inside a web request that rack-timeout cuts at 15
+  # seconds, and six waits is 12 of them before any network time. Every
+  # expired source we read is refreshed for the next run whether or not we
+  # wait for it.
+  #
+  # Not done: a HEAD to read each key's age before choosing. It answers in a
+  # tenth of the time, but whether it sets off the refresh is unmeasured, and
+  # it is one more request shape no browser sends at a site that challenges
+  # sessions it finds odd.
+  FRESH_ENOUGH = 2.minutes
+  CACHE_LIFETIME = 10.minutes
+  REVALIDATION_WAIT = 2.seconds
+
+  # The events one source listed, and the age of the copy they came from.
+  Board = Struct.new(:events, :age)
+
   API_SPORT_MAP = {
     nfl: "football/nfl",
     super_bowl: "football/super-bowl",
@@ -63,7 +108,7 @@ class BovadaApiClient
     created_before = Line.count
 
     session = BovadaSession.new.warm!
-    events = events_for(session, sport)
+    board = board_for(session, sport)
 
     # Only when the book listed nothing at all, and the fallback board never
     # files a competitor report.
@@ -84,10 +129,10 @@ class BovadaApiClient
     # and says plainly - so the second, misdirecting report is suppressed. A
     # real Super Bowl whose teams we cannot name still builds no lines, and
     # still reaches no_data.
-    fallback = events.empty? && sport == :nfl
-    events = events_for(session, :super_bowl) if fallback
+    fallback = board.events.empty? && sport == :nfl
+    board = board_for(session, :super_bowl) if fallback
 
-    lines = parse_and_assert_lines(events, fallback: fallback)
+    lines = parse_and_assert_lines(board.events, fallback: fallback)
 
     # A book that returns nothing while we hold active lines is telling us
     # something is wrong with the request, not that every game was cancelled.
@@ -106,7 +151,12 @@ class BovadaApiClient
 
     ScrapeResult.new(
       outcome: ScrapeRun::SUCCESS,
-      message: "#{deactivated} lines deactivated. #{activated} lines activated.",
+      # The age goes in the audit trail because nothing else can answer
+      # "was that scrape looking at a stale board" after the fact. Only when
+      # some source listed something: no copy was used otherwise, and "0s"
+      # would read as fresh from the origin.
+      message: ["#{deactivated} lines deactivated. #{activated} lines activated.",
+                ("Board copy #{board.age}s old." if board.age)].compact.join(" "),
       created: Line.count - created_before,
       activated: activated,
       deactivated: deactivated
@@ -117,16 +167,65 @@ class BovadaApiClient
 
   attr_reader :sport
 
-  # The first source that lists any events wins. Nothing anywhere is the only
-  # honest empty, and the caller still refuses to act on it while we hold
-  # active lines.
-  def events_for(session, key)
+  # The first source that lists any events wins - and while a game is on, the
+  # first whose copy is fresh, or failing that the youngest. Nothing anywhere
+  # is the only honest empty, and the caller still refuses to act on it while
+  # we hold active lines.
+  def board_for(session, key)
+    youngest = nil
+
     SOURCES.each do |prefix, query|
-      events = events_in(session.get_json(url_for(prefix, query, key)))
-      return events if events.any?
+      board = ask(session, url_for(prefix, query, key))
+      next if board.events.empty?
+      return board unless in_play? && board.age > FRESH_ENOUGH
+
+      youngest = board if youngest.nil? || board.age < youngest.age
+    rescue BovadaSession::Challenged
+      # Looking for something fresher must not cost us the board already in
+      # hand. Before there was any looking, a source that answered was the
+      # end of the run; a timeout on the next one is no reason to record a
+      # challenge, update nothing and back the scheduler off mid-game.
+      raise if youngest.nil?
+
+      break
     end
 
-    []
+    youngest || Board.new([], nil)
+  end
+
+  def ask(session, url)
+    board = read(session, url)
+    return board unless ask_again?(board)
+
+    # Our request is what told the edge this copy had expired.
+    @asked_again = true
+    sleep(REVALIDATION_WAIT)
+    refreshed = read(session, url)
+
+    # An empty second answer is a cold key, not an empty board - the first
+    # answer is still the best this source has.
+    refreshed.events.any? ? refreshed : board
+  rescue BovadaSession::Challenged
+    raise if board.nil?
+
+    board
+  end
+
+  def ask_again?(board)
+    in_play? && !@asked_again && board.events.any? && board.age >= CACHE_LIFETIME
+  end
+
+  def read(session, url)
+    reply = session.fetch_json(url)
+    Board.new(events_in(reply.json), reply.age)
+  end
+
+  # Only then is a board a few minutes behind a board that is wrong. Between
+  # games every extra request would be spent on lines that move by the hour.
+  def in_play?
+    return @in_play if defined?(@in_play)
+
+    @in_play = Game.public_send(sport).in_progress.exists?
   end
 
   def url_for(prefix, query, key)
