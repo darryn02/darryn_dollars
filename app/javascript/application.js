@@ -142,16 +142,34 @@ const FLASH_ICONS = {
   error: "exclamation-triangle-fill"
 };
 
+const FLASH_KINDS = "dd-flash--success dd-flash--error";
+
+let flashTimer = null;
+
 function renderFlash(kind, message, asHtml) {
+  // Each flash used to set its own five second timer and never cancel the one
+  // before it, so a second flash was emptied when the first one's time ran
+  // out - a bet added three seconds after another kept its confirmation for
+  // two. The animation had the same problem: re-adding a class that is
+  // already there does not restart it, so the fade ran on the first flash's
+  // clock too.
+  clearTimeout(flashTimer);
+
   const $flash = $(".flash-from-js")
-    .removeClass("dd-flash--success dd-flash--error")
-    .addClass("fade-in-down-out dd-flash--" + kind)
+    .removeClass("fade-in-down-out " + FLASH_KINDS)
     .empty();
 
-  const $icon = $(
-    '<svg class="dd-icon" aria-hidden="true" focusable="false">' +
-    '<use href="#i-' + FLASH_ICONS[kind] + '"></use></svg>'
-  );
+  // Every layout renders the banner today. jQuery would shrug at a missing
+  // one; the offsetWidth read below would throw and take the rest of the
+  // server's response script with it.
+  if (!$flash.length) { return; }
+
+  // Reading a layout property between removing the class and adding it back
+  // is what makes the browser treat the animation as new.
+  void $flash[0].offsetWidth;
+
+  $flash.addClass("fade-in-down-out dd-flash--" + kind);
+
   const $body = $("<div></div>");
 
   if (asHtml) {
@@ -160,8 +178,13 @@ function renderFlash(kind, message, asHtml) {
     $body.text(message);
   }
 
+  const $icon = $(
+    '<svg class="dd-icon" aria-hidden="true" focusable="false">' +
+    '<use href="#i-' + FLASH_ICONS[kind] + '"></use></svg>'
+  );
+
   $flash.append($icon).append($body);
-  setTimeout(cleanUp, 5000);
+  flashTimer = setTimeout(cleanUp, 5000);
 }
 
 function showSuccessFlash(message) {
@@ -175,7 +198,7 @@ function showErrorFlash(pMessage, pOptions) {
 
 function cleanUp() {
   $(".flash-from-js")
-    .removeClass("fade-in-down-out dd-flash--success dd-flash--error")
+    .removeClass("fade-in-down-out " + FLASH_KINDS)
     .empty();
 }
 
