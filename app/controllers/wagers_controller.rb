@@ -2,7 +2,7 @@ class WagersController < ApplicationController
   # Scoring settles money, so it belongs to the book alone. The view has always
   # hidden these controls from players; that hid the buttons, not the routes.
   before_action :require_admin!, only: [:mark_as_win, :mark_as_loss, :mark_as_push]
-  before_action :load_reachable_wager, only: [:destroy]
+  before_action :load_reachable_wager, only: [:destroy, :move]
   before_action :load_slip_account, only: [:confirm_pending, :cancel_pending]
 
   def bet_slip
@@ -34,6 +34,37 @@ class WagersController < ApplicationController
       @notice = "Wager #{@wager.id} has been cancelled."
     else
       @error = "Confirmed wagers cannot be cancelled.".html_safe
+    end
+  end
+
+  # Puts a pending wager on another of the same player's accounts: the fix
+  # for a bet added under the wrong one, without deleting it and finding the
+  # line again - which may have moved, or closed, in the meantime.
+  #
+  # Pending only. A confirmed wager is money the book has accepted against
+  # one account's credit, and moving that is a correction for the book to
+  # make, not a button.
+  #
+  # The target is looked up among the wager owner's accounts rather than the
+  # signed-in user's, so the book can move a player's bet between that
+  # player's accounts and nobody can move one across to somebody else.
+  #
+  # Credit is not checked here. It never is while a wager is pending - the
+  # check belongs to confirmation, and the wager still has to pass it there
+  # against the account it lands on.
+  def move
+    target = @wager.account.user.accounts.find_by(id: params[:account_id])
+
+    if !@wager.pending?
+      redirect_to bet_slip_wagers_path, alert: "Only a pending wager can be moved."
+    elsif target.nil? || target == @wager.account
+      redirect_to bet_slip_wagers_path, alert: "That wager cannot be moved there."
+    else
+      Wager.transaction do
+        @wager.update!(account: target, bet_slip: BetSlip.pending.find_or_create_by!(account_id: target.id))
+      end
+
+      redirect_to bet_slip_wagers_path, notice: "Moved to #{target.display_name}'s slip."
     end
   end
 
@@ -101,7 +132,7 @@ class WagersController < ApplicationController
   def load_reachable_wager
     @wager = Wager.find_by(id: params[:id])
 
-    deny!("That wager is not yours to cancel.") unless @wager && reachable_account?(@wager.account_id)
+    deny!("That wager is not yours.") unless @wager && reachable_account?(@wager.account_id)
   end
 
   # Which slip the button was pressed on. Confirm and Cancel all are rendered

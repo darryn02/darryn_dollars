@@ -33,6 +33,11 @@ class BetSlipViewModel
     show_avatar? ? "Confirm #{account.display_name}'s #{count}" : "Confirm #{count}"
   end
 
+  # The owner's other accounts: where a wager on this slip could be moved to.
+  def move_targets
+    account.user.accounts.reject { |other| other == account }
+  end
+
   def pending?
     status == "pending"
   end
