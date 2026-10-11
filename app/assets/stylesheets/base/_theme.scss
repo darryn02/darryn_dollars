@@ -256,6 +256,13 @@ body .container.main {
   }
 }
 
+// A message raised as text - a scoring report from the admin dashboard, say -
+// breaks where its own newlines are. Not applied to a message raised as
+// markup, whose source has newlines that mean nothing.
+.dd-flash__lines {
+  white-space: pre-line;
+}
+
 .dd-flash--notice,
 .dd-flash--success {
   border-left-color: $win;

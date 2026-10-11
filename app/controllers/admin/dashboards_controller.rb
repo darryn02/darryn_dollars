@@ -15,16 +15,24 @@ module Admin
       @notice = BovadaApiClient.update_lines(sport: params[:sport])
     end
 
+    # These three answer with a report of several lines, handed over as the
+    # plain text it is. Each used to swap its newlines for <br> and mark the
+    # result html_safe, but the flash script renders a message as text, so
+    # the book read the tags. The line breaks are now kept by the stylesheet
+    # (.dd-flash__lines).
+    #
+    # Rendering the report as HTML instead was rejected: it carries team
+    # names that arrive from a scrape, and html_safe on that is an open door.
     def fetch_scores
-      @notice = ScoreScraper.run(params[:sport] || :nfl).gsub("\n", "<br>").html_safe
+      @notice = ScoreScraper.run(params[:sport] || :nfl)
     end
 
     def score_lines
-      @notice = LineScorer.run.gsub("\n", "<br>").html_safe
+      @notice = LineScorer.run
     end
 
     def score_wagers
-      @notice = WagerScorer.run.gsub("\n", "<br>").html_safe
+      @notice = WagerScorer.run
     end
   end
 end

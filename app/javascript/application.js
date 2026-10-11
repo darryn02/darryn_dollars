@@ -175,7 +175,8 @@ function renderFlash(kind, message, asHtml) {
   if (asHtml) {
     $body.html(message);
   } else {
-    $body.text(message);
+    // Text keeps its own line breaks; see .dd-flash__lines.
+    $body.text(message).addClass("dd-flash__lines");
   }
 
   // The added-to-slip flash leads with the account's avatar instead.
