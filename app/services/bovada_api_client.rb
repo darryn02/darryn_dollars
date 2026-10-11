@@ -41,12 +41,24 @@ class BovadaApiClient
   # 930 seconds old; the same url 37 seconds later was 36 seconds old. The
   # cdn-stale-while-revalidate=30 it advertises is not what it does.
   #
-  # Nobody else asks for these urls, so "whoever asks next" was us, ten or
-  # twenty minutes later - every scheduled scrape was handed the board as it
-  # stood at the scrape before. A second half market is listed for the length
-  # of halftime, about 14 minutes, so we saw it once the third quarter was
-  # under way or not at all: 24 of the 65 games played up to 2026-10-08 never
-  # got a second half line.
+  # On a url nothing else asks for, "whoever asks next" was us, ten or twenty
+  # minutes later - a scrape was handed the board as it stood at the scrape
+  # before. That is three of the four live keys: read from a dyno an hour
+  # after a laptop had last touched them, their copies were 3,731 to 3,768
+  # seconds old, and fresh four seconds later. The first source is different.
+  # Something else refreshes it - after the first deploy of this code a copy
+  # turned up that was born 37 seconds after our run had finished - so its
+  # age when we arrive is whatever that traffic left behind.
+  #
+  # (This comment first said nobody else asked for any of these urls. That
+  # was inferred from one matching timestamp, and the first source proved it
+  # wrong the same afternoon.)
+  #
+  # Either way the app was reading a board of unknown age and never looked.
+  # A second half market is listed for the length of halftime, about 14
+  # minutes, so we saw it once the third quarter was under way or not at
+  # all: 24 of the 65 games played up to 2026-10-08 never got a second half
+  # line.
   #
   # So while a game is on, a copy is only taken as it comes if it is this
   # young. An expired one is asked for a second time, after the refresh our
