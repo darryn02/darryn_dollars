@@ -7,9 +7,14 @@ development: &default
   reaping_frequency: <%= Integer(ENV.fetch("DB_REAPING_FREQUENCY", 10)) %>
   timeout: 5000
 
+# TEST_ENV_NUMBER is the suffix parallel_tests uses, borrowed so that two
+# sessions working in two worktrees can each name their own test database.
+# Sharing one does not work: the suite clears every table before it starts
+# and system specs delete rather than roll back, so each run wipes the rows
+# the other is in the middle of using. Unset, the name is what it always was.
 test:
   <<: *default
-  database: darryn_dollars_test
+  database: darryn_dollars_test<%= ENV["TEST_ENV_NUMBER"] %>
 
 production: &deploy
   adapter: postgresql
