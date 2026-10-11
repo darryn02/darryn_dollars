@@ -24,4 +24,39 @@ RSpec.describe "Flash messages raised from JavaScript", type: :system do
 
     expect(page).to have_css(".flash-from-js", text: "second bet", wait: 0)
   end
+
+  # The scoring buttons on the admin dashboard answer with a report of
+  # several lines. The controller joined them with <br>, the script rendered
+  # the message as text, and the book read the tag: "BUF +2.5 -> win<br>MIA".
+  describe "a report of several lines on the admin dashboard" do
+    let(:user) { create_user(name: "The Book", admin: true) }
+
+    def report_text
+      find(".flash-from-js div").text
+    end
+
+    it "puts each line on its own line" do
+      allow(LineScorer).to receive(:run).and_return("BUF +2.5 -> win\nMIA -2.5 -> loss")
+
+      visit admin_dashboard_path
+      click_link "Score Lines"
+
+      expect(page).to have_css(".flash-from-js div")
+      expect(report_text).to eq("BUF +2.5 -> win\nMIA -2.5 -> loss")
+    end
+
+    # A report is built from team names that arrive from a scrape. It is shown
+    # as text so that markup in one is something to read, not something the
+    # browser acts on.
+    it "shows markup inside a report as text" do
+      allow(LineScorer).to receive(:run).and_return("<img src=x> Bills\nscored")
+
+      visit admin_dashboard_path
+      click_link "Score Lines"
+
+      expect(page).to have_css(".flash-from-js div")
+      expect(report_text).to eq("<img src=x> Bills\nscored")
+      expect(page).to have_no_css(".flash-from-js img")
+    end
+  end
 end
