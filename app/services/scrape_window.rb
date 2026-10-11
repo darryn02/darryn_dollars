@@ -34,6 +34,18 @@ class ScrapeWindow
   # that already happened.
   MINIMUM_INTERVAL = 10.minutes
 
+  # How often the scheduler asks. An interval is only ever met to the nearest
+  # tick, so "has enough time passed" has to mean "is this the tick nearest to
+  # it" - half a heartbeat of slack.
+  #
+  # Without the slack a 10 minute interval on a 10 minute heartbeat ran every
+  # 20. ran_at is stamped when a run finishes, a few seconds after its tick,
+  # so the next tick arrived 9m5xs later, fell short, and did nothing: on
+  # 2026-10-11 the 18:41:01 UTC tick was skipped for being 9m54s after the
+  # 18:31:07 run, and 133 of 251 in-game gaps that season were ~20 minutes
+  # against 104 of ~10. A halftime lasts about 14.
+  HEARTBEAT = 10.minutes
+
   # Applied on top of the normal cadence after the book pushes back.
   FIRST_BACKOFF = 30.minutes
   MAX_BACKOFF = 6.hours
@@ -45,7 +57,7 @@ class ScrapeWindow
   end
 
   def due?
-    last_run_at.nil? || (Time.current - last_run_at) >= interval
+    last_run_at.nil? || (Time.current - last_run_at) >= interval - HEARTBEAT / 2
   end
 
   # Exposed so the rake task can say why it did nothing.

@@ -31,6 +31,24 @@ RSpec.describe ScrapeWindow, type: :service do
 
       expect(window).not_to be_due
     end
+
+    # The scheduler ticks every 10 minutes and a run is stamped when it
+    # finishes, so the next tick always lands a few seconds short of a 10
+    # minute interval. Skipping it made the real cadence 20 minutes, which is
+    # longer than a halftime.
+    it "is due on the next heartbeat, seconds short of the interval" do
+      game_at(now - 1.hour)
+      run_at(now - 9.minutes - 54.seconds)
+
+      expect(window).to be_due
+    end
+
+    it "still skips the tick after an off-beat run" do
+      game_at(now - 1.hour)
+      run_at(now - 4.minutes)
+
+      expect(window).not_to be_due
+    end
   end
 
   describe "#interval" do
