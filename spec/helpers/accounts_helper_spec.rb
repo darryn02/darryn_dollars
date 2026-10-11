@@ -16,6 +16,14 @@ RSpec.describe AccountsHelper, type: :helper do
 
       expect(helper.account_initials(big)).to eq("M")
     end
+
+    # A nickname can be nothing but an emoji or punctuation, which left the
+    # avatar an empty disc.
+    it "falls back to the first character when there is no letter or digit" do
+      big.update!(name: nil, nickname: "🔥🔥")
+
+      expect(helper.account_initials(big)).to eq("🔥")
+    end
   end
 
   describe "#account_color_class" do

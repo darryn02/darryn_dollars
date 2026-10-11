@@ -43,19 +43,23 @@ class Account < ApplicationRecord
   #
   # name comes first because it is what the bet sheet dropdown and the slip
   # titles already showed, so it is what a player with two accounts has been
-  # reading. nickname is the leaderboard handle and is the fallback - when
-  # there is no name, or when a sibling account has the same one, since two
-  # choices labelled alike is the mistake this exists to prevent. The last
-  # resort is the id, so the label is never blank.
+  # reading. nickname is the leaderboard handle and is the fallback.
+  #
+  # A label is only used if no sibling account has it as either its name or
+  # its nickname. Two choices labelled alike is the mistake this exists to
+  # prevent, and checking one column at a time let it through twice over: two
+  # accounts sharing both a name and a nickname, and one account's name being
+  # the other's nickname. When neither label is free the id is added, so the
+  # result is distinct whatever the two columns hold, and never blank.
   def display_name
-    [:name, :nickname].each do |field|
-      label = self[field].to_s.squish
-      next if label.blank?
+    own = [name, nickname].map { |label| label.to_s.squish }.reject(&:blank?)
+    return "Account ##{id}" if own.empty?
 
-      return label if user.accounts.none? { |other| other.id != id && other[field].to_s.squish.casecmp?(label) }
-    end
+    taken = user.accounts.reject { |other| other.id == id }.
+      flat_map { |other| [other.name, other.nickname] }.
+      map { |label| label.to_s.squish.downcase }
 
-    name.to_s.squish.presence || nickname.to_s.squish.presence || "Account ##{id}"
+    own.find { |label| taken.exclude?(label.downcase) } || "#{own.first} ##{id}"
   end
 
   def qualified_name
