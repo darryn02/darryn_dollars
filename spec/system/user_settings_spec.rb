@@ -31,7 +31,7 @@ RSpec.describe "The settings page", type: :system do
     visit edit_user_path(user)
     fill_in "Leaderboard nickname", with: "The Commissioner"
     click_button "Save changes"
-    expect(page).to have_css(".dd-flash", text: "Settings updated")
+    expect(page).to have_css(".dd-flash--notice", text: "Settings updated")
 
     expect(account.reload.nickname).to eq("The Commissioner")
 
@@ -46,7 +46,7 @@ RSpec.describe "The settings page", type: :system do
     visit edit_user_path(user)
     uncheck "Show me on the leaderboard"
     click_button "Save changes"
-    expect(page).to have_css(".dd-flash", text: "Settings updated")
+    expect(page).to have_css(".dd-flash--notice", text: "Settings updated")
 
     expect(account.reload.leaderboard_visible).to be(false)
 
@@ -83,7 +83,7 @@ RSpec.describe "The settings page", type: :system do
     choose "account_#{big.id}_emoji_#{Account::EMOJI_CHOICES.index('🐻')}", allow_label_click: true
     choose "account_#{little.id}_emoji_#{Account::EMOJI_CHOICES.index('🐭')}", allow_label_click: true
     click_button "Save changes"
-    expect(page).to have_css(".dd-flash", text: "Settings updated")
+    expect(page).to have_css(".dd-flash--notice", text: "Settings updated")
 
     expect(big.reload.emoji).to eq("🐻")
     expect(little.reload.emoji).to eq("🐭")
@@ -114,7 +114,7 @@ RSpec.describe "The settings page", type: :system do
     fill_in "Leaderboard nickname", with: "Renamed Main", match: :first
     all("input[name*='nickname']").last.set("Renamed Side")
     click_button "Save changes"
-    expect(page).to have_css(".dd-flash", text: "Settings updated")
+    expect(page).to have_css(".dd-flash--notice", text: "Settings updated")
 
     expect(main.reload.nickname).to eq("Renamed Main")
     expect(side.reload.nickname).to eq("Renamed Side")
