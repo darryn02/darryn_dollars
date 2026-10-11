@@ -52,20 +52,36 @@ class WagersController < ApplicationController
   # Credit is not checked here. It never is while a wager is pending - the
   # check belongs to confirmation, and the wager still has to pass it there
   # against the account it lands on.
+  #
+  # The check and the write happen under a row lock, on the row as it is
+  # then. The wager was read before this action began, and Confirm in another
+  # tab can commit in between; deciding on that earlier copy moved a wager
+  # the book had just accepted. with_lock reloads before it yields.
   def move
     target = @wager.account.user.accounts.find_by(id: params[:account_id])
 
-    if !@wager.pending?
-      redirect_to bet_slip_wagers_path, alert: "Only a pending wager can be moved."
-    elsif target.nil? || target == @wager.account
-      redirect_to bet_slip_wagers_path, alert: "That wager cannot be moved there."
-    else
-      Wager.transaction do
+    outcome = @wager.with_lock do
+      if !@wager.pending?
+        :not_pending
+      elsif target.nil? || target.id == @wager.account_id
+        :not_there
+      else
         @wager.update!(account: target, bet_slip: BetSlip.pending.find_or_create_by!(account_id: target.id))
+        :moved
       end
-
-      redirect_to bet_slip_wagers_path, notice: "Moved to #{target.display_name}'s slip."
     end
+
+    case outcome
+    when :moved
+      redirect_to bet_slip_wagers_path, notice: "Moved to #{target.display_name}'s slip."
+    when :not_pending
+      redirect_to bet_slip_wagers_path, alert: "Only a pending wager can be moved."
+    else
+      redirect_to bet_slip_wagers_path, alert: "That wager cannot be moved there."
+    end
+  rescue ActiveRecord::RecordNotFound
+    # Cancelled in another tab between the read and the lock.
+    redirect_to bet_slip_wagers_path, alert: "That wager is no longer on your slip."
   end
 
   def confirm_pending
@@ -73,15 +89,30 @@ class WagersController < ApplicationController
     if @wagers.size.zero?
       redirect_to bet_slip_wagers_path, error: "No pending wagers to confirm."
     else
+      confirmed = 0
       errors = []
       @wagers.each do |wager|
         begin
-          wager.confirmed!
+          # Under a row lock, on the row as it is now. This list was read a
+          # moment ago, and a wager on it may since have been moved to the
+          # player's other account or cancelled from another tab. Confirming
+          # the earlier copy would accept it on the account it moved to,
+          # having checked credit against the one it left.
+          wager.with_lock do
+            next unless wager.pending? && wager.account_id == @account.id
+
+            wager.confirmed!
+            confirmed += 1
+          end
+        rescue ActiveRecord::RecordNotFound
+          next
         rescue ActiveRecord::RecordInvalid => e
           errors << "#{wager}: #{e.message.sub('Validation failed:', '')}"
         end
       end
-      redirect_to bet_slip_wagers_path, notice: (["#{@wagers.size - errors.size} wagers confirmed."] + errors).join("<br>").html_safe
+      # Counted as they go through, now that a wager can be passed over
+      # without being an error.
+      redirect_to bet_slip_wagers_path, notice: (["#{confirmed} wagers confirmed."] + errors).join("<br>").html_safe
     end
   end
 

@@ -60,6 +60,45 @@ RSpec.describe "Moving a pending wager to another account", type: :request do
     expect(wager.reload.account).to eq(big)
   end
 
+  # Two tabs, or two fast taps: Confirm commits after this request has read
+  # the wager and before it writes. The decision was made on the copy in
+  # memory, so a wager the book had just accepted against one account's
+  # credit landed on the other with no check there.
+  #
+  # find_by is handed the copy read before the confirm, which is the state a
+  # request is in at the moment it loses that race.
+  it "leaves a wager that was confirmed after this request read it" do
+    sign_in player
+    read_before_the_confirm = Wager.find(wager.id)
+    Wager.find(wager.id).update!(status: :confirmed)
+
+    allow(Wager).to receive(:find_by).and_call_original
+    allow(Wager).to receive(:find_by).with(id: wager.id.to_s).and_return(read_before_the_confirm)
+
+    patch move_wager_path(wager, account_id: little.id)
+
+    expect(wager.reload.account).to eq(big)
+    expect(wager).to be_confirmed
+  end
+
+  # The same race from the other side: Confirm on Big Joe's slip holds a copy
+  # read before the wager was moved to Little Joe. It used to confirm it
+  # anyway, on the account it had moved to, having checked credit against the
+  # one it had left.
+  it "is not confirmed by a Confirm on the slip it has just left" do
+    sign_in player
+    read_before_the_move = Wager.find(wager.id)
+    patch move_wager_path(wager, account_id: little.id)
+    expect(wager.reload.account).to eq(little)
+
+    allow_any_instance_of(WagersController).
+      to receive(:pending_wagers_on_slip).and_return([read_before_the_move])
+
+    post confirm_pending_wagers_path(account_id: big.id)
+
+    expect(wager.reload).to be_pending
+  end
+
   it "will not move a wager to somebody else's account" do
     other = create_user(name: "Someone Else")
     their_account = create_account(user: other)
