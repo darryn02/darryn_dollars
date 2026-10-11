@@ -55,6 +55,16 @@ RSpec.describe "Confirming and cancelling a pending slip", type: :request do
       expect(little_wager.reload).to be_pending
     end
 
+    # destroy_all empties the relation it was called on, so counting it
+    # afterwards asked the database how many pending wagers were left: none.
+    it "says how many it cancelled" do
+      create_wager(account: big, line: card[:over], amount: 100, bet_slip: big_wager.bet_slip)
+
+      delete cancel_pending_wagers_path(account_id: big.id)
+
+      expect(flash[:notice]).to eq("2 wagers cancelled")
+    end
+
     it "cancels nothing when it is not told which slip" do
       expect { delete cancel_pending_wagers_path }.not_to change(Wager, :count)
     end

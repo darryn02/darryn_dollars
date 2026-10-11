@@ -121,8 +121,10 @@ class WagersController < ApplicationController
     if @wagers.size.zero?
       redirect_to bet_slip_wagers_path, error: "No pending wagers to cancel."
     else
-      @wagers.destroy_all
-      redirect_to bet_slip_wagers_path, notice: "#{@wagers.size} wagers cancelled"
+      # Counted from what destroy_all returns. It resets the relation it was
+      # called on, so @wagers.size afterwards re-counts and finds none.
+      cancelled = @wagers.destroy_all.size
+      redirect_to bet_slip_wagers_path, notice: "#{cancelled} wagers cancelled"
     end
   end
 
