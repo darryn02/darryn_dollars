@@ -214,6 +214,32 @@ RSpec.describe "Placing a wager", type: :system do
       expect(Wager.where(account_id: account.id).first).to be_pending
     end
 
+    # The single Add to Bet Slip button is disabled by Rails while its request
+    # is in flight; the account buttons are hand-written and were not, so a
+    # second tap before the sheet closed sent the bet twice.
+    #
+    # The test layout makes every XHR synchronous, which hides exactly this,
+    # so it is switched back for the two taps. They are fired from one script
+    # because that is the only way to land the second inside the first's
+    # request.
+    it "adds one bet when the account button is tapped twice" do
+      visit lines_path
+
+      open_bet_sheet(card[:away_spread], labelled: "+2.5")
+      within(sheet) { click_button "$100" }
+
+      page.execute_script(<<~JS)
+        window.jQuery.ajaxSetup({ async: true });
+        var button = document.querySelector("#{sheet} .dd-bet-as__btn");
+        button.click();
+        button.click();
+      JS
+
+      expect(page).to have_css(".flash-from-js", text: "Added to Big Joe's slip.")
+      expect(page).to have_no_css("#{sheet}.show")
+      expect(Wager.count).to eq(1)
+    end
+
     # Enter presses a form's first submit button, which here would be the
     # first account's: a default by another route.
     it "adds nothing when Enter is pressed in the amount field" do

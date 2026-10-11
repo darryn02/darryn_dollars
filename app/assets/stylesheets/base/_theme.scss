@@ -913,6 +913,11 @@ $account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
     outline-offset: 2px;
   }
 
+  // While the bet is being added; see the data-disable note in _bet_form.
+  &:disabled {
+    opacity: .55;
+  }
+
   // A third account would otherwise sit alone in half a row.
   &:last-child:nth-child(odd) {
     grid-column: 1 / -1;

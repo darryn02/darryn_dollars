@@ -46,8 +46,14 @@
             %p.dd-bet-as__label{ id: "betAsLabel-#{line.id}" } Add this bet for
             .dd-bet-as__choices
               - user.accounts.each do |account|
+                -# data-disable is what f.submit gets for free: jquery_ujs
+                -# disables every such button once the request is sent, so a
+                -# second tap before the sheet closes cannot add the bet
+                -# again - on this account or, by a slip of the thumb, the
+                -# other. Plain data-disable rather than data-disable-with,
+                -# which would swap the avatar and name for a line of text.
                 %button.dd-bet-as__btn{ type: "submit", name: "wager[account_id]", value: account.id,
-                  class: account_color_class(account) }
+                  class: account_color_class(account), data: { disable: true } }
                   = account_avatar(account)
                   %span.dd-bet-as__who
                     %span.dd-bet-as__name= account.display_name
