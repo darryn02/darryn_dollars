@@ -20,6 +20,12 @@
           %span.dd-slip__bet-line= wager_line_label(wager.line)
           %span.dd-slip__bet-meta= line_terms(wager.line)
           = vig_waived_badge(wager)
+          -# A bet added under the wrong account is put right here, while it
+          -# is still pending, rather than deleted and found again.
+          - bet_slip.move_targets.each do |target|
+            = link_to "Move to #{target.display_name}",
+              move_wager_path(wager, account_id: target.id),
+              method: :patch, class: "dd-slip__move"
         .dd-slip__figures
           %span.dd-slip__stake= currency(wager.amount)
           %span.dd-slip__towin= "to win #{currency(wager.potential_profit)}"

@@ -95,8 +95,10 @@ RSpec.describe "Placing a wager", type: :system do
     visit bet_slip_wagers_path
 
     expect(page).to have_css(".dd-slip--pending")
-    # Nothing to tell this slip apart from, so nothing marking it.
+    # Nothing to tell this slip apart from, so nothing marking it and
+    # nowhere to move a bet to.
     expect(page).to have_no_css(".dd-acct-avatar")
+    expect(page).to have_no_css(".dd-slip__move")
 
     click_link "Confirm 1 wager"
 
@@ -173,6 +175,21 @@ RSpec.describe "Placing a wager", type: :system do
 
       expect(page).to have_css(".flash-from-js", text: "has been cancelled")
       expect(Wager.count).to eq(0)
+    end
+
+    it "moves a pending bet to the other account from its slip" do
+      create_wager(account: account, line: card[:away_spread], amount: 100)
+
+      visit bet_slip_wagers_path
+
+      within(".dd-slip--pending", text: "Big Joe Pending Wagers") do
+        click_link "Move to Little Joe"
+      end
+
+      expect(page).to have_css(".dd-flash", text: "Moved to Little Joe's slip.")
+      expect(page).to have_css(".dd-slip--pending", text: "Little Joe Pending Wagers")
+      expect(page).to have_no_css(".dd-slip--pending", text: "Big Joe Pending Wagers")
+      within(".dd-slip--pending") { expect(page).to have_link("Move to Big Joe") }
     end
 
     it "heads each slip with its account and confirms only the one pressed" do

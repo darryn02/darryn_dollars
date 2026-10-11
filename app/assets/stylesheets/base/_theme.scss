@@ -1024,6 +1024,16 @@ $account-colors: #a78bfa, #2dd4bf, #f08ad0, #c5e063;
   color: $text-3;
 }
 
+.dd-slip__move {
+  align-self: flex-start;
+  // Padded out to a thumb-sized target without pushing the row taller than
+  // the text needs.
+  margin: 0 0 -.375rem -.375rem;
+  padding: .375rem;
+  font-size: .8125rem;
+  font-weight: 700;
+}
+
 .dd-slip__figures {
   display: flex;
   flex-direction: column;

@@ -2,6 +2,10 @@ Rails.application.routes.draw do
   devise_for :users, controllers: { invitations: "users/invitations" }
   resources :lines, only: [:index]
   resources :wagers, only: [:create, :update, :destroy] do
+    member do
+      patch :move
+    end
+
     collection do
       get :bet_slip
       get :history
