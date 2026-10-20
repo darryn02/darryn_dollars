@@ -254,6 +254,9 @@ RSpec.describe BovadaApiClient, type: :service do
       }
     end
 
+    def gzipped(url) = a_request(:get, url).with { |req| req.headers["Accept-Encoding"] != "identity" }
+    def uncompressed(url) = a_request(:get, url).with(headers: { "Accept-Encoding" => "identity" })
+
     def market(period, total)
       {
         "description" => "Total",
@@ -289,6 +292,34 @@ RSpec.describe BovadaApiClient, type: :service do
 
       expect(Line.second_half.active.count).to eq(2)
       expect(a_request(:get, first_source)).to have_been_made.once
+      expect(uncompressed(api)).not_to have_been_made
+    end
+
+    # Halftime on 2026-10-19: every other source a cold [], the first
+    # source's gzip copy 427 seconds old and taken before the second half
+    # went up, its uncompressed copy 118 seconds old and listing it.
+    it "builds the second half from the uncompressed copy when the gzip one is aging" do
+      stub_api(body: [].to_json)
+      stub_request(:get, first_source).to_return(board(age: 427, second_half: false))
+      stub_request(:get, first_source).with(headers: { "Accept-Encoding" => "identity" }).
+        to_return(board(age: 118, second_half: true))
+
+      result = described_class.update_lines(sport: :nfl)
+
+      expect(Line.second_half.active.count).to eq(2)
+      expect(result.to_s).to include("Board copy 118s old, from coupon?lang=en uncompressed.")
+    end
+
+    # A cold key was cold in both encodings, and every uncompressed request
+    # is one no browser sends.
+    it "asks for no uncompressed copy of a source that listed nothing" do
+      stub_api(body: [].to_json)
+      stub_request(:get, first_source).to_return(board(age: 300, second_half: false))
+
+      described_class.update_lines(sport: :nfl)
+
+      expect(uncompressed(first_source)).to have_been_made.once
+      expect(uncompressed(api)).to have_been_made.once
     end
 
     it "settles for the youngest copy when no source is fresh" do
@@ -298,7 +329,8 @@ RSpec.describe BovadaApiClient, type: :service do
       described_class.update_lines(sport: :nfl)
 
       expect(Line.second_half.active.count).to eq(2)
-      expect(a_request(:get, api)).to have_been_made.times(described_class::SOURCES.size)
+      expect(gzipped(api)).to have_been_made.times(described_class::SOURCES.size)
+      expect(uncompressed(api)).to have_been_made.times(described_class::SOURCES.size)
     end
 
     it "takes a fresh copy from the first source without asking anybody else" do
@@ -362,8 +394,9 @@ RSpec.describe BovadaApiClient, type: :service do
 
       described_class.update_lines(sport: :nfl)
 
-      expect(a_request(:get, first_source)).to have_been_made.twice
-      expect(a_request(:get, second_source)).to have_been_made.once
+      expect(gzipped(first_source)).to have_been_made.twice
+      expect(gzipped(second_source)).to have_been_made.once
+      expect(uncompressed(first_source)).to have_been_made.once
     end
 
     # Between games a board ten minutes behind is still right, and the extra

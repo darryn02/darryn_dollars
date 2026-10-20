@@ -50,6 +50,24 @@ RSpec.describe BovadaSession, type: :service do
     expect(described_class.new.warm!.fetch_json(api).age).to eq(0)
   end
 
+  it "asks for gzip, as a browser does, unless told otherwise" do
+    stub_request(:get, home).to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+    stub_request(:get, api).to_return(status: 200, body: "{}", headers: { "Content-Type" => "application/json" })
+
+    described_class.new.warm!.fetch_json(api)
+
+    expect(a_request(:get, api).with { |req| req.headers["Accept-Encoding"].to_s.include?("gzip") }).
+      to have_been_made
+  end
+
+  it "asks for the uncompressed copy when told to, and reads it" do
+    stub_request(:get, home).to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+    stub_request(:get, api).with(headers: { "Accept-Encoding" => "identity" }).
+      to_return(status: 200, body: { "events" => [] }.to_json, headers: { "Content-Type" => "application/json" })
+
+    expect(described_class.new.warm!.fetch_json(api, compressed: false).json).to eq("events" => [])
+  end
+
   it "raises Challenged when the response is not JSON" do
     stub_request(:get, home).to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
     stub_request(:get, api).to_return(status: 200, body: "<html>Access Denied</html>",

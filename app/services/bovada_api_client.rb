@@ -85,12 +85,46 @@ class BovadaApiClient
   # tenth of the time, but whether it sets off the refresh is unmeasured, and
   # it is one more request shape no browser sends at a site that challenges
   # sessions it finds odd.
+  #
+  # The edge also keeps two copies of each url, one gzipped and one not, and
+  # they can age on separate clocks. At halftime on 2026-10-19 every source
+  # but the first was a cold [], and the first source's gzip copy - the one
+  # Net::HTTP gets, because it asks for gzip - was 427 seconds old and taken
+  # before the second half markets went up. Its uncompressed copy was 118
+  # seconds old and listed them. The page views in between rebuilt the board
+  # from the stale copy, because it was too old to trust and too young to
+  # ask again, and second half lines arrived up to eight minutes late. The
+  # split held on three samples of that url over twelve minutes. The bare
+  # v2 url was 357 seconds old in both encodings, so on some keys the two
+  # copies are refreshed together, and a stuck key is stuck in both.
+  #
+  # So a source whose gzip copy listed events but was too old to trust gets a
+  # second try uncompressed, after every gzip copy has had its turn. Only
+  # then: an uncompressed request carries no Accept-Encoding a browser would
+  # send, and the body is about eight times the size - 872KB against 106KB,
+  # 0.25 seconds against 0.11 from a laptop. A source that listed nothing is
+  # not asked again, since a cold key was cold in both encodings, and a
+  # challenge on this second try costs nothing more than the board in hand.
+  # No Accept-Encoding, "identity" and "br" all got the uncompressed copy, and
+  # a browser's "gzip, deflate, br, zstd" got the gzip one, so there are two
+  # copies to try and no more.
   FRESH_ENOUGH = 2.minutes
   CACHE_LIFETIME = 10.minutes
   REVALIDATION_WAIT = 2.seconds
 
-  # The events one source listed, and the age of the copy they came from.
-  Board = Struct.new(:events, :age)
+  # The events one source listed, the age of the copy they came from, and
+  # which source and encoding that was.
+  Board = Struct.new(:events, :age, :source)
+
+  # One url, asked for in one encoding.
+  Source = Data.define(:prefix, :query, :compressed) do
+    def uncompressed = with(compressed: false)
+
+    def to_s
+      name = [prefix[%r{/event/(\w+)/}, 1], query].compact.join("?")
+      compressed ? name : "#{name} uncompressed"
+    end
+  end
 
   API_SPORT_MAP = {
     nfl: "football/nfl",
@@ -167,8 +201,10 @@ class BovadaApiClient
       # "was that scrape looking at a stale board" after the fact. Only when
       # some source listed something: no copy was used otherwise, and "0s"
       # would read as fresh from the origin.
+      # The source too, which nothing recorded on 2026-10-19 when a fresh copy
+      # finally ended a halftime with no second half lines.
       message: ["#{deactivated} lines deactivated. #{activated} lines activated.",
-                ("Board copy #{board.age}s old." if board.age)].compact.join(" "),
+                ("Board copy #{board.age}s old, from #{board.source}." if board.age)].compact.join(" "),
       created: Line.count - created_before,
       activated: activated,
       deactivated: deactivated
@@ -183,36 +219,44 @@ class BovadaApiClient
   # first whose copy is fresh, or failing that the youngest. Nothing anywhere
   # is the only honest empty, and the caller still refuses to act on it while
   # we hold active lines.
+  #
+  # The uncompressed copies of aging sources join the end of the queue, so
+  # they are reached only once every gzip copy has been read.
   def board_for(session, key)
+    queue = SOURCES.map { |prefix, query| Source.new(prefix: prefix, query: query, compressed: true) }
     youngest = nil
 
-    SOURCES.each do |prefix, query|
-      board = ask(session, url_for(prefix, query, key))
-      next if board.events.empty?
-      return board unless in_play? && board.age > FRESH_ENOUGH
+    while (source = queue.shift)
+      begin
+        board = ask(session, source, key)
+        next if board.events.empty?
+        return board unless in_play? && board.age > FRESH_ENOUGH
 
-      youngest = board if youngest.nil? || board.age < youngest.age
-    rescue BovadaSession::Challenged
-      # Looking for something fresher must not cost us the board already in
-      # hand. Before there was any looking, a source that answered was the
-      # end of the run; a timeout on the next one is no reason to record a
-      # challenge, update nothing and back the scheduler off mid-game.
-      raise if youngest.nil?
+        youngest = board if youngest.nil? || board.age < youngest.age
+        queue << source.uncompressed if source.compressed
+      rescue BovadaSession::Challenged
+        # Looking for something fresher must not cost us the board already in
+        # hand. Before there was any looking, a source that answered was the
+        # end of the run; a timeout on the next one is no reason to record a
+        # challenge, update nothing and back the scheduler off mid-game.
+        raise if youngest.nil?
 
-      break
+        break
+      end
     end
 
-    youngest || Board.new([], nil)
+    youngest || Board.new([], nil, nil)
   end
 
-  def ask(session, url)
-    board = read(session, url)
+  def ask(session, source, key)
+    url = url_for(source.prefix, source.query, key)
+    board = read(session, url, source)
     return board unless ask_again?(board)
 
     # Our request is what told the edge this copy had expired.
     @asked_again = true
     sleep(REVALIDATION_WAIT)
-    refreshed = read(session, url)
+    refreshed = read(session, url, source)
 
     # An empty second answer is a cold key, not an empty board - the first
     # answer is still the best this source has.
@@ -227,9 +271,9 @@ class BovadaApiClient
     in_play? && !@asked_again && board.events.any? && board.age >= CACHE_LIFETIME
   end
 
-  def read(session, url)
-    reply = session.fetch_json(url)
-    Board.new(events_in(reply.json), reply.age)
+  def read(session, url, source)
+    reply = session.fetch_json(url, compressed: source.compressed)
+    Board.new(events_in(reply.json), reply.age, source)
   end
 
   # Only then is a board a few minutes behind a board that is wrong. Between
