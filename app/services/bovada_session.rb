@@ -24,7 +24,8 @@ class BovadaSession
 
   # Deliberately not "Ruby". Note the absence of Accept-Encoding: Net::HTTP
   # sets its own and transparently decompresses only when it does, so setting
-  # it here would hand us a gzip blob to parse.
+  # it here would hand us a gzip blob to parse. Asking for identity is the
+  # exception, since there is then nothing to decompress.
   BROWSER_HEADERS = {
     "User-Agent" => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " \
                     "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
@@ -57,8 +58,11 @@ class BovadaSession
 
   def get_json(url) = fetch_json(url).json
 
-  def fetch_json(url)
-    response = get(url, referer: HOME_PAGE)
+  # The edge keeps a gzip copy and an uncompressed copy of each url, and they
+  # can be minutes apart in age - see BovadaApiClient. compressed: false asks
+  # for the other one.
+  def fetch_json(url, compressed: true)
+    response = get(url, referer: HOME_PAGE, compressed: compressed)
     content_type = response["content-type"].to_s
 
     unless content_type.include?("json")
@@ -74,11 +78,12 @@ class BovadaSession
 
   attr_reader :cookies
 
-  def get(url, referer: nil, accept: nil)
+  def get(url, referer: nil, accept: nil, compressed: true)
     uri = URI(url)
     request = Net::HTTP::Get.new(uri)
     BROWSER_HEADERS.each { |k, v| request[k] = v }
     request["Accept"] = accept if accept
+    request["Accept-Encoding"] = "identity" unless compressed
     request["Referer"] = referer if referer
     request["Cookie"] = cookie_header if cookies.any?
 
